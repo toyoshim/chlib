@@ -209,6 +209,9 @@ void pinMode(uint8_t port, uint8_t bit, uint8_t mode) {
       case 3:
         P3_PU |= mask;
         break;
+      case 4:
+        P4_PU |= mask;
+        break;
       default:
         Serial.println("N/A");
         break;
@@ -227,6 +230,9 @@ void pinMode(uint8_t port, uint8_t bit, uint8_t mode) {
         break;
       case 3:
         P3_PU &= mask;
+        break;
+      case 4:
+        P4_PU &= mask;
         break;
       default:
         Serial.println("N/A");
@@ -248,6 +254,9 @@ void pinMode(uint8_t port, uint8_t bit, uint8_t mode) {
       case 3:
         P3_DIR |= mask;
         break;
+      case 4:
+        P4_DIR |= mask;
+        break;
       default:
         Serial.println("N/A");
         break;
@@ -266,6 +275,9 @@ void pinMode(uint8_t port, uint8_t bit, uint8_t mode) {
         break;
       case 3:
         P3_DIR &= mask;
+        break;
+      case 4:
+        P4_DIR &= mask;
         break;
       default:
         Serial.println("N/A");

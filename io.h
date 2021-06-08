@@ -39,7 +39,9 @@ SFR(P2_PU, 0xbd);  // P2 pull-up enable register
 SFR(P3_DIR, 0xbe);  // P3 direction control register
 SFR(P3_PU, 0xbf);  // P3 pull-up enable register
 SFR(P4_OUT, 0xc0);  // P4 output register
+SFR(P4_IN, 0xc1);  // P4 input register
 SFR(P4_DIR, 0xc2);  // P4 direction control register
+SFR(P4_PU, 0xc3);  // P4 pull-up enable register
 SFR(P0_DIR, 0xc4);  // P0 direction control register
 SFR(P0_PU, 0xc5);  // P0 pull-up enable register
 SFR(PORT_CFG, 0xc6);  // Port configuration register
