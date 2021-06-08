@@ -81,7 +81,7 @@ void initialize() {
   // Fosc = 12MHz, Fpll = 288MHz, Fusb4x = 48MHz by PLL_CFG default
   enter_safe_mode();
   CLOCK_CFG = (CLOCK_CFG & ~MASK_SYS_CK_DIV) | 6;  // Fsys = 288MHz / 6 = 48MHz
-  PLL_CFG = (24 << 0) | (6 << 5);  // PLL multiplier 24, USB clock divisor 6
+  PLL_CFG = ((24 << 0) | (6 << 5)) & 0xff;  // PLL multiplier 24, USB clock divisor 6
   leave_safe_mode();
 
   // UART0 115200 TX at P0.3
@@ -342,6 +342,6 @@ uint8_t digitalReadPort(uint8_t port) {
       return P4_IN;
     default:
       Serial.println("N/A");
-      break;
+      return 0;
   }
 }
