@@ -4,73 +4,7 @@
 
 #include "ch559.h"
 
-#include <compiler.h>
-#include <stdio.h>
-
-SFR(P0, 0x80);  // P0 input/output register
-SFR(PCON, 0x87);  // Power control register
-SFR(TMOD, 0x89);  // Timer/counter/0/1 mode register
-SFR(TH1, 0x8d);	 // High byte of timer1 count
-SFR(P1, 0x90);  // P1 input/output register
-SFR(SER1_IER, 0x91);  // UART1 interrupt enable
-SFR(SER1_DLM, 0x91);  // UART1 divisor latch MSB byte, only when DLAB=1
-SFR(SER1_FCR, 0x92);  // UART1 FIFO control
-SFR(SER1_LCR, 0x93);  // UART1 line control
-SFR(SER1_MCR, 0x94);  // UART1 modem control
-SFR(SER1_LSR, 0x95);  // UART1 line status
-SFR(SER1_DIV, 0x97);  // UART1 pre-divisor latch byte, only when DLAB=1
-SFR(SBUF, 0x99);  // UART0 data buffer register
-SFR(SER1_FIFO, 0x9a);  // UART1 FIFO register
-SFR(SER1_DLL, 0x9a);  // UART1 divisor latch LSB byte, only when DLAB=1
-SFR(PWM_DATA, 0x9c);  // PWM1 data register
-SFR(PWM_CTRL, 0x9d);  // PWM control register
-SFR(PWM_CK_SE, 0x9e);  // PWM clock divisor register
-SFR(PWM_CYCLE, 0x9f);  // PWM cycle period register
-SFR(P2, 0xa0);  // P2 input/output register
-SFR(SAFE_MOD, 0xa1);  // Safe mode control register
-SFR(P3, 0xb0);  // P3 input/output register
-SFR(CLOCK_CFG, 0xb3);  // System clock configuration register
-SFR(P1_DIR, 0xba);  // P1 direction control register
-SFR(P1_PU, 0xbb);  // P1 pull-up enable register
-SFR(P2_DIR, 0xbc);  // P2 direction control register
-SFR(P2_PU, 0xbd);  // P2 pull-up enable register
-SFR(P3_DIR, 0xbe);  // P3 direction control register
-SFR(P3_PU, 0xbf);  // P3 pull-up enable register
-SFR(P4_OUT, 0xc0);  // P4 output register
-SFR(P4_DIR, 0xc2);  // P4 direction control register
-SFR(P0_DIR, 0xc4);  // P0 direction control register
-SFR(P0_PU, 0xc5);  // P0 pull-up enable register
-SFR(PORT_CFG, 0xc6);  // Port configuration register
-SFR(T2MOD, 0xc9);  // Timer2 mode register
-SFR(PIN_FUNC, 0xce);  // Function pins select register
-SFR(RESET_KEEP, 0xfe);  // Reset-keeping register
-
-SBIT(TR1, 0x88, 6);  // TCON - Timer1 start/stop bit
-SBIT(SM0, 0x98, 7);  // SCON - UART0 mode bit0, selection data bit
-SBIT(SM1, 0x98, 6);  // SCON - UART0 mode bit1, selection baud rate
-SBIT(TI, 0x98, 1);  // SCON - Transmit interrupt flag
-
-enum {
-  SMOD = 0x80,  // PCON, Baud rate selection for UART0 mode 1/2/3
-  bT1_M1 = 0x20,  // TMOD, Timer1 mode high bit
-  bIER_PIN_MOD1 = 0x20,  // SER1_IER, UART1 pin mode high bit
-  bFCR_FIFO_EN = 0x01,  // SER1_FCR, UART1 FIFO enable
-  bFCR_R_FIFO_CLR = 0x02,  // SER1_FCR, UART1 receiver FIFO clear
-  bFCR_T_FIFO_CLR = 0x04,  // SER1_FCR, UART1 transmitter FIFO clear
-  bLCR_WORD_SZ0 = 0x01,  // SER1_LCR, UART1 word bit length low bit
-  bLCR_WORD_SZ1 = 0x02,  // SER1_LCR, UART1 word bit length high bit
-  bLCR_DLAB = 0x80,  // SER1_LCR, UART1 divisor latch access bit enable
-  bMCR_HALF = 0x80,  // SE1_MCR, UART1 enable half-duplex mode
-  bLSR_T_FIFO_EMP = 0x20,  // SER1_LSR, UART1 transmitter FIFO empty status
-  bLSR_DATA_RDY = 0x01,  // SER1_LSR, UART1 receiver FIFO data ready status
-  bPWM_CLR_ALL = 0x02,  // PWM_CTRL, clear FIFO and count of PWM1/2
-  bPWM_OUT_EN = 0x08,  // PWM_CTRL, PWM1 output enable
-  MASK_SYS_CK_DIV = 0x1f,  // CLOCK_CFG, system clock divisor factor
-  bTMR_CLK = 0x80,  // T2MOD, Fastest internal clock mode for timer 0/1/2
-  bT1_CLK = 0x20,  // T2MOD, Timer1 internal clock frequency selection
-  bUART0_PIN_X = 0x10,  // PIN_FUNC, Pin UART0 mapping enable bit
-  bPWM1_PIN_X = 0x80,  // PIN_FUNC, Pin PWM1/PWM2 mapping enable bit
-};
+#include "io.h"
 
 void (*runBootloader)() = 0xf400;
 
@@ -147,6 +81,7 @@ void initialize() {
   // Fosc = 12MHz, Fpll = 288MHz, Fusb4x = 48MHz by PLL_CFG default
   enter_safe_mode();
   CLOCK_CFG = (CLOCK_CFG & ~MASK_SYS_CK_DIV) | 6;  // Fsys = 288MHz / 6 = 48MHz
+  PLL_CFG = (24 << 0) | (6 << 5);  // PLL multiplier 24, USB clock divisor 6
   leave_safe_mode();
 
   // UART0 115200 TX at P0.3
