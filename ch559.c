@@ -327,3 +327,21 @@ void digitalWrite(uint8_t port, uint8_t bit, uint8_t value) {
     }
   }
 }
+
+uint8_t digitalReadPort(uint8_t port) {
+  switch (port) {
+    case 0:
+      return P0;
+    case 1:
+      return P1;
+    case 2:
+      return P2;
+    case 3:
+      return P3;
+    case 4:
+      return P4_IN;
+    default:
+      Serial.println("N/A");
+      break;
+  }
+}
