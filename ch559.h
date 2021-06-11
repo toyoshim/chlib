@@ -8,6 +8,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "interrupt.h"
+
+extern void timer3_int() __interrupt INT_NO_TMR3 __using 1;
+
 void initialize();
 
 // note: pins are fixed to XA/XB for now
@@ -20,6 +24,13 @@ uint8_t rs485_recv();
 void pwm1_init();
 void pwm1_enable(bool enable);
 void pwm1_duty(uint8_t data, uint8_t cycle);
+
+void timer3_tick_init();
+void timer3_tick_reset();
+void timer3_tick_wait(uint16_t msec);
+bool timer3_tick_gt(uint16_t msec);
+uint16_t timer3_tick_msec();
+uint16_t timer3_tick_sec();
 
 // Arduino-like APIs
 

@@ -9,7 +9,7 @@
 
 #include "interrupt.h"
 
-extern void usb_int(void) __interrupt INT_NO_USB __using 1;
+extern void usb_int() __interrupt INT_NO_USB __using 1;
 
 enum {
   // descriptor

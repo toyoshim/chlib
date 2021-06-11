@@ -4,8 +4,6 @@
 
 #include "usb_device.h"
 
-#include <stdint.h>
-
 #include "ch559.h"
 #include "io.h"
 
@@ -73,7 +71,7 @@ static void bus_reset() {
   UEP0_CTRL = UEP_R_RES_ACK | UEP_T_RES_NAK;
   if (usb_device->ep1_in)
     UEP1_CTRL = bUEP_AUTO_TOG | UEP_R_RES_ACK;
-  USB_DEV_AD = 0;
+  USB_DEV_AD = 0x00;
 }
 
 static void stall() {
@@ -223,7 +221,7 @@ void usb_int() __interrupt INT_NO_USB __using 1 {
 void usb_device_init(struct usb_device* device) {
   usb_device = device;
 
-  // DMA addresse must be even address
+  // DMA addresses must be even
   if ((uint16_t)ep0_buffer & 1)
     ep0_buffer++;
   if ((uint16_t)ep1_buffer & 1)

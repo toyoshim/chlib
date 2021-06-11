@@ -28,7 +28,16 @@ SFR(PWM_CK_SE, 0x9e);  // PWM clock divisor register
 SFR(PWM_CYCLE, 0x9f);  // PWM cycle period register
 SFR(P2, 0xa0);  // P2 input/output register
 SFR(SAFE_MOD, 0xa1);  // Safe mode control register
+SFR(T3_SETUP, 0xa3);  // Timer3 setup register
+SFR(T3_CK_SE_L, 0xa4);  // Timer3 clock divisor setting low byte
+SFR(T3_COUNT_L, 0xa4);  // Timer3 current count low byte
+SFR(T3_CK_SE_H, 0xa5);  // Timer3 clock divisor settings high byte
+SFR(T3_COUNT_H, 0xa5);  // Timer3 current count high byte
+SFR(T3_END_L, 0xa6);  // Timer3 count end value low byte
+SFR(T3_END_H, 0xa7);  // Timer3 count end value high byte
 SFR(IE, 0xa8);  // Interrupt enable register
+SFR(T3_STAT, 0xa9);  // Timer3 status register
+SFR(T3_CTRL, 0xaa);  // Timer3 control register
 SFR(P3, 0xb0);  // P3 input/output register
 SFR(PLL_CFG, 0xb2);  // PLL clock configuration register
 SFR(CLOCK_CFG, 0xb3);  // System clock configuration register
@@ -50,8 +59,12 @@ SFR(PIN_FUNC, 0xce);  // Function pins select register
 SFR(USB_INT_FG, 0xd8);  // USB interrupt flag register
 SFR(USB_RX_LEN, 0xd1);  // USB receiving length register
 SFR(UEP1_CTRL, 0xd2);  // Endpoint1 control register
+SFR(UH_SETUP, 0xd2);  // USB host auxiliary setup register
 SFR(UEP1_T_LEN, 0xd3);  // Endpoint1 transmittal length register
 SFR(UEP2_CTRL, 0xd4);  // Endpoint2 control register
+SFR(UH_RX_CTRL, 0xd4);  // USB host receiver endpoint control register
+SFR(UH_TX_CTRL, 0xd6);  // USB host transmittal endpoint control register
+SFR(USB_HUB_ST, 0xd8);  // USB host hub status
 SFR(USB_INT_ST, 0xd9);  // USB interrupt status
 SFR(USB_MIS_ST, 0xda);  // USB miscellaneous status
 SFR(UEP0_CTRL, 0xdc);  // Endpoint0 control register
@@ -60,6 +73,8 @@ SFR(USB_INT_EN, 0xe1);  // USB interrrupt enable
 SFR(USB_CTRL, 0xe2);  // USB control register
 SFR(USB_DEV_AD, 0xe3);  // USB device address register
 SFR(UDEV_CTRL, 0xe4);  // USB device port control register
+SFR(UHUB0_CTRL, 0xe4);  // USB HUB0 control register
+SFR(UHUB1_CTRL, 0xe5);  // USB HUB1 control register
 SFR(IE_EX, 0xe8);  // Extend interrupt enable register
 SFR(RESET_KEEP, 0xfe);  // Reset-keeping register
 
@@ -68,9 +83,11 @@ SBIT(SM1, 0x98, 6);  // SCON, UART0 mode bit1, selection baud rate
 SBIT(SM0, 0x98, 7);  // SCON, UART0 mode bit0, selection data bit
 SBIT(TI, 0x98, 1);  // SCON, Transmit interrupt flag
 SBIT(EA, 0xa8, 7);  // IE, Global interrupt enable control bit
-SBIT(UIF_BUS_RST, 0xd8, 0);  // USB_INT_FG, USB bus reset
+SBIT(UIF_BUS_RST, 0xd8, 0);  // USB_INT_FG, USB bus reset (device)
+SBIT(UIF_DETECT, 0xd8, 0);  // USB_INT_FG, checking device connection (host)
 SBIT(UIF_TRANSFER, 0xd8, 1);  // USB_INT_FG, USB transfer complete
 SBIT(UIF_SUSPEND, 0xd8, 2);  // USB_INT_FG, USB suspend or resume
+SBIT(IE_TMR3, 0xe8, 1);  // IE_EX, Timer3 interruprt enable bit
 SBIT(IE_USB, 0xe8, 2);  // IE_EX, USB interruprt enable bit
 
 enum {
@@ -88,6 +105,12 @@ enum {
   bLSR_DATA_RDY = 0x01,  // SER1_LSR, UART1 receiver FIFO data ready status
   bPWM_CLR_ALL = 0x02,  // PWM_CTRL, clear FIFO and count of PWM1/2
   bPWM_OUT_EN = 0x08,  // PWM_CTRL, PWM1 output enable
+  bT3_EN_CK_SE = 0x01,  // T3_SETUP, enable to access divisor setting register
+  bT3_IE_END = 0x80,  // T3_SETUP, enable interrupt for capture mode count
+  bT3_IF_END = 0x10,  // T3_STAT, Interrupt flag for count over
+  bT3_MOD_CAP = 0x01,  // T3_CTRL, Timer3 mode
+  bT3_CLR_ALL = 0x02,  // T3_CTRL, Timer3 force clear FIFO and count
+  bT3_CNT_EN = 0x04,  // T3_CTRL, Timer3 count enable
   MASK_SYS_CK_DIV = 0x1f,  // CLOCK_CFG, system clock divisor factor
   bTMR_CLK = 0x80,  // T2MOD, Fastest internal clock mode for timer 0/1/2
   bT1_CLK = 0x20,  // T2MOD, Timer1 internal clock frequency selection
@@ -99,6 +122,8 @@ enum {
   UIS_TOKEN_SOF = 0x10,  // USB_INT_ST, SOF packet token
   UIS_TOKEN_IN = 0x20,  // USB_INT_ST, IN packet token
   UIS_TOKEN_SETUP = 0x30,  // USB_INT_ST, SETUP packet token
+  bUHS_H0_ATTACH = 0x08,  // USB HUB0 attached status
+  bUHS_H1_ATTACH = 0x80,  // USB HUB1 attached status
   bUEP_R_TOG = 0x80,  // UEPx_CTRL, Expected data toggle flag of USB EPn RX
   bUEP_T_TOG = 0x40,  // UEPx_CTRL, Expected data toggle flag of USB EPn TX
   MASK_UEP_T_RES = 0x03,  // UEPx_CTRL, mask for UEP_T_RES_*
@@ -109,24 +134,34 @@ enum {
   UEP_R_RES_NAK = 0x80,  // UEPx_CTRL, Handshake nak response for EPn RX
   UEP_R_RES_STALL = 0xc0,  // UEPx_CTRL, Handshake stall response for EPn RX
   bUEP_AUTO_TOG = 0x10,  // UEPx_CTRL, automatic toggle
-  bUIE_BUS_RST = 0x01,  // USB_INT_EN, USB bus reset event
+  bUH_SOF_EN = 0x40,  // UH_SETUP, USB host automatic SOF enable
+  bUIE_BUS_RST = 0x01,  // USB_INT_EN, USB bus reset event (device)
+  bUIE_DETECT = 0x01,  // USB_INT_EN, USB device detected event (host)
   bUIE_TRANSFER = 0x02,  // USB_INT_EN, USB transfer complete interrupt flag
   bUIE_SUSPEND = 0x04,  // USB_INT_EN, USB suspend or resume interrupt flag
   bUC_DMA_EN = 0x01,  // USB_CTRL, Enable DMA and interrupt
   bUC_INT_BUSY = 0x08,  // USB_CTRL, Automatic responding busy
   bUC_DEV_PU_EN = 0x20,  // USB_CTRL, Enable USB device function
+  bUC_HOST_MODE = 0x80,  // USB_CTRL, USB mode selection
   bUMS_SUSPEND = 0x04,  // USB_MIS_ST, USB suspend status
   bUD_PORT_EN = 0x01,  // UDEV_CTRL, Enable USB physical port I/O
   bUD_DM_PD_DIS = 0x10,  // UDEV_CTRL, Disable USB DM pull-down register
   bUD_DP_PD_DIS = 0x20,  // UDEV_CTRL, Disable USB DP pull-down register
   bUEP1_TX_EN = 0x40,  // UEP4_1_MOD, Enable USB endpoint 1 receiving
+  bUH_EP_RX_EN = 0x08,  // UH_EP_MOD, Enable USB host endpoint receiving
+  bUH_EP_TX_EN = 0x40,  // UH_EP_MOD, Enable USB host endpoint transmittal
 };
 
 __at (0x2446) uint8_t volatile UEP4_1_MOD;
 __at (0x2447) uint8_t volatile UEP2_3_MOD;
+__at (0x2447) uint8_t volatile UH_EP_MOD;
 __at (0x2448) uint8_t volatile UEP0_DMA_H;
 __at (0x2449) uint8_t volatile UEP0_DMA_L;
 __at (0x244a) uint8_t volatile UEP1_DMA_H;
 __at (0x244b) uint8_t volatile UEP1_DMA_L;
+__at (0x244c) uint8_t volatile UH_RX_DMA_H;
+__at (0x244d) uint8_t volatile UH_RX_DMA_L;
+__at (0x244e) uint8_t volatile UH_TX_DMA_H;
+__at (0x244f) uint8_t volatile UH_TX_DMA_L;
 
 #endif  // __io_h__

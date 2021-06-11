@@ -76,6 +76,12 @@ static void s_println(const char* val) {
   Serial.print("\r\n");
 }
 
+static uint16_t timer3_tick = 0;
+void timer3_int() __interrupt INT_NO_TMR3 __using 1 {
+  timer3_tick++;
+  T3_STAT |= bT3_IF_END;
+}
+
 void initialize() {
   // Clock
   // Fosc = 12MHz, Fpll = 288MHz, Fusb4x = 48MHz by PLL_CFG default
@@ -178,6 +184,69 @@ void pwm1_enable(bool enable) {
     PWM_CTRL |= bPWM_OUT_EN;
   else
     PWM_CTRL &= ~bPWM_OUT_EN;
+}
+
+void timer3_tick_init() {
+  T3_SETUP |= bT3_EN_CK_SE;  // Enable to access divisor settings register
+  T3_CK_SE_L = 0x80;  // Clock = Fsys(48M) / 48k = 1kHz
+  T3_CK_SE_H = 0xbb;
+  T3_SETUP &= ~bT3_EN_CK_SE;  // Disable
+  T3_END_L = 0x70;
+  T3_END_H = 0x3e;  // 1000 * 16
+  T3_CTRL |= bT3_CLR_ALL;
+  T3_CTRL &= ~bT3_CLR_ALL;
+  T3_SETUP |= bT3_IE_END;  // Enable end interrupt
+  T3_CTRL |= bT3_CNT_EN;  // Start counting
+  T3_STAT = 0xff;
+  IE_TMR3 = 1;  // Enable timer3 interrupt
+  EA = 1;  // Enable interruprts
+}
+
+void timer3_tick_reset() {
+  IE_TMR3 = 0;
+  timer3_tick = 0;
+  T3_CTRL |= bT3_CLR_ALL;
+  T3_CTRL &= ~bT3_CLR_ALL;
+  T3_STAT |= bT3_IF_END;
+  IE_TMR3 = 1;
+}
+
+void timer3_tick_wait(uint16_t msec) {
+  timer3_tick_reset();
+  msec <<= 4;
+  uint8_t h = msec >> 8;
+  uint8_t l = msec & 0xff;
+  while (T3_COUNT_H < h);
+  while (T3_COUNT_L < l);
+}
+
+bool timer3_tick_gt(uint16_t msec) {
+  msec <<= 4;
+  uint8_t h = msec >> 8;
+  uint8_t t = T3_COUNT_H;
+  if (t < h)
+    return false;
+  if (t > h)
+    return true;
+  uint8_t l = msec & 0xff;
+  t = T3_COUNT_L;
+  if (t > l)
+    return true;
+  return T3_COUNT_H > h;
+}
+
+uint16_t timer3_tick_msec() {
+  T3_CTRL &= ~bT3_CNT_EN;  // Stop counting
+  uint16_t tick = ((uint16_t)T3_COUNT_H << 4) | (T3_COUNT_L >> 4);
+  T3_CTRL |= bT3_CNT_EN;  // Start counting
+  return tick;
+}
+
+uint16_t timer3_tick_sec() {
+  IE_TMR3 = 0;
+  uint16_t tick = timer3_tick;
+  IE_TMR3 = 1;
+  return tick;
 }
 
 void delayMicroseconds(uint32_t us) {
