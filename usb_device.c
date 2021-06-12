@@ -15,7 +15,7 @@ static uint8_t* ep0_buffer = _ep0_buffer;
 static uint8_t _ep1_buffer[128 + 2 + 1];  // EP1 buffer size 128
 static uint8_t* ep1_buffer = _ep1_buffer;
 
-static struct USB_SETUP_REQ last_setup_req;
+static struct usb_setup_req last_setup_req;
 static const uint8_t* sending_data_ptr = 0;
 static uint8_t sending_data_len = 0;
 
@@ -84,12 +84,12 @@ static void get_descriptor() {
 }
 
 static void setup() {
-  if (USB_RX_LEN != sizeof(struct USB_SETUP_REQ)) {
+  if (USB_RX_LEN != sizeof(struct usb_setup_req)) {
     Serial.println("unexpected size");
     stall();
     return;
   }
-  struct USB_SETUP_REQ* req = (struct USB_SETUP_REQ*)ep0_buffer;
+  struct usb_setup_req* req = (struct usb_setup_req*)ep0_buffer;
   if ((req->bRequestType & USB_REQ_TYP_MASK) != USB_REQ_TYP_STANDARD) {
     Serial.println("not standard");
     stall();

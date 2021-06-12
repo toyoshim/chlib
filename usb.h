@@ -7,7 +7,7 @@
 
 #include <stdint.h>
 
-struct USB_SETUP_REQ {
+struct usb_setup_req {
   uint8_t bRequestType;
   uint8_t bRequest;
   uint16_t wValue;
