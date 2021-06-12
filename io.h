@@ -64,9 +64,9 @@ SFR(UEP1_T_LEN, 0xd3);  // Endpoint1 transmittal length register
 SFR(UEP2_CTRL, 0xd4);  // Endpoint2 control register
 SFR(UH_RX_CTRL, 0xd4);  // USB host receiver endpoint control register
 SFR(UH_TX_CTRL, 0xd6);  // USB host transmittal endpoint control register
-SFR(USB_HUB_ST, 0xd8);  // USB host hub status
 SFR(USB_INT_ST, 0xd9);  // USB interrupt status
 SFR(USB_MIS_ST, 0xda);  // USB miscellaneous status
+SFR(USB_HUB_ST, 0xdb);  // USB host hub status
 SFR(UEP0_CTRL, 0xdc);  // Endpoint0 control register
 SFR(UEP0_T_LEN, 0xdd);  // Endpoint0 transmittal length reigster
 SFR(USB_INT_EN, 0xe1);  // USB interrrupt enable
@@ -122,8 +122,13 @@ enum {
   UIS_TOKEN_SOF = 0x10,  // USB_INT_ST, SOF packet token
   UIS_TOKEN_IN = 0x20,  // USB_INT_ST, IN packet token
   UIS_TOKEN_SETUP = 0x30,  // USB_INT_ST, SETUP packet token
-  bUHS_H0_ATTACH = 0x08,  // USB HUB0 attached status
-  bUHS_H1_ATTACH = 0x80,  // USB HUB1 attached status
+  bUHS_BUS_RESET = 0x02,  // USB_HUB_ST, Control USB hub bus reset
+  bUHS_DM_LEVEL = 0x04,  // USB_HUB_ST, DM level on attaching
+  bUHS_H0_ATTACH = 0x08,  // USB_HUB_ST, USB HUB0 attached status
+  bUHS_HM_LEVEL = 0x40,  // USB_HUB_ST, HM level on attaching
+  bUHS_H1_ATTACH = 0x80,  // USB_HUB_ST, USB HUB1 attached status
+  bUH_PORT_EN = 0x01,  // UHUBn_CTRL, Enable USB hub port
+  bUH_LOW_SPEED = 0x04,  // UHUBn_CTRL, Enable USB hub low speed
   bUEP_R_TOG = 0x80,  // UEPx_CTRL, Expected data toggle flag of USB EPn RX
   bUEP_T_TOG = 0x40,  // UEPx_CTRL, Expected data toggle flag of USB EPn TX
   MASK_UEP_T_RES = 0x03,  // UEPx_CTRL, mask for UEP_T_RES_*
