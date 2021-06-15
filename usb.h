@@ -15,8 +15,25 @@ struct usb_setup_req {
   uint16_t wLength;
 };
 
+struct usb_desc_device {
+  uint8_t bLength;
+  uint8_t bDescriptorType;
+  uint16_t bcdUSB;
+  uint8_t bDeviceClass;
+  uint8_t bDeviceSubClass;
+  uint8_t bDeviceProtocol;
+  uint8_t bMaxPacketSize0;
+  uint16_t idVendor;
+  uint16_t bcdDevice;
+  uint8_t iManufacturer;
+  uint8_t iProduct;
+  uint8_t iSerialNumber;
+  uint8_t bNumConfigurations;
+};
+
 enum {
   // bRequestType
+  USB_REQ_TYP_IN = 0x80,
   USB_REQ_TYP_MASK = 0x60,
   USB_REQ_TYP_STANDARD = 0x00,
 
@@ -32,6 +49,19 @@ enum {
   USB_GET_INTERFACE = 0x0a,
   USB_SET_INTERFACE = 0x0b,
   USB_SYNCH_FRAME = 0x0c,
+
+  // descriptor
+  USB_DESC_DEVICE = 0x01,
+  USB_DESC_CONFIGURATION = 0x02,
+  USB_DESC_STRING = 0x03,
+  USB_DESC_INTERFACE = 0x04,
+  USB_DESC_ENDPOINT = 0x05,
+  USB_DESC_HID = 0x21,
+  USB_DESC_HID_REPORT = 0x22,
+
+  // pid
+  USB_PID_IN = 0x09,
+  USB_PID_SETUP = 0x0d,
 };
 
 #endif  // __usb_h__

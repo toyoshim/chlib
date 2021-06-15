@@ -56,14 +56,16 @@ SFR(P0_PU, 0xc5);  // P0 pull-up enable register
 SFR(PORT_CFG, 0xc6);  // Port configuration register
 SFR(T2MOD, 0xc9);  // Timer2 mode register
 SFR(PIN_FUNC, 0xce);  // Function pins select register
-SFR(USB_INT_FG, 0xd8);  // USB interrupt flag register
 SFR(USB_RX_LEN, 0xd1);  // USB receiving length register
 SFR(UEP1_CTRL, 0xd2);  // Endpoint1 control register
 SFR(UH_SETUP, 0xd2);  // USB host auxiliary setup register
 SFR(UEP1_T_LEN, 0xd3);  // Endpoint1 transmittal length register
 SFR(UEP2_CTRL, 0xd4);  // Endpoint2 control register
 SFR(UH_RX_CTRL, 0xd4);  // USB host receiver endpoint control register
+SFR(UH_EP_PID, 0xd5);  // USB host endpoint and token PID register
 SFR(UH_TX_CTRL, 0xd6);  // USB host transmittal endpoint control register
+SFR(UH_TX_LEN, 0xd7);  // USB host transmittal length register
+SFR(USB_INT_FG, 0xd8);  // USB interrupt flag register
 SFR(USB_INT_ST, 0xd9);  // USB interrupt status
 SFR(USB_MIS_ST, 0xda);  // USB miscellaneous status
 SFR(USB_HUB_ST, 0xdb);  // USB host hub status
@@ -87,6 +89,7 @@ SBIT(UIF_BUS_RST, 0xd8, 0);  // USB_INT_FG, USB bus reset (device)
 SBIT(UIF_DETECT, 0xd8, 0);  // USB_INT_FG, checking device connection (host)
 SBIT(UIF_TRANSFER, 0xd8, 1);  // USB_INT_FG, USB transfer complete
 SBIT(UIF_SUSPEND, 0xd8, 2);  // USB_INT_FG, USB suspend or resume
+SBIT(U_TOG_OK, 0xd8, 6);  // USB_INT_FG, Current USB transmit data toggle flag
 SBIT(IE_TMR3, 0xe8, 1);  // IE_EX, Timer3 interruprt enable bit
 SBIT(IE_USB, 0xe8, 2);  // IE_EX, USB interruprt enable bit
 
@@ -116,6 +119,10 @@ enum {
   bT1_CLK = 0x20,  // T2MOD, Timer1 internal clock frequency selection
   bUART0_PIN_X = 0x10,  // PIN_FUNC, Pin UART0 mapping enable bit
   bPWM1_PIN_X = 0x80,  // PIN_FUNC, Pin PWM1/PWM2 mapping enable bit
+  bUH_R_TOG = 0x80,  // UH_RX_CTRL, Expected data toggle flag
+  bUH_R_AUTO_TOG = 0x10,  // UH_RX_CTRL, Enable automatic toggle
+  bUH_T_TOG = 0x40,  // UH_TX_CTRL, Prepared data toggle flag
+  bUH_T_AUTO_TOG = 0x10,  // UH_TX_CTRL, Enable automatic toggle
   MASK_UIS_ENDP = 0x0f,  // USB_INT_ST, mask for endpoint number
   MASK_UIS_TOKEN = 0x30,  // USB_INT_ST, mask for bUIS_TOKEN1,0
   UIS_TOKEN_OUT = 0x00,  // USB_INT_ST, OUT packet token
