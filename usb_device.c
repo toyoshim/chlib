@@ -90,7 +90,7 @@ static void setup() {
     return;
   }
   struct usb_setup_req* req = (struct usb_setup_req*)ep0_buffer;
-  if ((req->bRequestType & USB_REQ_TYP_MASK) != USB_REQ_TYP_STANDARD) {
+  if ((req->bRequestType & USB_REQ_TYPE_MASK) != USB_REQ_TYPE_STANDARD) {
     Serial.println("not standard");
     stall();
     return;
