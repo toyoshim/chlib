@@ -26,8 +26,6 @@ enum {
 
   STATE_READY,
 
-  STATE_DISCONNECT,
-
   STATE_DELAY,
   STATE_TRANSACTION,
 };
@@ -69,11 +67,11 @@ static uint8_t in_buffer[1024];
 static uint8_t _tx_buffer[64 + 1];
 static uint8_t* tx_buffer = _tx_buffer;
 
-static uint8_t* transaction_buffer[2] = { 0, 0 };
-static uint16_t transaction_size[2] = { 0, 0 };
-static uint8_t transaction_recv_state[2] = { 0, 0 };
-static uint8_t transaction_ep_pid[2] = { 0, 0 };
-static uint8_t transaction_tog[2] = { 0, 0 };
+static bool transaction_lock = false;
+static uint8_t* transaction_buffer = 0;
+static uint16_t transaction_size = 0;
+static uint8_t transaction_recv_state = STATE_IDLE;
+static uint8_t transaction_ep_pid = 0;
 
 static uint8_t state[2] = { STATE_IDLE, STATE_IDLE };
 static uint16_t delay_until[2] = { 0, 0 };
@@ -108,34 +106,28 @@ static void delay_ms(uint8_t hub, uint16_t delay_ms, uint8_t next_state) {
 }
 
 static void host_transact_cont(uint8_t hub) {
-  if ((transaction_ep_pid[hub] >> 4) != USB_PID_IN) {
-    uint16_t send_size =
-        (transaction_size[hub] < 64) ? transaction_size[hub] : 64;
+  if ((transaction_ep_pid >> 4) != USB_PID_IN) {
+    uint16_t send_size = (transaction_size < 64) ? transaction_size : 64;
     for (uint16_t i = 0; i < send_size; ++i)
-      tx_buffer[i] = transaction_buffer[hub][i];
-    transaction_buffer[hub] += send_size;
-    transaction_size[hub] -= send_size;
+      tx_buffer[i] = transaction_buffer[i];
+    transaction_buffer += send_size;
+    transaction_size -= send_size;
     UH_TX_LEN = send_size;
   } else {
     UH_TX_LEN = 0;
   }
-  UH_EP_PID = transaction_ep_pid[hub];
+  UH_EP_PID = transaction_ep_pid;
   UIF_TRANSFER = 0;
   state[hub] = STATE_TRANSACTION;
 }
 
 static void host_transact(
     uint8_t hub, uint8_t* buffer, uint16_t size, uint8_t recv_state, uint8_t ep, uint8_t pid, uint8_t tog) {
-  transaction_buffer[hub] = buffer;
-  transaction_size[hub] = size;
-  transaction_recv_state[hub] = recv_state;
-  transaction_ep_pid[hub] = (pid << 4) | ep;
-  transaction_tog[hub] = tog;
-  UH_RX_CTRL = UH_TX_CTRL = transaction_tog[hub];
-  uint8_t alt_hub = (hub + 1) & 1;
-  if (transaction_size[alt_hub]) {  // TODO: use a dedicated lock while the whole transactions
-    halt("hub conflict");
-  }
+  transaction_buffer = buffer;
+  transaction_size = size;
+  transaction_recv_state = recv_state;
+  transaction_ep_pid = (pid << 4) | ep;
+  UH_RX_CTRL = UH_TX_CTRL = tog;
   host_transact_cont(hub);
 }
 
@@ -203,6 +195,9 @@ static bool state_enable(uint8_t hub) {
 }
 
 static bool state_get_device_desc(uint8_t hub) {
+  if (transaction_lock)
+    return false;
+  transaction_lock = true;
   host_setup_transfer(
       hub,
       (uint8_t*)&get_device_descriptor,
@@ -279,18 +274,15 @@ static bool state_get_hid_report_desc(uint8_t hub) {
 }
 
 static bool state_get_hid_report_desc_recv(uint8_t hub) {
-  hub;
-  halt("recv");
-  return false;
+  usb_host->check_hid_report_desc(hub, in_buffer);
+  transaction_lock = false;
+  state[hub] = STATE_READY;
+  return true;
 }
 
-static bool state_disconnect(uint8_t hub) {
-  if (!hub)
-    UHUB0_CTRL = 0x00;
-  else
-    UHUB1_CTRL = 0x00;
-  state[hub] = STATE_IDLE;
-  return true;
+static bool state_ready(uint8_t hub) {
+  hub;
+  return false;
 }
 
 static bool state_delay(uint8_t hub) {
@@ -307,34 +299,34 @@ static bool state_transaction(uint8_t hub) {
     return false;
   UH_EP_PID = 0;  // Stop USB transaction.
 
-  if ((transaction_ep_pid[hub] >> 4) == USB_PID_IN) {
-    uint16_t size = (transaction_size[hub] > USB_RX_LEN)
-        ? USB_RX_LEN : transaction_size[hub];
+  if ((transaction_ep_pid >> 4) == USB_PID_IN) {
+    uint16_t size = (transaction_size > USB_RX_LEN)
+        ? USB_RX_LEN : transaction_size;
     for (uint16_t i = 0; i < size; ++i)
-      transaction_buffer[hub][i] = rx_buffer[i];
-    transaction_buffer[hub] = &transaction_buffer[hub][size];
-    transaction_size[hub] -= size;
+      transaction_buffer[i] = rx_buffer[i];
+    transaction_buffer = &transaction_buffer[size];
+    transaction_size -= size;
   }
 
-  if (transaction_size[hub]) {
+  if (transaction_size) {
     host_transact_cont(hub);
     return false;
   }
 
   if (U_TOG_OK) {
     // Succeeded.
-    if ((transaction_ep_pid[hub] >> 4) == USB_PID_SETUP) {
+    if ((transaction_ep_pid >> 4) == USB_PID_SETUP) {
       const struct usb_setup_req* req = (const struct usb_setup_req*)tx_buffer;
       if (req->wLength &&
           (req->bRequestType & USB_REQ_DIR_MASK) == USB_REQ_DIR_IN) {
-        host_in_transfer(hub, req->wLength, transaction_recv_state[hub]);
+        host_in_transfer(hub, req->wLength, transaction_recv_state);
         return false;
       } else if (req->wLength &&
           (req->bRequestType & USB_REQ_DIR_MASK) == USB_REQ_DIR_OUT) {
         halt("out");
       }
     }
-    state[hub] = transaction_recv_state[hub];
+    state[hub] = transaction_recv_state;
     return true;
   }
   Serial.printc(USB_INT_ST, HEX);
@@ -344,10 +336,13 @@ static bool state_transaction(uint8_t hub) {
 
 static bool fsm(uint8_t hub) {
   if (state[hub] != STATE_IDLE && !resetting[hub]) {
-    if ((hub == 0 && (USB_HUB_ST & bUHS_H0_ATTACH) == 0) ||
-        (hub == 1 && (USB_HUB_ST & bUHS_H1_ATTACH) == 0)) {
-      state[hub] = STATE_DISCONNECT;
-      return true;
+    if (hub == 0 && (USB_HUB_ST & bUHS_H0_ATTACH) == 0) {
+      UHUB0_CTRL = 0x00;
+      state[hub] = STATE_IDLE;
+    }
+    if (hub == 1 && (USB_HUB_ST & bUHS_H1_ATTACH) == 0) {
+      UHUB1_CTRL = 0x00;
+      state[hub] = STATE_IDLE;
     }
   }
   switch (state[hub]) {
@@ -373,8 +368,8 @@ static bool fsm(uint8_t hub) {
       return state_get_hid_report_desc(hub);
     case STATE_GET_HID_REPORT_DESC_RECV:
       return state_get_hid_report_desc_recv(hub);
-    case STATE_DISCONNECT:
-      return state_disconnect(hub);
+    case STATE_READY:
+      return state_ready(hub);
     case STATE_DELAY:
       return state_delay(hub);
     case STATE_TRANSACTION:
