@@ -79,11 +79,11 @@ static uint8_t delay_next_state[2] = { 0, 0 };
 static bool resetting[2] = { false, false };
 static bool is_hid[2] = { false, false };
 
-static void dump(const char* message, const uint8_t* buffer, uint8_t size) {
+static void dump(const char* message, const uint8_t* buffer, uint16_t size) {
   Serial.print("=== ");
   Serial.print(message);
   Serial.println(" ===");
-  for (uint8_t i = 0; i < size; ++i) {
+  for (uint16_t i = 0; i < size; ++i) {
     Serial.printc(buffer[i], HEX);
     if (i % 8 == 7)
       Serial.println("");
@@ -92,6 +92,7 @@ static void dump(const char* message, const uint8_t* buffer, uint8_t size) {
   }
   Serial.println("\r\n======");
 }
+
 static void halt(const char* message) {
   Serial.println(message);
   for (;;);

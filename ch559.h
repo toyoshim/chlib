@@ -37,11 +37,13 @@ uint16_t timer3_tick_sec();
 // type
 #define BIN 0
 #define HEX 1
+#define DEC 2
 extern struct SerialLibrary {
   void (*putc)(uint8_t val);
   void (*printc)(uint8_t val, uint8_t type);
   void (*print)(const char* val);
   void (*println)(const char* val);
+  void (*printf)(const char*fmt, ...);
 } Serial;
 
 void delayMicroseconds(uint32_t us);
