@@ -154,6 +154,7 @@ enum {
   bUC_DMA_EN = 0x01,  // USB_CTRL, Enable DMA and interrupt
   bUC_INT_BUSY = 0x08,  // USB_CTRL, Automatic responding busy
   bUC_DEV_PU_EN = 0x20,  // USB_CTRL, Enable USB device function
+  bUC_LOW_SPEED = 0x40,  // USB_CTRL, USB bus speed selection
   bUC_HOST_MODE = 0x80,  // USB_CTRL, USB mode selection
   bUMS_SUSPEND = 0x04,  // USB_MIS_ST, USB suspend status
   bUD_PORT_EN = 0x01,  // UDEV_CTRL, Enable USB physical port I/O

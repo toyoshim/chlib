@@ -185,7 +185,7 @@ static bool state_enable(uint8_t hub) {
     return false;
   }
   resetting[hub] = false;
- 
+
   if (!hub) {
     if (USB_HUB_ST & bUHS_DM_LEVEL)
       UHUB0_CTRL |= bUH_LOW_SPEED;
@@ -204,6 +204,12 @@ static bool state_get_device_desc(uint8_t hub) {
   if (transaction_lock)
     return false;
   transaction_lock = true;
+  if ((hub == 0 && (UHUB0_CTRL & bUH_LOW_SPEED) == 0) ||
+      (hub == 1 && (UHUB1_CTRL & bUH_LOW_SPEED) == 0)) {
+    USB_CTRL &= ~bUC_LOW_SPEED;
+  } else {
+    USB_CTRL |= bUC_LOW_SPEED;
+  }
   host_setup_transfer(
       hub,
       (uint8_t*)&get_device_descriptor,
