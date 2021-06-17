@@ -109,6 +109,7 @@ enum {
   USB_DESC_HID_REPORT = 0x22,
 
   // pid
+  USB_PID_OUT = 0x01,
   USB_PID_IN = 0x09,
   USB_PID_SETUP = 0x0d,
 

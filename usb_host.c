@@ -142,6 +142,11 @@ static void host_in_transfer(uint8_t hub, uint16_t size, uint8_t recv_state) {
   host_transact(hub, in_buffer, size, recv_state, 0, USB_PID_IN, tog);
 }
 
+static void host_out_transfer(uint8_t hub, uint16_t size, uint8_t recv_state) {
+  uint8_t tog = bUH_R_TOG | bUH_R_AUTO_TOG | bUH_T_TOG | bUH_T_AUTO_TOG;
+  host_transact(hub, in_buffer, size, recv_state, 0, USB_PID_OUT, tog);
+}
+
 static bool state_idle(uint8_t hub) {
   if ((hub == 0 && (USB_HUB_ST & bUHS_H0_ATTACH)) ||
       (hub == 1 && (USB_HUB_ST & bUHS_H1_ATTACH))) {
@@ -326,6 +331,8 @@ static bool state_transaction(uint8_t hub) {
           (req->bRequestType & USB_REQ_DIR_MASK) == USB_REQ_DIR_OUT) {
         halt("out");
       }
+    } else if ((transaction_ep_pid >> 4) == USB_PID_IN) {
+      host_out_transfer(hub, 0, transaction_recv_state);
     }
     state[hub] = transaction_recv_state;
     return true;
