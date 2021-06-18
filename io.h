@@ -123,7 +123,8 @@ enum {
   bUH_R_AUTO_TOG = 0x10,  // UH_RX_CTRL, Enable automatic toggle
   bUH_T_TOG = 0x40,  // UH_TX_CTRL, Prepared data toggle flag
   bUH_T_AUTO_TOG = 0x10,  // UH_TX_CTRL, Enable automatic toggle
-  MASK_UIS_ENDP = 0x0f,  // USB_INT_ST, mask for endpoint number
+  MASK_UIS_ENDP = 0x0f,  // USB_INT_ST, mask for endpoint number (device)
+  MASK_UIS_HRES = 0x0f,  // USB_INT_ST, mask for current token PID (host)
   MASK_UIS_TOKEN = 0x30,  // USB_INT_ST, mask for bUIS_TOKEN1,0
   UIS_TOKEN_OUT = 0x00,  // USB_INT_ST, OUT packet token
   UIS_TOKEN_SOF = 0x10,  // USB_INT_ST, SOF packet token

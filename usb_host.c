@@ -21,6 +21,7 @@ enum {
   STATE_GET_FULL_CONFIGURATION_DESC,
   STATE_GET_FULL_CONFIGURATION_DESC_RECV,
   STATE_SET_CONFIGURATION,
+  STATE_HID_SETUP,
   STATE_GET_HID_REPORT_DESC,
   STATE_GET_HID_REPORT_DESC_RECV,
 
@@ -28,6 +29,7 @@ enum {
 
   STATE_DELAY,
   STATE_TRANSACTION,
+  STATE_TRANSACTION_RETRY,
 };
 
 static const struct usb_setup_req get_device_descriptor = {
@@ -272,7 +274,12 @@ static bool state_set_configuration(uint8_t hub) {
       hub,
       (uint8_t*)&set_configuration_descriptor,
       sizeof(set_configuration_descriptor),
-      is_hid[hub] ? STATE_GET_HID_REPORT_DESC : STATE_READY);
+      is_hid[hub] ? STATE_HID_SETUP : STATE_READY);
+  return false;
+}
+
+static bool state_hid_setup(uint8_t hub) {
+  delay_ms(hub, 1, STATE_GET_HID_REPORT_DESC);
   return false;
 }
 
@@ -308,6 +315,7 @@ static bool state_transaction(uint8_t hub) {
   // Wait until the transaction completes.
   if (!UIF_TRANSFER)
     return false;
+
   UH_EP_PID = 0;  // Stop USB transaction.
 
   if ((transaction_ep_pid >> 4) == USB_PID_IN) {
@@ -330,6 +338,8 @@ static bool state_transaction(uint8_t hub) {
       const struct usb_setup_req* req = (const struct usb_setup_req*)tx_buffer;
       if (req->wLength &&
           (req->bRequestType & USB_REQ_DIR_MASK) == USB_REQ_DIR_IN) {
+        // Need to wait a little ?!
+        for (uint8_t i = 0; i < 200; ++i);
         host_in_transfer(hub, req->wLength, transaction_recv_state);
         return false;
       } else if (req->wLength &&
@@ -337,13 +347,26 @@ static bool state_transaction(uint8_t hub) {
         halt("out");
       }
     } else if ((transaction_ep_pid >> 4) == USB_PID_IN) {
-      host_out_transfer(hub, 0, transaction_recv_state);
+      host_out_transfer(hub, 0, transaction_recv_state);  // ACK
     }
     state[hub] = transaction_recv_state;
     return true;
   }
+  if ((USB_INT_ST & MASK_UIS_HRES) == USB_PID_NAK) {
+    delay_ms(hub, 1, STATE_TRANSACTION_RETRY);
+    return false;
+  }
+
   Serial.printc(USB_INT_ST, HEX);
   halt("\ntransmit error");
+  return false;
+}
+
+static bool state_transaction_retry(uint8_t hub) {
+  Serial.println("RETRY");
+  UH_EP_PID = transaction_ep_pid;
+  UIF_TRANSFER = 0;
+  state[hub] = STATE_TRANSACTION;
   return false;
 }
 
@@ -377,6 +400,8 @@ static bool fsm(uint8_t hub) {
       return state_get_configuration_desc_recv(hub);
     case STATE_SET_CONFIGURATION:
       return state_set_configuration(hub);
+    case STATE_HID_SETUP:
+      return state_hid_setup(hub);
     case STATE_GET_HID_REPORT_DESC:
       return state_get_hid_report_desc(hub);
     case STATE_GET_HID_REPORT_DESC_RECV:
@@ -387,6 +412,8 @@ static bool fsm(uint8_t hub) {
       return state_delay(hub);
     case STATE_TRANSACTION:
       return state_transaction(hub);
+    case STATE_TRANSACTION_RETRY:
+      return state_transaction_retry(hub);
     default:
       halt("unknown state");
   }
@@ -418,6 +445,7 @@ void usb_host_init(struct usb_host* host) {
     UHUB0_CTRL = 0x00;  // Enable HUB0
   if (host->flags & USE_HUB1)
     UHUB1_CTRL = 0x00;  // Enable HUB1
+  USB_INT_EN = bUIE_TRANSFER | bUIE_DETECT;
 
   for (uint8_t i = 0; i < 2; ++i)
     state[i] = STATE_IDLE;
@@ -430,4 +458,8 @@ void usb_host_poll() {
     while (fsm(0));
   if (usb_host->flags & USE_HUB1)
     while (fsm(1));
+}
+
+bool usb_host_ready(uint8_t hub) {
+  return state[hub] == STATE_READY;
 }

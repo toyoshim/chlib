@@ -110,8 +110,11 @@ enum {
 
   // pid
   USB_PID_OUT = 0x01,
+  USB_PID_ACK = 0x02,
   USB_PID_IN = 0x09,
+  USB_PID_NAK = 0x0a,
   USB_PID_SETUP = 0x0d,
+  USB_PID_STALL = 0x0e,
 
   // class
   USB_CLASS_AUDIO = 0x01,

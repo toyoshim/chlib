@@ -5,6 +5,7 @@
 #ifndef __usb_host_h__
 #define __usb_host_h__
 
+#include <stdbool.h>
 #include <stdint.h>
 
 enum {
@@ -21,5 +22,6 @@ struct usb_host {
 
 void usb_host_init(struct usb_host* host);
 void usb_host_poll();
+bool usb_host_ready(uint8_t hub);
 
 #endif  // __usb_host_h__
