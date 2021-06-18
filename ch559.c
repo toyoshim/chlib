@@ -55,7 +55,7 @@ static void s_putc(uint8_t val) {
   putchar(val);
 }
 
-static void s_printc(uint8_t val, uint8_t type) {
+static void s_printc(int16_t val, uint8_t type) {
   if (type == BIN) {
     for (int i = 0x80; i; i >>= 1)
       Serial.putc((val & i) ? '1' : '0');
@@ -66,6 +66,10 @@ static void s_printc(uint8_t val, uint8_t type) {
       Serial.putc('0');
     Serial.putc(U4ToHex(val & 0x0f));
   } else if (type == DEC) {
+    if (val < 0) {
+      Serial.putc('-');
+      val = -val;
+    }
     if (val >= 100)
       Serial.putc(U4ToHex(val / 100));
     if (val >= 10)
