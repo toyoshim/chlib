@@ -29,6 +29,9 @@ enum {
 
   STATE_DELAY,
   STATE_TRANSACTION,
+  STATE_TRANSACTION_IN,
+  STATE_TRANSACTION_ACK,
+  STATE_TRANSACTION_CONT,
   STATE_TRANSACTION_RETRY,
 };
 
@@ -328,7 +331,7 @@ static bool state_transaction(uint8_t hub) {
   }
 
   if (transaction_size) {
-    host_transact_cont(hub);
+    delay_ms(hub, 1, STATE_TRANSACTION_CONT);
     return false;
   }
 
@@ -338,16 +341,15 @@ static bool state_transaction(uint8_t hub) {
       const struct usb_setup_req* req = (const struct usb_setup_req*)tx_buffer;
       if (req->wLength &&
           (req->bRequestType & USB_REQ_DIR_MASK) == USB_REQ_DIR_IN) {
-        // Need to wait a little ?!
-        for (uint8_t i = 0; i < 200; ++i);
-        host_in_transfer(hub, req->wLength, transaction_recv_state);
+        delay_ms(hub, 1, STATE_TRANSACTION_IN);
         return false;
       } else if (req->wLength &&
           (req->bRequestType & USB_REQ_DIR_MASK) == USB_REQ_DIR_OUT) {
         halt("out");
       }
     } else if ((transaction_ep_pid >> 4) == USB_PID_IN) {
-      host_out_transfer(hub, 0, transaction_recv_state);  // ACK
+      delay_ms(hub, 1, STATE_TRANSACTION_ACK);
+      return false;
     }
     state[hub] = transaction_recv_state;
     return true;
@@ -362,8 +364,23 @@ static bool state_transaction(uint8_t hub) {
   return false;
 }
 
+static bool state_transaction_in(uint8_t hub) {
+  const struct usb_setup_req* req = (const struct usb_setup_req*)tx_buffer;
+  host_in_transfer(hub, req->wLength, transaction_recv_state);
+  return false;
+}
+
+static bool state_transaction_ack(uint8_t hub) {
+  host_out_transfer(hub, 0, transaction_recv_state);
+  return false;
+}
+
+static bool state_transaction_cont(uint8_t hub) {
+  host_transact_cont(hub);
+  return false;
+}
+
 static bool state_transaction_retry(uint8_t hub) {
-  Serial.println("RETRY");
   UH_EP_PID = transaction_ep_pid;
   UIF_TRANSFER = 0;
   state[hub] = STATE_TRANSACTION;
@@ -412,6 +429,12 @@ static bool fsm(uint8_t hub) {
       return state_delay(hub);
     case STATE_TRANSACTION:
       return state_transaction(hub);
+    case STATE_TRANSACTION_IN:
+      return state_transaction_in(hub);
+    case STATE_TRANSACTION_ACK:
+      return state_transaction_ack(hub);
+    case STATE_TRANSACTION_CONT:
+      return state_transaction_cont(hub);
     case STATE_TRANSACTION_RETRY:
       return state_transaction_retry(hub);
     default:
