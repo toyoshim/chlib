@@ -70,6 +70,15 @@ struct usb_desc_hid {
   uint16_t wDescriptorLength;
 };
 
+struct usb_desc_endpoint {
+  uint8_t bLength;
+  uint8_t bDescriptorType;
+  uint8_t bEndpointAddress;
+  uint8_t bmAttributes;
+  uint16_t wMaxPacketSize;
+  uint8_t bInterval;
+};
+
 enum {
   // bRequestType
   USB_REQ_DIR_MASK = 0x80,
@@ -111,6 +120,7 @@ enum {
   // pid
   USB_PID_OUT = 0x01,
   USB_PID_ACK = 0x02,
+  USB_PID_DATA0 = 0x03,
   USB_PID_IN = 0x09,
   USB_PID_NAK = 0x0a,
   USB_PID_SETUP = 0x0d,
