@@ -245,39 +245,6 @@ void timer3_tick_init() {
   EA = 1;  // Enable interruprts
 }
 
-void timer3_tick_reset() {
-  IE_TMR3 = 0;
-  timer3_tick = 0;
-  T3_CTRL |= bT3_CLR_ALL;
-  T3_CTRL &= ~bT3_CLR_ALL;
-  T3_STAT |= bT3_IF_END;
-  IE_TMR3 = 1;
-}
-
-void timer3_tick_wait(uint16_t msec) {
-  timer3_tick_reset();
-  msec <<= 4;
-  uint8_t h = msec >> 8;
-  uint8_t l = msec & 0xff;
-  while (T3_COUNT_H < h);
-  while (T3_COUNT_L < l);
-}
-
-bool timer3_tick_gt(uint16_t msec) {
-  msec <<= 4;
-  uint8_t h = msec >> 8;
-  uint8_t t = T3_COUNT_H;
-  if (t < h)
-    return false;
-  if (t > h)
-    return true;
-  uint8_t l = msec & 0xff;
-  t = T3_COUNT_L;
-  if (t > l)
-    return true;
-  return T3_COUNT_H > h;
-}
-
 uint16_t timer3_tick_msec() {
   T3_CTRL &= ~bT3_CNT_EN;  // Stop counting
   uint16_t tick = ((uint16_t)T3_COUNT_H << 4) | (T3_COUNT_L >> 4);
@@ -290,6 +257,42 @@ uint16_t timer3_tick_sec() {
   uint16_t tick = timer3_tick;
   IE_TMR3 = 1;
   return tick;
+}
+
+static bool timer3_tick_ge(uint16_t tick) {
+  uint8_t h = tick >> 8;
+  uint8_t t = T3_COUNT_H;
+  if (t < h)
+    return false;
+  if (t > h)
+    return true;
+  uint8_t l = tick;
+  t = T3_COUNT_L;
+  if (t >= l)
+    return true;
+  return T3_COUNT_H > h;
+}
+
+static bool timer3_tick_le(uint16_t tick) {
+  uint8_t h = tick >> 8;
+  uint8_t t = T3_COUNT_H;
+  if (t > h)
+    return false;
+  if (t < h)
+    return true;
+  uint8_t l = tick;
+  t = T3_COUNT_L;
+  if (t > l)
+    return false;
+  return T3_COUNT_H <= h;
+}
+
+bool timer3_tick_msec_between(uint16_t begin, uint16_t end) {
+  begin <<= 4;
+  end <<= 4;
+  if (begin < end)
+    return timer3_tick_ge(begin) && timer3_tick_le(end);
+  return timer3_tick_ge(begin) || timer3_tick_le(end);
 }
 
 void delayMicroseconds(uint32_t us) {

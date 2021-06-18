@@ -74,7 +74,8 @@ static uint8_t transaction_recv_state = STATE_IDLE;
 static uint8_t transaction_ep_pid = 0;
 
 static uint8_t state[2] = { STATE_IDLE, STATE_IDLE };
-static uint16_t delay_until[2] = { 0, 0 };
+static uint16_t delay_begin[2] = { 0, 0 };
+static uint16_t delay_end[2] = { 0, 0 };
 static uint8_t delay_next_state[2] = { 0, 0 };
 static bool resetting[2] = { false, false };
 static bool is_hid[2] = { false, false };
@@ -99,9 +100,8 @@ static void halt(const char* message) {
 }
 
 static void delay_ms(uint8_t hub, uint16_t delay_ms, uint8_t next_state) {
-  if (delay_until[0] == 0 && delay_until[1] == 0)
-    timer3_tick_reset();
-  delay_until[hub] = timer3_tick_msec() + delay_ms;
+  delay_begin[hub] = timer3_tick_msec();
+  delay_end[hub] = delay_begin[hub] + delay_ms;
   delay_next_state[hub] = next_state;
   state[hub] = STATE_DELAY;
 }
@@ -298,9 +298,8 @@ static bool state_ready(uint8_t hub) {
 }
 
 static bool state_delay(uint8_t hub) {
-  if (!timer3_tick_gt(delay_until[hub]))
+  if (timer3_tick_msec_between(delay_begin[hub], delay_end[hub]))
     return false;
-  delay_until[hub] = 0;
   state[hub] = delay_next_state[hub];
   return true;
 }
