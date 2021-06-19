@@ -76,7 +76,7 @@ static uint8_t in_buffer[1024];
 static uint8_t _tx_buffer[64 + 1];
 static uint8_t* tx_buffer = _tx_buffer;
 
-static bool transaction_lock = false;
+static int8_t transaction_lock = -1;
 static uint8_t* transaction_buffer = 0;
 static uint16_t transaction_size = 0;
 static uint8_t transaction_recv_state = STATE_IDLE;
@@ -120,6 +120,27 @@ static void delay_ms(uint8_t hub, uint16_t delay_ms, uint8_t next_state) {
   delay_end[hub] = delay_begin[hub] + delay_ms;
   delay_next_state[hub] = next_state;
   state[hub] = STATE_DELAY_MS;
+}
+
+static bool is_transaction_locked() {
+  return transaction_lock >= 0;
+}
+
+static bool lock_transaction(uint8_t hub) {
+  if (is_transaction_locked())
+    return false;
+  transaction_lock = hub;
+  if ((hub == 0 && (UHUB0_CTRL & bUH_LOW_SPEED) == 0) ||
+      (hub == 1 && (UHUB1_CTRL & bUH_LOW_SPEED) == 0)) {
+    USB_CTRL &= ~bUC_LOW_SPEED;
+  } else {
+    USB_CTRL |= bUC_LOW_SPEED;
+  }
+  return true;
+}
+
+static void unlock_transaction() {
+  transaction_lock = -1;
 }
 
 static void host_transact_cont(uint8_t hub) {
@@ -219,9 +240,8 @@ static bool state_enable(uint8_t hub) {
 }
 
 static bool state_get_device_desc(uint8_t hub) {
-  if (transaction_lock)
+  if (!lock_transaction(hub))
     return false;
-  transaction_lock = true;
   if ((hub == 0 && (UHUB0_CTRL & bUH_LOW_SPEED) == 0) ||
       (hub == 1 && (UHUB1_CTRL & bUH_LOW_SPEED) == 0)) {
     USB_CTRL &= ~bUC_LOW_SPEED;
@@ -310,7 +330,7 @@ static bool state_get_hid_report_desc(uint8_t hub) {
 
 static bool state_get_hid_report_desc_recv(uint8_t hub) {
   usb_host->check_hid_report_desc(hub, in_buffer);
-  transaction_lock = false;
+  unlock_transaction();
   delay_ms(hub, 1, STATE_READY);
   return false;
 }
@@ -327,7 +347,7 @@ static bool state_ready(uint8_t hub) {
 
 static bool state_in_recv(uint8_t hub) {
   usb_host->in(hub, in_buffer);
-  transaction_lock = false;
+  unlock_transaction();
   delay_ms(hub, 1, STATE_READY);
   return false;
 }
@@ -521,13 +541,12 @@ void usb_host_poll() {
 }
 
 bool usb_host_ready(uint8_t hub) {
-  return state[hub] == STATE_READY && !transaction_lock;
+  return state[hub] == STATE_READY && !is_transaction_locked();
 }
 
 bool usb_host_in(uint8_t hub, uint8_t ep, uint8_t size) {
-  if (!usb_host_ready(hub))
+  if (!usb_host_ready(hub) || !lock_transaction(hub))
     return false;
-  transaction_lock = true;
   host_in_transfer(hub, ep, size, STATE_IN_RECV);
   return false;
 }
