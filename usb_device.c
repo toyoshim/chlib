@@ -10,7 +10,8 @@
 
 static struct usb_device* usb_device = 0;
 
-static uint8_t _ep0_buffer[8 + 2 + 1];  // EP0 buffer size 8
+static const uint8_t ep0_size = 64;
+static uint8_t _ep0_buffer[64 + 2 + 1];  // EP0 buffer size 64
 static uint8_t* ep0_buffer = _ep0_buffer;
 static uint8_t _ep1_buffer[128 + 2 + 1];  // EP1 buffer size 128
 static uint8_t* ep1_buffer = _ep1_buffer;
@@ -53,7 +54,7 @@ static void stall() {
 }
 
 static void ep0_send(uint8_t len, const uint8_t* data) {
-  uint8_t transfer_len = (len <= 8) ? len : 8;
+  uint8_t transfer_len = (len <= ep0_size) ? len : ep0_size;
   for (uint8_t i = 0; i < transfer_len; ++i)
     ep0_buffer[i] = data[i];
   UEP0_T_LEN = transfer_len;
@@ -63,7 +64,7 @@ static void ep0_send(uint8_t len, const uint8_t* data) {
 }
 
 static void ep0_cont() {
-  uint8_t transfer_len = (sending_data_len <= 8) ? sending_data_len : 8;
+  uint8_t transfer_len = (sending_data_len <= ep0_size) ? sending_data_len : ep0_size;
   for (uint8_t i = 0; i < transfer_len; ++i)
     ep0_buffer[i] = sending_data_ptr[i];
   UEP0_T_LEN = transfer_len;
