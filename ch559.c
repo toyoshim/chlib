@@ -481,3 +481,8 @@ uint8_t digitalReadPort(uint8_t port) {
       return 0;
   }
 }
+
+uint8_t digitalRead(uint8_t port, uint8_t pin) {
+  uint8_t v = digitalReadPort(port);
+  return (v & (1 << pin)) ? HIGH : LOW;
+}

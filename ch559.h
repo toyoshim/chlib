@@ -65,5 +65,6 @@ void pinMode(uint8_t port, uint8_t bit, uint8_t mode);
 void digitalWrite(uint8_t port, uint8_t bit, uint8_t value);
 // note: port 5 is not supported yet
 uint8_t digitalReadPort(uint8_t port);
+uint8_t digitalRead(uint8_t port, uint8_t bit);
 
 #endif  // __ch559_h__
