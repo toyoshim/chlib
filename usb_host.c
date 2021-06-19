@@ -30,7 +30,8 @@ enum {
 
   STATE_IN_RECV,
 
-  STATE_DELAY,
+  STATE_DELAY_US,
+  STATE_DELAY_MS,
   STATE_TRANSACTION,
   STATE_TRANSACTION_IN,
   STATE_TRANSACTION_ACK,
@@ -107,11 +108,18 @@ static void halt(const char* message) {
   for (;;);
 }
 
+static void delay_us(uint8_t hub, uint16_t delay_us, uint8_t next_state) {
+  delay_begin[hub] = timer3_tick_raw();
+  delay_end[hub] = delay_begin[hub] + timer3_tick_from_usec(delay_us);
+  delay_next_state[hub] = next_state;
+  state[hub] = STATE_DELAY_US;
+}
+
 static void delay_ms(uint8_t hub, uint16_t delay_ms, uint8_t next_state) {
   delay_begin[hub] = timer3_tick_msec();
   delay_end[hub] = delay_begin[hub] + delay_ms;
   delay_next_state[hub] = next_state;
-  state[hub] = STATE_DELAY;
+  state[hub] = STATE_DELAY_MS;
 }
 
 static void host_transact_cont(uint8_t hub) {
@@ -324,7 +332,14 @@ static bool state_in_recv(uint8_t hub) {
   return false;
 }
 
-static bool state_delay(uint8_t hub) {
+static bool state_delay_us(uint8_t hub) {
+  if (timer3_tick_raw_between(delay_begin[hub], delay_end[hub]))
+    return false;
+  state[hub] = delay_next_state[hub];
+  return true;
+}
+
+static bool state_delay_ms(uint8_t hub) {
   if (timer3_tick_msec_between(delay_begin[hub], delay_end[hub]))
     return false;
   state[hub] = delay_next_state[hub];
@@ -445,8 +460,10 @@ static bool fsm(uint8_t hub) {
       return state_ready(hub);
     case STATE_IN_RECV:
       return state_in_recv(hub);
-    case STATE_DELAY:
-      return state_delay(hub);
+    case STATE_DELAY_US:
+      return state_delay_us(hub);
+    case STATE_DELAY_MS:
+      return state_delay_ms(hub);
     case STATE_TRANSACTION:
       return state_transaction(hub);
     case STATE_TRANSACTION_IN:
