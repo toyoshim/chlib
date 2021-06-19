@@ -249,6 +249,17 @@ void timer3_tick_init() {
   EA = 1;  // Enable interruprts
 }
 
+uint16_t timer3_tick_raw() {
+  T3_CTRL &= ~bT3_CNT_EN;  // Stop counting
+  uint16_t tick = ((uint16_t)T3_COUNT_H << 8) | T3_COUNT_L;
+  T3_CTRL |= bT3_CNT_EN;  // Start counting
+  return tick;
+}
+
+uint16_t timer3_tick_from_usec(uint16_t usec) {
+  return usec * 16 / 1000;
+}
+
 uint16_t timer3_tick_msec() {
   T3_CTRL &= ~bT3_CNT_EN;  // Stop counting
   uint16_t tick = ((uint16_t)T3_COUNT_H << 4) | (T3_COUNT_L >> 4);
@@ -291,12 +302,14 @@ static bool timer3_tick_le(uint16_t tick) {
   return T3_COUNT_H <= h;
 }
 
-bool timer3_tick_msec_between(uint16_t begin, uint16_t end) {
-  begin <<= 4;
-  end <<= 4;
+bool timer3_tick_raw_between(uint16_t begin, uint16_t end) {
   if (begin < end)
     return timer3_tick_ge(begin) && timer3_tick_le(end);
   return timer3_tick_ge(begin) || timer3_tick_le(end);
+}
+
+bool timer3_tick_msec_between(uint16_t begin, uint16_t end) {
+  return timer3_tick_raw_between(begin << 4, end << 4);
 }
 
 void delayMicroseconds(uint32_t us) {
