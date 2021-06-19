@@ -164,7 +164,7 @@ static void host_transact(
   transaction_buffer = buffer;
   transaction_size = size;
   transaction_recv_state = recv_state;
-  transaction_ep_pid = (pid << 4) | ep;
+  transaction_ep_pid = (pid << 4) | (ep & 0x0f);
   UH_RX_CTRL = UH_TX_CTRL = tog;
   host_transact_cont(hub);
 }
