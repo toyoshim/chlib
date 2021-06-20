@@ -250,9 +250,15 @@ void timer3_tick_init() {
 }
 
 uint16_t timer3_tick_raw() {
-  T3_CTRL &= ~bT3_CNT_EN;  // Stop counting
-  uint16_t tick = ((uint16_t)T3_COUNT_H << 8) | T3_COUNT_L;
-  T3_CTRL |= bT3_CNT_EN;  // Start counting
+  uint16_t tick;
+  for (;;) {
+    uint8_t h = T3_COUNT_H;
+    uint8_t l = T3_COUNT_L;
+    if (h == T3_COUNT_H) {
+      tick = (h << 8) | l;
+      break;
+    }
+  }
   return tick;
 }
 
@@ -265,17 +271,12 @@ uint16_t timer3_tick_from_usec(uint16_t usec) {
 }
 
 uint16_t timer3_tick_msec() {
-  T3_CTRL &= ~bT3_CNT_EN;  // Stop counting
-  uint16_t tick = ((uint16_t)T3_COUNT_H << 4) | (T3_COUNT_L >> 4);
-  T3_CTRL |= bT3_CNT_EN;  // Start counting
+  return timerr3_tick_raw() >> 4;
   return tick;
 }
 
 uint16_t timer3_tick_sec() {
-  IE_TMR3 = 0;
-  uint16_t tick = timer3_tick;
-  IE_TMR3 = 1;
-  return tick;
+  return timer3_tick;
 }
 
 static bool timer3_tick_ge(uint16_t tick) {
