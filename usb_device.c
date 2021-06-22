@@ -77,6 +77,10 @@ static void get_descriptor() {
   uint8_t type = last_setup_req.wValue >> 8;
   uint8_t no = last_setup_req.wValue & 0xff;
   uint8_t size = usb_device->get_descriptor_size(type, no);
+  if (0 == size && type == USB_DESC_DEVICE_QUALIFIER) {
+    stall();
+    return;
+  }
   if (0 == size)
     halt("get_descriptor");
   if (size > last_setup_req.wLength)
