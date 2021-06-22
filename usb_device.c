@@ -20,6 +20,8 @@ static struct usb_setup_req last_setup_req;
 static const uint8_t* sending_data_ptr = 0;
 static uint8_t sending_data_len = 0;
 
+static bool is_hid = false;
+
 static void halt(const char* token) {
   Serial.println(token);
   Serial.print("type: ");
@@ -55,7 +57,7 @@ static void stall() {
 
 static void ep0_send(uint8_t len, const uint8_t* data) {
   uint8_t transfer_len = (len <= ep0_size) ? len : ep0_size;
-  for (uint8_t i = 0; i < transfer_len; ++i)
+  if (data) for (uint8_t i = 0; i < transfer_len; ++i)
     ep0_buffer[i] = data[i];
   UEP0_T_LEN = transfer_len;
   UEP0_CTRL = bUEP_R_TOG | bUEP_T_TOG | UEP_R_RES_ACK | UEP_T_RES_ACK;
@@ -85,7 +87,30 @@ static void get_descriptor() {
     halt("get_descriptor");
   if (size > last_setup_req.wLength)
     size = last_setup_req.wLength;
-  ep0_send(size, usb_device->get_descriptor(type, no));
+  const char* desc = usb_device->get_descriptor(type, no);
+
+  // Peek outgoing descrirptors to know if the device is HID or not.
+  if (type == USB_DESC_DEVICE) {
+    const struct usb_desc_device* device = (const struct usb_desc_device*)desc;
+    is_hid = device->bDeviceClass == USB_CLASS_HID;
+  } else if (type == USB_DESC_CONFIGURATION) {
+    for (uint8_t i = 0; i < size; ) {
+      const struct usb_desc_head* head =
+          (const struct usb_desc_head*)(desc + i);
+      if (head->bDescriptorType != USB_DESC_INTERFACE) {
+        i += head->bLength;
+        continue;
+      }
+      const struct usb_desc_interface* interface =
+          (const struct usb_desc_interface*)(desc + i);
+      if (interface->bInterfaceClass == USB_CLASS_HID) {
+        is_hid = true;
+        break;
+      }
+    }
+  }
+
+  ep0_send(size, desc);
 }
 
 static void setup() {
@@ -95,33 +120,49 @@ static void setup() {
     return;
   }
   struct usb_setup_req* req = (struct usb_setup_req*)ep0_buffer;
-  if ((req->bRequestType & USB_REQ_TYPE_MASK) != USB_REQ_TYPE_STANDARD) {
+  if ((req->bRequestType & USB_REQ_TYPE_MASK) == USB_REQ_TYPE_STANDARD) {
+    switch (req->bRequest) {
+      case USB_GET_STATUS:
+        ep0_send(2, "\0\0");
+        break;
+      case USB_SET_FEATURE:
+        ep0_send(0, 0);
+        break;
+      case USB_SET_ADDRESS:
+        last_setup_req = *req;
+        ep0_send(0, 0);
+        break;
+        case USB_GET_DESCRIPTOR:
+        last_setup_req = *req;
+        get_descriptor();
+        break;
+      case USB_SET_CONFIGURATION:
+        ep0_send(0, 0);
+        break;
+      default:
+        last_setup_req = *req;
+        halt("setup");
+        break;
+    }
+  } else if ((req->bRequestType & USB_REQ_TYPE_MASK) == USB_REQ_TYPE_CLASS && is_hid) {
+    switch (req->bRequest) {
+      case USB_HID_GET_REPORT: {
+        uint8_t len = usb_device->ep1_in(ep0_buffer);
+        ep0_send(len, 0);
+        break;
+      }
+      case USB_HID_SET_IDLE:
+        // TODO: notify clients to ignore interrupt requests.
+        ep0_send(0, 0);
+        break;
+      default:
+        last_setup_req = *req;
+        halt("not impl");
+        stall();
+    }
+  } else {
     Serial.println("not standard");
     stall();
-    return;
-  }
-  switch (req->bRequest) {
-    case USB_GET_STATUS:
-      ep0_send(2, "\0\0");
-      break;
-    case USB_SET_FEATURE:
-      ep0_send(0, 0);
-      break;
-    case USB_SET_ADDRESS:
-      last_setup_req = *req;
-      ep0_send(0, 0);
-      break;
-    case USB_GET_DESCRIPTOR:
-      last_setup_req = *req;
-      get_descriptor();
-      break;
-    case USB_SET_CONFIGURATION:
-      ep0_send(0, 0);
-      break;
-    default:
-      last_setup_req = *req;
-      halt("setup");
-      break;
   }
 }
 
