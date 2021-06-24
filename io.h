@@ -8,6 +8,12 @@
 #include <compiler.h>
 
 SFR(P0, 0x80);  // P0 input/output register
+SFR(ROM_ADDR_L, 0x84);  // Flash-ROM address register low byte
+SFR(ROM_ADDR_H, 0x85);  // Flash-ROM address register high byte
+SFR(ROM_STATUS, 0x86);  // Flash-ROM status register
+SFR(ROM_CTRL, 0x86);  // Flash-ROM control register
+SFR(ROM_DATA_L, 0x8e);  // Flash-ROM data register low byte
+SFR(ROM_DATA_H, 0x8f);  // Flash-ROM data register high byte
 SFR(PCON, 0x87);  // Power control register
 SFR(TMOD, 0x89);  // Timer/counter/0/1 mode register
 SFR(TH1, 0x8d);	 // High byte of timer1 count
@@ -39,6 +45,7 @@ SFR(IE, 0xa8);  // Interrupt enable register
 SFR(T3_STAT, 0xa9);  // Timer3 status register
 SFR(T3_CTRL, 0xaa);  // Timer3 control register
 SFR(P3, 0xb0);  // P3 input/output register
+SFR(GLOBAL_CFG, 0xb1);  // Global configuration register
 SFR(PLL_CFG, 0xb2);  // PLL clock configuration register
 SFR(CLOCK_CFG, 0xb3);  // System clock configuration register
 SFR(P1_DIR, 0xba);  // P1 direction control register
@@ -114,6 +121,8 @@ enum {
   bT3_MOD_CAP = 0x01,  // T3_CTRL, Timer3 mode
   bT3_CLR_ALL = 0x02,  // T3_CTRL, Timer3 force clear FIFO and count
   bT3_CNT_EN = 0x04,  // T3_CTRL, Timer3 count enable
+  bDATA_WE = 0x04,  // GLOBAL_CFG, Data-Flash program or erase enable
+  bCODE_WE = 0x08,  // GLOBAL_CFG, Flash-ROM program or erase enable
   MASK_SYS_CK_DIV = 0x1f,  // CLOCK_CFG, system clock divisor factor
   bTMR_CLK = 0x80,  // T2MOD, Fastest internal clock mode for timer 0/1/2
   bT1_CLK = 0x20,  // T2MOD, Timer1 internal clock frequency selection
