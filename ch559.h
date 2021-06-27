@@ -14,11 +14,6 @@ extern void timer3_int() __interrupt INT_NO_TMR3 __using 1;
 
 void initialize();
 
-// note: pin is fixed to P4.3 for now
-void pwm1_init();
-void pwm1_enable(bool enable);
-void pwm1_duty(uint8_t data, uint8_t cycle);
-
 // Arduino-like APIs
 
 // type
