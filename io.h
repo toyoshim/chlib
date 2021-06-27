@@ -91,11 +91,15 @@ SFR(RESET_KEEP, 0xfe);  // Reset-keeping register
 
 SBIT(TR0, 0x88, 4);  // TCON, Timer0 start/stop bit
 SBIT(TR1, 0x88, 6);  // TCON, Timer1 start/stop bit
+SBIT(P1_0, 0x90, 0);  // P1, 0
+SBIT(P1_1, 0x90, 1);  // P1, 1
 SBIT(SM1, 0x98, 6);  // SCON, UART0 mode bit1, selection baud rate
 SBIT(SM0, 0x98, 7);  // SCON, UART0 mode bit0, selection data bit
 SBIT(TI, 0x98, 1);  // SCON, Transmit interrupt flag
 SBIT(ET0, 0xa8, 1);  // IE, Timer0 interrupt enable bit
 SBIT(EA, 0xa8, 7);  // IE, Global interrupt enable control bit
+SBIT(P4_0, 0xc0, 0);  // P4, 0
+SBIT(P4_1, 0xc0, 1);  // P4, 1
 SBIT(UIF_BUS_RST, 0xd8, 0);  // USB_INT_FG, USB bus reset (device)
 SBIT(UIF_DETECT, 0xd8, 0);  // USB_INT_FG, checking device connection (host)
 SBIT(UIF_TRANSFER, 0xd8, 1);  // USB_INT_FG, USB transfer complete
