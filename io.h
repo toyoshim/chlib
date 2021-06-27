@@ -12,6 +12,8 @@ SFR(ROM_ADDR_L, 0x84);  // Flash-ROM address register low byte
 SFR(ROM_ADDR_H, 0x85);  // Flash-ROM address register high byte
 SFR(ROM_STATUS, 0x86);  // Flash-ROM status register
 SFR(ROM_CTRL, 0x86);  // Flash-ROM control register
+SFR(TL0, 0x8a);  // Timer0 count register low byte
+SFR(TH0, 0x8c);  // Timer0 count register high byte
 SFR(ROM_DATA_L, 0x8e);  // Flash-ROM data register low byte
 SFR(ROM_DATA_H, 0x8f);  // Flash-ROM data register high byte
 SFR(PCON, 0x87);  // Power control register
@@ -87,10 +89,12 @@ SFR(UHUB1_CTRL, 0xe5);  // USB HUB1 control register
 SFR(IE_EX, 0xe8);  // Extend interrupt enable register
 SFR(RESET_KEEP, 0xfe);  // Reset-keeping register
 
+SBIT(TR0, 0x88, 4);  // TCON, Timer0 start/stop bit
 SBIT(TR1, 0x88, 6);  // TCON, Timer1 start/stop bit
 SBIT(SM1, 0x98, 6);  // SCON, UART0 mode bit1, selection baud rate
 SBIT(SM0, 0x98, 7);  // SCON, UART0 mode bit0, selection data bit
 SBIT(TI, 0x98, 1);  // SCON, Transmit interrupt flag
+SBIT(ET0, 0xa8, 1);  // IE, Timer0 interrupt enable bit
 SBIT(EA, 0xa8, 7);  // IE, Global interrupt enable control bit
 SBIT(UIF_BUS_RST, 0xd8, 0);  // USB_INT_FG, USB bus reset (device)
 SBIT(UIF_DETECT, 0xd8, 0);  // USB_INT_FG, checking device connection (host)
@@ -102,6 +106,8 @@ SBIT(IE_USB, 0xe8, 2);  // IE_EX, USB interruprt enable bit
 
 enum {
   SMOD = 0x80,  // PCON, Baud rate selection for UART0 mode 1/2/3
+  bT0_M0 = 0x01,  // TMOD, Timer0 mode low bit
+  bT0_M1 = 0x02,  // TMOD, Timer0 mode high bit
   bT1_M1 = 0x20,  // TMOD, Timer1 mode high bit
   bIER_PIN_MOD1 = 0x20,  // SER1_IER, UART1 pin mode high bit
   bFCR_FIFO_EN = 0x01,  // SER1_FCR, UART1 FIFO enable
@@ -124,8 +130,9 @@ enum {
   bDATA_WE = 0x04,  // GLOBAL_CFG, Data-Flash program or erase enable
   bCODE_WE = 0x08,  // GLOBAL_CFG, Flash-ROM program or erase enable
   MASK_SYS_CK_DIV = 0x1f,  // CLOCK_CFG, system clock divisor factor
-  bTMR_CLK = 0x80,  // T2MOD, Fastest internal clock mode for timer 0/1/2
+  bT0_CLK = 0x10,  // T2MOD, Timer0 internal clock frequency selection
   bT1_CLK = 0x20,  // T2MOD, Timer1 internal clock frequency selection
+  bTMR_CLK = 0x80,  // T2MOD, Fastest internal clock mode for timer 0/1/2
   bUART0_PIN_X = 0x10,  // PIN_FUNC, Pin UART0 mapping enable bit
   bPWM1_PIN_X = 0x80,  // PIN_FUNC, Pin PWM1/PWM2 mapping enable bit
   bUH_R_TOG = 0x80,  // UH_RX_CTRL, Expected data toggle flag

@@ -6,6 +6,7 @@
 #define __interrupt_h__
 
 enum {
+  INT_NO_TMR0 = 1,
   INT_NO_TMR3 = 7,
   INT_NO_USB = 8,
 };
