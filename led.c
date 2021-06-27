@@ -19,8 +19,8 @@ static uint8_t polarity = LOW;
 static const uint8_t patterns[][8] = {
   {  ON,  ON,  ON,  ON,  ON,  ON,  ON,  ON },  // ON
   {  ON,  ON,  ON,  ON, OFF, OFF, OFF, OFF },  // Blink
-  {  ON,  ON, OFF, OFF,  ON,  ON, OFF, OFF },  // Faster Blink
-  {  ON, OFF,  ON, OFF,  ON, OFF,  ON, OFF },  // Fastest Blink
+  {  ON,  ON, OFF, OFF,  ON,  ON, OFF, OFF },  // Fast Blink
+  {  ON, OFF,  ON, OFF,  ON, OFF,  ON, OFF },  // Faster Blink
   {  ON, OFF,  ON, OFF, OFF, OFF, OFF, OFF },  // Blink Twice
   {  ON, OFF,  ON, OFF,  ON, OFF, OFF, OFF },  // Blink Three times
   { OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF },  // OFF
