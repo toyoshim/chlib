@@ -8,10 +8,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "interrupt.h"
-
-extern void timer3_int() __interrupt INT_NO_TMR3 __using 1;
-
 void initialize();
 
 // Arduino-like APIs

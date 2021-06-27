@@ -4,7 +4,6 @@
 
 #include "timer3.h"
 
-#include "interrupt.h"
 #include "io.h"
 
 static uint16_t timer3_tick = 0;

@@ -8,6 +8,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "interrupt.h"
+
+extern void timer3_int() __interrupt INT_NO_TMR3 __using 1;
+
 void timer3_tick_init();
 uint16_t timer3_tick_raw();
 uint16_t timer3_tick_from_usec(uint16_t usec);
