@@ -6,6 +6,7 @@
 
 #include "ch559.h"
 #include "io.h"
+#include "timer3.h"
 #include "usb.h"
 
 enum {

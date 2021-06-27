@@ -5,6 +5,7 @@
 #include "led.h"
 
 #include "ch559.h"
+#include "timer3.h"
 
 static int8_t port = -1;
 static int8_t pin = -1;
