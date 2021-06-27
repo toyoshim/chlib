@@ -14,12 +14,6 @@ extern void timer3_int() __interrupt INT_NO_TMR3 __using 1;
 
 void initialize();
 
-// note: pins are fixed to XA/XB for now
-void rs485_init();
-void rs485_send(uint8_t val);
-bool rs485_ready();
-uint8_t rs485_recv();
-
 // note: pin is fixed to P4.3 for now
 void pwm1_init();
 void pwm1_enable(bool enable);
