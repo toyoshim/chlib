@@ -51,7 +51,7 @@ void led_oneshot(uint8_t new_shot) {
 }
 
 // TODO: shot
-void led_update() {
+void led_poll() {
   uint16_t phase = timer3_tick_msec() / 125;
   digitalWrite(port, pin, patterns[mode][phase] == polarity ? HIGH : LOW);
 }
