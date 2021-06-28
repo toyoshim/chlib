@@ -93,13 +93,33 @@ SBIT(TR0, 0x88, 4);  // TCON, Timer0 start/stop bit
 SBIT(TR1, 0x88, 6);  // TCON, Timer1 start/stop bit
 SBIT(P1_0, 0x90, 0);  // P1, 0
 SBIT(P1_1, 0x90, 1);  // P1, 1
+SBIT(P1_2, 0x90, 2);  // P1, 2
+SBIT(P1_3, 0x90, 3);  // P1, 3
+SBIT(P1_4, 0x90, 4);  // P1, 4
+SBIT(P1_5, 0x90, 5);  // P1, 5
+SBIT(P1_6, 0x90, 6);  // P1, 6
+SBIT(P1_7, 0x90, 7);  // P1, 7
 SBIT(SM1, 0x98, 6);  // SCON, UART0 mode bit1, selection baud rate
 SBIT(SM0, 0x98, 7);  // SCON, UART0 mode bit0, selection data bit
 SBIT(TI, 0x98, 1);  // SCON, Transmit interrupt flag
+SBIT(P2_0, 0xa0, 0);  // P2, 0
+SBIT(P2_1, 0xa0, 1);  // P2, 1
+SBIT(P2_2, 0xa0, 2);  // P2, 2
+SBIT(P2_3, 0xa0, 3);  // P2, 3
+SBIT(P2_4, 0xa0, 4);  // P2, 4
+SBIT(P2_5, 0xa0, 5);  // P2, 5
+SBIT(P2_6, 0xa0, 6);  // P2, 6
+SBIT(P2_7, 0xa0, 7);  // P2, 7
 SBIT(ET0, 0xa8, 1);  // IE, Timer0 interrupt enable bit
 SBIT(EA, 0xa8, 7);  // IE, Global interrupt enable control bit
 SBIT(P4_0, 0xc0, 0);  // P4, 0
 SBIT(P4_1, 0xc0, 1);  // P4, 1
+SBIT(P4_2, 0xc0, 2);  // P4, 2
+SBIT(P4_3, 0xc0, 3);  // P4, 3
+SBIT(P4_4, 0xc0, 4);  // P4, 4
+SBIT(P4_5, 0xc0, 5);  // P4, 5
+SBIT(P4_6, 0xc0, 6);  // P4, 6
+SBIT(P4_7, 0xc0, 7);  // P4, 7
 SBIT(UIF_BUS_RST, 0xd8, 0);  // USB_INT_FG, USB bus reset (device)
 SBIT(UIF_DETECT, 0xd8, 0);  // USB_INT_FG, checking device connection (host)
 SBIT(UIF_TRANSFER, 0xd8, 1);  // USB_INT_FG, USB transfer complete
