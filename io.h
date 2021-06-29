@@ -63,6 +63,7 @@ SFR(P4_PU, 0xc3);  // P4 pull-up enable register
 SFR(P0_DIR, 0xc4);  // P0 direction control register
 SFR(P0_PU, 0xc5);  // P0 pull-up enable register
 SFR(PORT_CFG, 0xc6);  // Port configuration register
+SFR(P5_IN, 0xc7);  // P5 input register
 SFR(T2MOD, 0xc9);  // Timer2 mode register
 SFR(PIN_FUNC, 0xce);  // Function pins select register
 SFR(USB_RX_LEN, 0xd1);  // USB receiving length register
@@ -134,6 +135,7 @@ enum {
   bT0_M1 = 0x02,  // TMOD, Timer0 mode high bit
   bT1_M1 = 0x20,  // TMOD, Timer1 mode high bit
   bIER_PIN_MOD1 = 0x20,  // SER1_IER, UART1 pin mode high bit
+  bIER_PIN_MOD0 = 0x10,  // SER1_IER, UART1 pin mode low bit
   bFCR_FIFO_EN = 0x01,  // SER1_FCR, UART1 FIFO enable
   bFCR_R_FIFO_CLR = 0x02,  // SER1_FCR, UART1 receiver FIFO clear
   bFCR_T_FIFO_CLR = 0x04,  // SER1_FCR, UART1 transmitter FIFO clear
@@ -157,6 +159,7 @@ enum {
   bT0_CLK = 0x10,  // T2MOD, Timer0 internal clock frequency selection
   bT1_CLK = 0x20,  // T2MOD, Timer1 internal clock frequency selection
   bTMR_CLK = 0x80,  // T2MOD, Fastest internal clock mode for timer 0/1/2
+  bP4_DRV = 0x04,  // P5_IN, P4 output ability select
   bUART0_PIN_X = 0x10,  // PIN_FUNC, Pin UART0 mapping enable bit
   bPWM1_PIN_X = 0x80,  // PIN_FUNC, Pin PWM1/PWM2 mapping enable bit
   bUH_R_TOG = 0x80,  // UH_RX_CTRL, Expected data toggle flag
