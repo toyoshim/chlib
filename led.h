@@ -7,6 +7,9 @@
 
 #include <stdint.h>
 
+// Should be included from the main source file to set up interrupt handler.
+#include "timer3.h"
+
 // LED mode
 enum {
   L_ON,
