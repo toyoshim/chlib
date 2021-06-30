@@ -52,7 +52,11 @@ static char U4ToHex(uint8_t val) {
 struct SerialLibrary Serial;
 
 static void s_putc(uint8_t val) {
+#ifdef _NO_UART0
+  val;
+#else
   putchar(val);
+#endif
 }
 
 static void s_printc(int16_t val, uint8_t type) {
@@ -130,10 +134,12 @@ void initialize() {
   PLL_CFG = ((24 << 0) | (6 << 5)) & 0xff;  // PLL multiplier 24, USB clock divisor 6
   leave_safe_mode();
 
+#ifndef _NO_UART0
   // UART0 115200 TX at P0.3
   P0_DIR |= 0x08;  // Set P0.3(TXD) as output
   P0_PU |= 0x08;  // Pull-up P0.3(TXD)
   PIN_FUNC |= bUART0_PIN_X;  // RXD0/TXD0 enable P0.2/P0.3
+#endif
 
   SM0 = 0;  // 8-bits data
   SM1 = 1;  // variable baud rate, based on timer
