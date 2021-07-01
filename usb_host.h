@@ -8,6 +8,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+// Should be included from the main source file to set up interrupt handler.
+#include "timer3.h"
+
 enum {
   USE_HUB0 = 1 << 0,
   USE_HUB1 = 1 << 1,
