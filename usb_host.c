@@ -465,6 +465,8 @@ static bool fsm(uint8_t hub) {
     if (state[hub] == STATE_IDLE) {
       UH_EP_PID = 0;  // Stop USB transaction.
       USB_CTRL = bUC_HOST_MODE | bUC_INT_BUSY | bUC_DMA_EN;
+      if (usb_host->disconnected)
+        usb_host->disconnected(hub);
     }
   }
   switch (state[hub]) {

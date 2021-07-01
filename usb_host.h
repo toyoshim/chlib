@@ -18,6 +18,7 @@ enum {
 
 struct usb_host {
   uint8_t flags;
+  void (*disconnected)(uint8_t hub);
   void (*check_device_desc)(uint8_t hub, const uint8_t* desc);
   void (*check_configuration_desc)(uint8_t hub, const uint8_t* desc);
   void (*check_hid_report_desc)(uint8_t hub, const uint8_t* desc);
