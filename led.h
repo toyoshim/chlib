@@ -21,6 +21,13 @@ enum {
   L_OFF,
 };
 
+// LED shot
+enum {
+  L_PULSE_ONCE,
+  L_PULSE_TWICE,
+  L_PULSE_THREE_TIMES,
+};
+
 void led_init(uint8_t port, uint8_t pin, uint8_t polarity);
 void led_mode(uint8_t mode);
 void led_oneshot(uint8_t shot);
