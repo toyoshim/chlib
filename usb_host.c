@@ -263,7 +263,8 @@ static bool state_get_device_desc(uint8_t hub) {
 
 static bool state_get_device_desc_recv(uint8_t hub) {
   const struct usb_desc_device* desc = (const struct usb_desc_device*)in_buffer;
-  usb_host->check_device_desc(hub, in_buffer);
+  if (usb_host->check_device_desc)
+    usb_host->check_device_desc(hub, in_buffer);
 
   get_configuration_descriptor.wLength = 0x09;  // request the core part.
   is_hid[hub] = desc->bDeviceClass == USB_CLASS_HID;
@@ -287,7 +288,8 @@ static bool state_get_configuration_desc_recv(uint8_t hub) {
     delay_us(hub, 250, STATE_GET_CONFIGURATION_DESC);
     return false;
   }
-  usb_host->check_configuration_desc(hub, in_buffer);
+  if (usb_host->check_configuration_desc)
+    usb_host->check_configuration_desc(hub, in_buffer);
   set_configuration_descriptor.wValue = desc->bConfigurationValue;
   // Note: multiple configurations are not supported.
 
@@ -334,7 +336,8 @@ static bool state_get_hid_report_desc(uint8_t hub) {
 }
 
 static bool state_get_hid_report_desc_recv(uint8_t hub) {
-  usb_host->check_hid_report_desc(hub, in_buffer);
+  if (usb_host->check_hid_report_desc)
+    usb_host->check_hid_report_desc(hub, in_buffer);
   unlock_transaction();
   delay_us(hub, 250, STATE_READY);
   return false;
@@ -351,7 +354,8 @@ static bool state_ready(uint8_t hub) {
 }
 
 static bool state_in_recv(uint8_t hub) {
-  usb_host->in(hub, in_buffer);
+  if (usb_host->in)
+    usb_host->in(hub, in_buffer);
   unlock_transaction();
   delay_us(hub, 250, STATE_READY);
   return false;
