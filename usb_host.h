@@ -28,6 +28,7 @@ struct usb_host {
 void usb_host_init(struct usb_host* host);
 void usb_host_poll();
 bool usb_host_ready(uint8_t hub);
+bool usb_host_idle();
 bool usb_host_in(uint8_t hub, uint8_t ep, uint8_t size);
 
 #endif  // __usb_host_h__

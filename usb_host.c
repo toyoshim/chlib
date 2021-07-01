@@ -562,6 +562,10 @@ bool usb_host_ready(uint8_t hub) {
   return state[hub] == STATE_READY && !is_transaction_locked();
 }
 
+bool usb_host_idle() {
+  return !is_transaction_locked();
+}
+
 bool usb_host_in(uint8_t hub, uint8_t ep, uint8_t size) {
   if (!usb_host_ready(hub) || !lock_transaction(hub))
     return false;
