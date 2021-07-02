@@ -15,6 +15,8 @@ enum {
   STATE_CONNECT,
   STATE_RESET,
   STATE_ENABLE,
+  STATE_SET_ADDRESS,
+  STATE_SET_ADDRESS_DONE,
   STATE_GET_DEVICE_DESC,
   STATE_GET_DEVICE_DESC_RECV,
   STATE_GET_CONFIGURATION_DESC,
@@ -38,6 +40,14 @@ enum {
   STATE_TRANSACTION_ACK,
   STATE_TRANSACTION_CONT,
   STATE_TRANSACTION_RETRY,
+};
+
+static struct usb_setup_req set_address_descriptor = {
+  USB_REQ_DIR_OUT,
+  USB_SET_ADDRESS,
+  0x00,  // address: can be modified
+  0x00,
+  0x00,
 };
 
 static const struct usb_setup_req get_device_descriptor = {
@@ -113,7 +123,7 @@ static bool is_transaction_locked() {
   return transaction_lock >= 0;
 }
 
-static bool lock_transaction(uint8_t hub) {
+static bool lock_transaction(uint8_t hub, uint8_t target_device_addr) {
   if (is_transaction_locked())
     return false;
   transaction_lock = hub;
@@ -123,6 +133,7 @@ static bool lock_transaction(uint8_t hub) {
   } else {
     USB_CTRL |= bUC_LOW_SPEED;
   }
+  USB_DEV_AD = target_device_addr & 0x7f;
   return true;
 }
 
@@ -226,19 +237,30 @@ static bool state_enable(uint8_t hub) {
     UHUB1_CTRL |= bUH_PORT_EN;
   }
   // Wait >200us.
+  delay_us(hub, 200, STATE_SET_ADDRESS);
+  return false;
+}
+
+static bool state_set_address(uint8_t hub) {
+  if (!lock_transaction(hub, 0))
+    return false;
+  set_address_descriptor.wValue = 1 + hub;
+  host_setup_transfer(
+      hub,
+      (uint8_t*)&set_address_descriptor,
+      sizeof(set_address_descriptor),
+      STATE_SET_ADDRESS_DONE);
+  return false;
+}
+
+static bool state_set_address_done(uint8_t hub) {
+  unlock_transaction();
+  lock_transaction(hub, 1 + hub);
   delay_us(hub, 200, STATE_GET_DEVICE_DESC);
   return false;
 }
 
 static bool state_get_device_desc(uint8_t hub) {
-  if (!lock_transaction(hub))
-    return false;
-  if ((hub == 0 && (UHUB0_CTRL & bUH_LOW_SPEED) == 0) ||
-      (hub == 1 && (UHUB1_CTRL & bUH_LOW_SPEED) == 0)) {
-    USB_CTRL &= ~bUC_LOW_SPEED;
-  } else {
-    USB_CTRL |= bUC_LOW_SPEED;
-  }
   host_setup_transfer(
       hub,
       (uint8_t*)&get_device_descriptor,
@@ -456,6 +478,7 @@ static bool fsm(uint8_t hub) {
         usb_host->disconnected(hub);
     }
   }
+  Serial.printf("state: %d, %d\n", hub, state[hub]);
   switch (state[hub]) {
     case STATE_IDLE:
       return state_idle(hub);
@@ -465,6 +488,10 @@ static bool fsm(uint8_t hub) {
       return state_reset(hub);
     case STATE_ENABLE:
       return state_enable(hub);
+    case STATE_SET_ADDRESS:
+      return state_set_address(hub);
+    case STATE_SET_ADDRESS_DONE:
+      return state_set_address_done(hub);
     case STATE_GET_DEVICE_DESC:
       return state_get_device_desc(hub);
     case STATE_GET_DEVICE_DESC_RECV:
@@ -554,7 +581,7 @@ bool usb_host_idle() {
 }
 
 bool usb_host_in(uint8_t hub, uint8_t ep, uint8_t size) {
-  if (!usb_host_ready(hub) || !lock_transaction(hub))
+  if (!usb_host_ready(hub) || !lock_transaction(hub, 1 + hub))
     return false;
   host_in_transfer(hub, ep, size, STATE_IN_RECV);
   return false;
