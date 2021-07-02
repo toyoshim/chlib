@@ -37,6 +37,7 @@ enum {
   STATE_DELAY_MS,
   STATE_TRANSACTION,
   STATE_TRANSACTION_IN,
+  STATE_TRANSACTION_OUT,
   STATE_TRANSACTION_ACK,
   STATE_TRANSACTION_CONT,
   STATE_TRANSACTION_RETRY,
@@ -92,6 +93,7 @@ static uint8_t* transaction_buffer = 0;
 static uint16_t transaction_size = 0;
 static uint8_t transaction_recv_state = STATE_IDLE;
 static uint8_t transaction_ep_pid = 0;
+static uint8_t transaction_stage = 0;
 
 static uint8_t state[2] = { STATE_IDLE, STATE_IDLE };
 static uint16_t delay_begin[2] = { 0, 0 };
@@ -133,7 +135,7 @@ static bool lock_transaction(uint8_t hub, uint8_t target_device_addr) {
   } else {
     USB_CTRL |= bUC_LOW_SPEED;
   }
-  USB_DEV_AD = target_device_addr & 0x7f;
+  USB_DEV_AD = target_device_addr;
   return true;
 }
 
@@ -142,16 +144,26 @@ static void unlock_transaction() {
 }
 
 static void host_transact_cont(uint8_t hub) {
+  uint16_t size;
   if ((transaction_ep_pid >> 4) != USB_PID_IN) {
-    uint16_t send_size = (transaction_size < 64) ? transaction_size : 64;
-    for (uint16_t i = 0; i < send_size; ++i)
+    size = (transaction_size < 64) ? transaction_size : 64;
+    for (uint16_t i = 0; i < size; ++i)
       tx_buffer[i] = transaction_buffer[i];
-    transaction_buffer += send_size;
-    transaction_size -= send_size;
-    UH_TX_LEN = send_size;
+    transaction_buffer += size;
+    transaction_size -= size;
+    UH_TX_LEN = size;
   } else {
+    size = transaction_size;
     UH_TX_LEN = 0;
   }
+
+#if 0
+  Serial.printf("ep: %d, pid: %d, size: %d; ", transaction_ep_pid & 0xf, transaction_ep_pid >> 4, size);
+  for (uint8_t i = 0; i < UH_TX_LEN; ++i)
+    Serial.printf("%x,",tx_buffer[i]);
+  Serial.printf("\n");
+#endif
+
   UH_EP_PID = transaction_ep_pid;
   UIF_TRANSFER = 0;
   state[hub] = STATE_TRANSACTION;
@@ -172,10 +184,6 @@ static void host_setup_transfer(
   host_transact(hub, buffer, size, recv_state, 0, USB_PID_SETUP, 0);
 }
 
-static void host_ack_transfer(uint8_t hub, uint8_t ep, uint8_t recv_state) {
-  host_transact(hub, 0, 0, recv_state, ep, USB_PID_ACK, 0);
-}
-
 static void host_in_transfer(
     uint8_t hub, uint8_t ep, uint16_t size, uint8_t recv_state) {
   uint8_t tog = bUH_R_TOG | bUH_R_AUTO_TOG | bUH_T_TOG | bUH_T_AUTO_TOG;
@@ -183,9 +191,15 @@ static void host_in_transfer(
 }
 
 static void host_out_transfer(
-    uint8_t hub, uint8_t ep, uint16_t size, uint8_t recv_state) {
+    uint8_t hub, uint8_t ep, uint8_t* buffer, uint16_t size, uint8_t recv_state) {
   uint8_t tog = bUH_R_TOG | bUH_R_AUTO_TOG | bUH_T_TOG | bUH_T_AUTO_TOG;
-  host_transact(hub, in_buffer, size, recv_state, ep, USB_PID_OUT, tog);
+  host_transact(hub, buffer, size, recv_state, ep, USB_PID_OUT, tog);
+}
+
+static void host_ack_transfer(
+    uint8_t hub, uint8_t ep, uint8_t* buffer, uint16_t size, uint8_t recv_state) {
+  uint8_t tog = bUH_R_TOG | bUH_R_AUTO_TOG | bUH_T_TOG | bUH_T_AUTO_TOG;
+  host_transact(hub, buffer, size, recv_state, ep, USB_PID_ACK, tog);
 }
 
 static bool state_idle(uint8_t hub) {
@@ -244,6 +258,7 @@ static bool state_enable(uint8_t hub) {
 static bool state_set_address(uint8_t hub) {
   if (!lock_transaction(hub, 0))
     return false;
+
   set_address_descriptor.wValue = 1 + hub;
   host_setup_transfer(
       hub,
@@ -256,7 +271,8 @@ static bool state_set_address(uint8_t hub) {
 static bool state_set_address_done(uint8_t hub) {
   unlock_transaction();
   lock_transaction(hub, 1 + hub);
-  delay_us(hub, 200, STATE_GET_DEVICE_DESC);
+  // Wait >2 ms
+  delay_ms(hub, 2, STATE_GET_DEVICE_DESC);
   return false;
 }
 
@@ -391,7 +407,9 @@ static bool state_transaction(uint8_t hub) {
 
   UH_EP_PID = 0;  // Stop USB transaction.
 
-  if ((transaction_ep_pid >> 4) == USB_PID_IN) {
+  uint8_t pid = transaction_ep_pid >> 4;
+  uint8_t token = USB_INT_ST & MASK_UIS_HRES;
+  if (pid == USB_PID_IN && token != USB_PID_NAK) {
     uint16_t size = (transaction_size > USB_RX_LEN)
         ? USB_RX_LEN : transaction_size;
     for (uint16_t i = 0; i < size; ++i)
@@ -400,7 +418,6 @@ static bool state_transaction(uint8_t hub) {
     transaction_size -= size;
   }
 
-  uint8_t token = USB_INT_ST & MASK_UIS_HRES;
   if (U_TOG_OK || token == USB_PID_DATA0 || token == USB_PID_DATA1) {
     if (transaction_size) {
       delay_us(hub, 250, STATE_TRANSACTION_CONT);
@@ -408,20 +425,40 @@ static bool state_transaction(uint8_t hub) {
     }
 
     // Succeeded.
-    uint8_t pid = transaction_ep_pid >> 4;
     if (pid == USB_PID_SETUP) {
+      // Proceed data stage.
+      transaction_stage = 0;
       const struct usb_setup_req* req = (const struct usb_setup_req*)tx_buffer;
-      if (req->wLength &&
-          (req->bRequestType & USB_REQ_DIR_MASK) == USB_REQ_DIR_IN) {
+      if ((req->bRequestType & USB_REQ_DIR_MASK) == USB_REQ_DIR_IN) {
+        pid = USB_PID_IN;
+        if (req->wLength) {
+          delay_us(hub, 250, STATE_TRANSACTION_IN);
+          return false;
+        }
+      } else if ((req->bRequestType & USB_REQ_DIR_MASK) == USB_REQ_DIR_OUT) {
+        pid = USB_PID_OUT;
+        if (req->wLength) {
+          delay_us(hub, 250, STATE_TRANSACTION_OUT);
+          return false;
+        }
+      }
+    }
+    if (transaction_stage == 0) {
+      // Proceed status stage.
+      transaction_stage++;
+      if (pid == USB_PID_IN) {
+        delay_us(hub, 250, STATE_TRANSACTION_OUT);
+        return false;
+      } else if (pid == USB_PID_OUT) {
         delay_us(hub, 250, STATE_TRANSACTION_IN);
         return false;
-      } else if (req->wLength &&
-          (req->bRequestType & USB_REQ_DIR_MASK) == USB_REQ_DIR_OUT) {
-        halt("out");
       }
-    } else if (pid == USB_PID_IN) {
-      delay_us(hub, 250, STATE_TRANSACTION_ACK);
-      return false;
+    } else if (transaction_stage == 2) {
+      // Ack
+      if (pid == USB_PID_IN) {
+        delay_us(hub, 250, STATE_TRANSACTION_ACK);
+        return false;
+      }
     }
     state[hub] = transaction_recv_state;
     return true;
@@ -439,13 +476,22 @@ static bool state_transaction(uint8_t hub) {
 static bool state_transaction_in(uint8_t hub) {
   const struct usb_setup_req* req = (const struct usb_setup_req*)tx_buffer;
   const uint8_t ep = transaction_ep_pid & 0x0f;
-  host_in_transfer(hub, ep, req->wLength, transaction_recv_state);
+  uint16_t size = (transaction_stage == 1) ? 0 : req->wLength;
+  host_in_transfer(hub, ep, size, transaction_recv_state);
+  return false;
+}
+
+static bool state_transaction_out(uint8_t hub) {
+  const struct usb_setup_req* req = (const struct usb_setup_req*)tx_buffer;
+  const uint8_t ep = transaction_ep_pid & 0x0f;
+  uint16_t size = (transaction_stage == 1) ? 0 : req->wLength;
+  host_out_transfer(hub, ep, 0, size, transaction_recv_state);
   return false;
 }
 
 static bool state_transaction_ack(uint8_t hub) {
   const uint8_t ep = transaction_ep_pid & 0x0f;
-  host_ack_transfer(hub, ep, transaction_recv_state);
+  host_ack_transfer(hub, ep, 0, 0, transaction_recv_state);
   return false;
 }
 
@@ -478,7 +524,6 @@ static bool fsm(uint8_t hub) {
         usb_host->disconnected(hub);
     }
   }
-  Serial.printf("state: %d, %d\n", hub, state[hub]);
   switch (state[hub]) {
     case STATE_IDLE:
       return state_idle(hub);
@@ -520,6 +565,8 @@ static bool fsm(uint8_t hub) {
       return state_transaction(hub);
     case STATE_TRANSACTION_IN:
       return state_transaction_in(hub);
+    case STATE_TRANSACTION_OUT:
+      return state_transaction_out(hub);
     case STATE_TRANSACTION_ACK:
       return state_transaction_ack(hub);
     case STATE_TRANSACTION_CONT:
@@ -583,6 +630,7 @@ bool usb_host_idle() {
 bool usb_host_in(uint8_t hub, uint8_t ep, uint8_t size) {
   if (!usb_host_ready(hub) || !lock_transaction(hub, 1 + hub))
     return false;
+  transaction_stage = 2;
   host_in_transfer(hub, ep, size, STATE_IN_RECV);
   return false;
 }
