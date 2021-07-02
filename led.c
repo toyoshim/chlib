@@ -55,8 +55,8 @@ void led_oneshot(uint8_t new_shot) {
 
 void led_poll() {
   if (shot != END) {
-    uint16_t phase = (timer3_tick_msec() - shot_start_time) / 50;
-    if (patterns[shot][phase] == END) {
+    uint16_t phase = ((timer3_tick_msec() - shot_start_time) % 1000) / 50;
+    if (shots[shot][phase] == END) {
       shot = END;
     } else {
       digitalWrite(port, pin, shots[shot][phase] == polarity ? HIGH : LOW);
