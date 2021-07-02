@@ -139,8 +139,11 @@ static bool lock_transaction(uint8_t hub, uint8_t target_device_addr) {
   return true;
 }
 
-static void unlock_transaction() {
+static bool unlock_transaction(uint8_t hub) {
+  if (transaction_lock != (int8_t)hub)
+    return false;
   transaction_lock = -1;
+  return true;
 }
 
 static void host_transact_cont(uint8_t hub) {
@@ -269,7 +272,7 @@ static bool state_set_address(uint8_t hub) {
 }
 
 static bool state_set_address_done(uint8_t hub) {
-  unlock_transaction();
+  unlock_transaction(hub);
   lock_transaction(hub, 1 + hub);
   // Wait >2 ms
   delay_ms(hub, 2, STATE_GET_DEVICE_DESC);
@@ -362,13 +365,13 @@ static bool state_get_hid_report_desc(uint8_t hub) {
 static bool state_get_hid_report_desc_recv(uint8_t hub) {
   if (usb_host->check_hid_report_desc)
     usb_host->check_hid_report_desc(hub, in_buffer);
-  unlock_transaction();
+  unlock_transaction(hub);
   delay_us(hub, 250, STATE_READY);
   return false;
 }
 
 static bool state_done(uint8_t hub) {
-  unlock_transaction();
+  unlock_transaction(hub);
   delay_us(hub, 250, STATE_READY);
   return false;
 }
@@ -381,7 +384,7 @@ static bool state_ready(uint8_t hub) {
 static bool state_in_recv(uint8_t hub) {
   if (usb_host->in)
     usb_host->in(hub, in_buffer);
-  unlock_transaction();
+  unlock_transaction(hub);
   delay_us(hub, 250, STATE_READY);
   return false;
 }
@@ -522,6 +525,7 @@ static bool fsm(uint8_t hub) {
       USB_CTRL = bUC_HOST_MODE | bUC_INT_BUSY | bUC_DMA_EN;
       if (usb_host->disconnected)
         usb_host->disconnected(hub);
+      unlock_transaction(hub);
     }
   }
   switch (state[hub]) {
