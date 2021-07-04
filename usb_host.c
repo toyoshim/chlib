@@ -393,8 +393,9 @@ static bool state_ready(uint8_t hub) {
 }
 
 static bool state_in_recv(uint8_t hub) {
-  if (usb_host->in)
+  if (usb_host->in && !do_not_retry[hub])
     usb_host->in(hub, in_buffer);
+  do_not_retry[hub] = false;
   unlock_transaction(hub);
   delay_us(hub, 250, STATE_READY);
   return false;
@@ -665,6 +666,9 @@ bool usb_host_in(uint8_t hub, uint8_t ep, uint8_t size) {
   if (!usb_host_ready(hub) || !lock_transaction(hub, 1 + hub))
     return false;
   transaction_stage = 2;
+  // Do not retry as hid returns NAK if the report isn't changed in idle state.
+  // This flag keeps true if the request fails with NAK.
+  do_not_retry[hub] = true;
   host_in_transfer(hub, ep, size, STATE_IN_RECV);
   return false;
 }
