@@ -30,6 +30,7 @@ enum {
 
   STATE_DONE,
   STATE_READY,
+  STATE_HALT,
 
   STATE_IN_RECV,
   STATE_HID_GET_REPORT,
@@ -110,9 +111,8 @@ static bool resetting[2] = { false, false };
 static bool is_hid[2] = { false, false };
 static uint8_t hid_interface_number[2] = { 0, 0 };
 
-static void halt(const char* message) {
-  Serial.println(message);
-  for (;;);
+static void halt(uint8_t hub) {
+  state[hub] = STATE_HALT;
 }
 
 static void delay_us(uint8_t hub, uint16_t delay_us, uint8_t next_state) {
@@ -490,7 +490,7 @@ static bool state_transaction(uint8_t hub) {
   }
 
   Serial.printf("\ntransmit error: %x\n", USB_INT_ST);
-  halt("");
+  halt(hub);
   return false;
 }
 
@@ -575,8 +575,12 @@ static bool fsm(uint8_t hub) {
       return state_get_hid_report_desc(hub);
     case STATE_GET_HID_REPORT_DESC_RECV:
       return state_get_hid_report_desc_recv(hub);
+    case STATE_DONE:
+      return state_done(hub);
     case STATE_READY:
       return state_ready(hub);
+    case STATE_HALT:
+      return false;
     case STATE_IN_RECV:
       return state_in_recv(hub);
     case STATE_HID_GET_REPORT:
@@ -598,7 +602,7 @@ static bool fsm(uint8_t hub) {
     case STATE_TRANSACTION_RETRY:
       return state_transaction_retry(hub);
     default:
-      halt("unknown state");
+      halt(hub);
   }
   return false;
 }
