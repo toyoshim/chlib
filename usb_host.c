@@ -32,6 +32,7 @@ enum {
   STATE_READY,
 
   STATE_IN_RECV,
+  STATE_HID_GET_REPORT,
 
   STATE_DELAY_US,
   STATE_DELAY_MS,
@@ -50,7 +51,6 @@ static struct usb_setup_req set_address_descriptor = {
   0x00,
   0x00,
 };
-
 static const struct usb_setup_req get_device_descriptor = {
   USB_REQ_DIR_IN,
   USB_GET_DESCRIPTOR,
@@ -79,6 +79,13 @@ static struct usb_setup_req get_hid_report_descriptor = {
   0x00,
   0x00,  // requesting descriptor size: can be modified
 };
+static struct usb_setup_req hid_get_report = {
+  USB_REQ_DIR_IN | USB_REQ_TYPE_CLASS | USB_REQ_RECPT_INTERFACE,
+  USB_HID_GET_REPORT,
+  (1 << 8) | 0,  // report type, report id: can be modified
+  0x00,  // interface: can be modified
+  0x00,  // report length: can be modified
+};
 
 static struct usb_host* usb_host = 0;
 
@@ -101,6 +108,7 @@ static uint16_t delay_end[2] = { 0, 0 };
 static uint8_t delay_next_state[2] = { 0, 0 };
 static bool resetting[2] = { false, false };
 static bool is_hid[2] = { false, false };
+static uint8_t hid_interface_number[2] = { 0, 0 };
 
 static void halt(const char* message) {
   Serial.println(message);
@@ -328,6 +336,8 @@ static bool state_get_configuration_desc_recv(uint8_t hub) {
         (const struct usb_desc_interface*)(in_buffer + offset);
       if (intf->bInterfaceClass == USB_CLASS_HID)
         is_hid[hub] = true;
+      if (is_hid[hub])
+        hid_interface_number[hub] = intf->bInterfaceNumber;
     } else if (head->bDescriptorType == USB_DESC_HID) {
       const struct usb_desc_hid* hid =
           (const struct usb_desc_hid*)(in_buffer + offset);
@@ -384,6 +394,14 @@ static bool state_ready(uint8_t hub) {
 static bool state_in_recv(uint8_t hub) {
   if (usb_host->in)
     usb_host->in(hub, in_buffer);
+  unlock_transaction(hub);
+  delay_us(hub, 250, STATE_READY);
+  return false;
+}
+
+static bool state_hid_get_report(uint8_t hub) {
+  if (usb_host->hid_report)
+    usb_host->hid_report(hub, in_buffer);
   unlock_transaction(hub);
   delay_us(hub, 250, STATE_READY);
   return false;
@@ -561,6 +579,8 @@ static bool fsm(uint8_t hub) {
       return state_ready(hub);
     case STATE_IN_RECV:
       return state_in_recv(hub);
+    case STATE_HID_GET_REPORT:
+      return state_hid_get_report(hub);
     case STATE_DELAY_US:
       return state_delay_us(hub);
     case STATE_DELAY_MS:
@@ -637,4 +657,20 @@ bool usb_host_in(uint8_t hub, uint8_t ep, uint8_t size) {
   transaction_stage = 2;
   host_in_transfer(hub, ep, size, STATE_IN_RECV);
   return false;
+}
+
+bool usb_host_hid_get_report(uint8_t hub, uint8_t id, uint8_t size) {
+  if (!is_hid[hub])
+    return false;
+  if (!usb_host_ready(hub) || !lock_transaction(hub, 1 + hub))
+    return false;
+  hid_get_report.wValue = (1 << 8) | id;
+  hid_get_report.wIndex = hid_interface_number[hub];
+  hid_get_report.wLength = size;
+  host_setup_transfer(
+      hub,
+      (uint8_t*)&hid_get_report,
+      sizeof(hid_get_report),
+      STATE_HID_GET_REPORT);
+  return true;
 }
