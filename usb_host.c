@@ -110,6 +110,7 @@ static uint8_t delay_next_state[2] = { 0, 0 };
 static bool resetting[2] = { false, false };
 static bool is_hid[2] = { false, false };
 static uint8_t hid_interface_number[2] = { 0, 0 };
+static bool do_not_retry[2] = { false, false };
 
 static void halt(uint8_t hub) {
   state[hub] = STATE_HALT;
@@ -400,8 +401,9 @@ static bool state_in_recv(uint8_t hub) {
 }
 
 static bool state_hid_get_report(uint8_t hub) {
-  if (usb_host->hid_report)
+  if (usb_host->hid_report && !do_not_retry[hub])
     usb_host->hid_report(hub, in_buffer);
+  do_not_retry[hub] = false;
   unlock_transaction(hub);
   delay_us(hub, 250, STATE_READY);
   return false;
@@ -482,9 +484,13 @@ static bool state_transaction(uint8_t hub) {
       }
     }
     state[hub] = transaction_recv_state;
+    do_not_retry[hub] = false;
     return true;
   }
   if (token == USB_PID_NAK) {
+    if (do_not_retry[hub] = true) {
+      state[hub] = transaction_recv_state;
+    }
     delay_us(hub, 250, STATE_TRANSACTION_RETRY);
     return false;
   }
@@ -671,6 +677,9 @@ bool usb_host_hid_get_report(uint8_t hub, uint8_t id, uint8_t size) {
   hid_get_report.wValue = (1 << 8) | id;
   hid_get_report.wIndex = hid_interface_number[hub];
   hid_get_report.wLength = size;
+  // Do not retry as hid returns NAK if the report isn't changed in idle state.
+  // This flag keeps true if the request fails with NAK.
+  do_not_retry[hub] = true;
   host_setup_transfer(
       hub,
       (uint8_t*)&hid_get_report,
