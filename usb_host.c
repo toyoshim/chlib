@@ -95,6 +95,7 @@ static uint8_t* rx_buffer = _rx_buffer;
 static uint8_t in_buffer[1024];
 static uint8_t _tx_buffer[64 + 1];
 static uint8_t* tx_buffer = _tx_buffer;
+static uint16_t ep_max_packet_size[2][16];
 
 static int8_t transaction_lock = -1;
 static uint8_t* transaction_buffer = 0;
@@ -111,6 +112,7 @@ static bool resetting[2] = { false, false };
 static bool is_hid[2] = { false, false };
 static uint8_t hid_interface_number[2] = { 0, 0 };
 static bool do_not_retry[2] = { false, false };
+static uint16_t user_request_size = 0;
 
 static void halt(uint8_t hub) {
   state[hub] = STATE_HALT;
@@ -182,7 +184,8 @@ static void host_transact_cont(uint8_t hub) {
 }
 
 static void host_transact(
-    uint8_t hub, uint8_t* buffer, uint16_t size, uint8_t recv_state, uint8_t ep, uint8_t pid, uint8_t tog) {
+    uint8_t hub, uint8_t* buffer, uint16_t size, uint8_t recv_state,
+    uint8_t ep, uint8_t pid, uint8_t tog) {
   transaction_buffer = buffer;
   transaction_size = size;
   transaction_recv_state = recv_state;
@@ -203,13 +206,15 @@ static void host_in_transfer(
 }
 
 static void host_out_transfer(
-    uint8_t hub, uint8_t ep, uint8_t* buffer, uint16_t size, uint8_t recv_state) {
+    uint8_t hub, uint8_t ep, uint8_t* buffer, uint16_t size,
+    uint8_t recv_state) {
   uint8_t tog = bUH_R_TOG | bUH_R_AUTO_TOG | bUH_T_TOG | bUH_T_AUTO_TOG;
   host_transact(hub, buffer, size, recv_state, ep, USB_PID_OUT, tog);
 }
 
 static void host_ack_transfer(
-    uint8_t hub, uint8_t ep, uint8_t* buffer, uint16_t size, uint8_t recv_state) {
+    uint8_t hub, uint8_t ep, uint8_t* buffer, uint16_t size,
+    uint8_t recv_state) {
   uint8_t tog = bUH_R_TOG | bUH_R_AUTO_TOG | bUH_T_TOG | bUH_T_AUTO_TOG;
   host_transact(hub, buffer, size, recv_state, ep, USB_PID_ACK, tog);
 }
@@ -302,8 +307,10 @@ static bool state_get_device_desc_recv(uint8_t hub) {
   if (usb_host->check_device_desc)
     usb_host->check_device_desc(hub, in_buffer);
 
-  get_configuration_descriptor.wLength = 0x09;  // request the core part.
+  ep_max_packet_size[hub][0] = desc->bMaxPacketSize0;
   is_hid[hub] = desc->bDeviceClass == USB_CLASS_HID;
+
+  get_configuration_descriptor.wLength = 0x09;  // request the core part.
   delay_us(hub, 250, STATE_GET_CONFIGURATION_DESC);
   return false;
 }
@@ -329,6 +336,9 @@ static bool state_get_configuration_desc_recv(uint8_t hub) {
   set_configuration_descriptor.wValue = desc->bConfigurationValue;
   // Note: multiple configurations are not supported.
 
+  for (uint8_t i = 1; i < 16; ++i)
+    ep_max_packet_size[hub][i] = 0;
+
   for (uint16_t offset = 0; offset < desc->wTotalLength; ) {
     const struct usb_desc_head* head =
         (const struct usb_desc_head*)(in_buffer + offset);
@@ -343,6 +353,11 @@ static bool state_get_configuration_desc_recv(uint8_t hub) {
       const struct usb_desc_hid* hid =
           (const struct usb_desc_hid*)(in_buffer + offset);
       get_hid_report_descriptor.wLength = hid->wDescriptorLength;
+    } else if (head->bDescriptorType == USB_DESC_ENDPOINT) {
+      const struct usb_desc_endpoint* ep =
+          (const struct usb_desc_endpoint*)(in_buffer + offset);
+      ep_max_packet_size[hub][ep->bEndpointAddress & 0x0f] =
+          ep->wMaxPacketSize;
     }
     offset += head->bLength;
   }
@@ -383,7 +398,7 @@ static bool state_get_hid_report_desc_recv(uint8_t hub) {
 
 static bool state_done(uint8_t hub) {
   unlock_transaction(hub);
-  delay_us(hub, 250, STATE_READY);
+  delay_ms(hub, 1, STATE_READY);
   return false;
 }
 
@@ -394,7 +409,7 @@ static bool state_ready(uint8_t hub) {
 
 static bool state_in_recv(uint8_t hub) {
   if (usb_host->in && !do_not_retry[hub])
-    usb_host->in(hub, in_buffer);
+    usb_host->in(hub, in_buffer, user_request_size - transaction_size);
   do_not_retry[hub] = false;
   unlock_transaction(hub);
   delay_us(hub, 250, STATE_READY);
@@ -434,8 +449,7 @@ static bool state_transaction(uint8_t hub) {
   uint8_t pid = transaction_ep_pid >> 4;
   uint8_t token = USB_INT_ST & MASK_UIS_HRES;
   if (pid == USB_PID_IN && token != USB_PID_NAK) {
-    uint16_t size = (transaction_size > USB_RX_LEN)
-        ? USB_RX_LEN : transaction_size;
+    uint16_t size = USB_RX_LEN;
     for (uint16_t i = 0; i < size; ++i)
       transaction_buffer[i] = rx_buffer[i];
     transaction_buffer = &transaction_buffer[size];
@@ -443,7 +457,8 @@ static bool state_transaction(uint8_t hub) {
   }
 
   if (U_TOG_OK || token == USB_PID_DATA0 || token == USB_PID_DATA1) {
-    if (transaction_size) {
+    if (transaction_size &&
+        USB_RX_LEN == ep_max_packet_size[hub][transaction_ep_pid & 0x0f]) {
       delay_us(hub, 250, STATE_TRANSACTION_CONT);
       return false;
     }
@@ -477,20 +492,15 @@ static bool state_transaction(uint8_t hub) {
         delay_us(hub, 250, STATE_TRANSACTION_IN);
         return false;
       }
-    } else if (transaction_stage == 2) {
-      // Ack
-      if (pid == USB_PID_IN) {
-        delay_us(hub, 250, STATE_TRANSACTION_ACK);
-        return false;
-      }
     }
     state[hub] = transaction_recv_state;
     do_not_retry[hub] = false;
     return true;
   }
   if (token == USB_PID_NAK) {
-    if (do_not_retry[hub] = true) {
+    if (do_not_retry[hub] == true) {
       state[hub] = transaction_recv_state;
+      return true;
     }
     delay_us(hub, 250, STATE_TRANSACTION_RETRY);
     return false;
@@ -669,7 +679,16 @@ bool usb_host_in(uint8_t hub, uint8_t ep, uint8_t size) {
   // Do not retry as hid returns NAK if the report isn't changed in idle state.
   // This flag keeps true if the request fails with NAK.
   do_not_retry[hub] = true;
+  user_request_size = size;
   host_in_transfer(hub, ep, size, STATE_IN_RECV);
+  return false;
+}
+
+bool usb_host_out(uint8_t hub, uint8_t ep, uint8_t* data, uint8_t size) {
+  if (!usb_host_ready(hub) || !lock_transaction(hub, 1 + hub))
+    return false;
+  transaction_stage = 2;
+  host_out_transfer(hub, ep, data, size, STATE_DONE);
   return false;
 }
 

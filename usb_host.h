@@ -22,7 +22,7 @@ struct usb_host {
   void (*check_device_desc)(uint8_t hub, const uint8_t* desc);
   void (*check_configuration_desc)(uint8_t hub, const uint8_t* desc);
   void (*check_hid_report_desc)(uint8_t hub, const uint8_t* desc);
-  void (*in)(uint8_t hub, const uint8_t* data);
+  void (*in)(uint8_t hub, const uint8_t* data, uint16_t size);
   void (*hid_report)(uint8_t hub, const uint8_t* data);
 };
 
@@ -31,6 +31,7 @@ void usb_host_poll();
 bool usb_host_ready(uint8_t hub);
 bool usb_host_idle();
 bool usb_host_in(uint8_t hub, uint8_t ep, uint8_t size);
+bool usb_host_out(uint8_t hub, uint8_t ep, uint8_t* data, uint8_t size);
 bool usb_host_hid_get_report(uint8_t hub, uint8_t id, uint8_t size);
 
 #endif  // __usb_host_h__
