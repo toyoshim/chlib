@@ -512,8 +512,8 @@ static bool state_transaction(uint8_t hub) {
 static bool state_transaction_in(uint8_t hub) {
   const struct usb_setup_req* req = (const struct usb_setup_req*)tx_buffer;
   const uint8_t ep = transaction_ep_pid & 0x0f;
-  uint16_t size = (transaction_stage == 1) ? 0 : req->wLength;
-  host_in_transfer(hub, ep, size, transaction_recv_state);
+  user_request_size = (transaction_stage == 1) ? 0 : req->wLength;
+  host_in_transfer(hub, ep, user_request_size, transaction_recv_state);
   return false;
 }
 
@@ -676,9 +676,10 @@ bool usb_host_setup(
     return false;
   for (uint16_t i = 0; i < req->wLength; ++i)
     buffer[i] = data[i];
-  // TODO: support SETUP IN.
   host_setup_transfer(
-      hub, (uint8_t*)req, sizeof(struct usb_setup_req), STATE_DONE);
+      hub, (uint8_t*)req, sizeof(struct usb_setup_req),
+          ((req->bRequestType & USB_REQ_DIR_MASK) == USB_REQ_DIR_IN)
+              ? STATE_IN_RECV : STATE_DONE);
   return true;
 }
 
