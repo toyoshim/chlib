@@ -10,6 +10,7 @@
 
 // Should be included from the main source file to set up interrupt handler.
 #include "timer3.h"
+#include "usb.h"
 
 enum {
   USE_HUB0 = 1 << 0,
@@ -30,6 +31,8 @@ void usb_host_init(struct usb_host* host);
 void usb_host_poll();
 bool usb_host_ready(uint8_t hub);
 bool usb_host_idle();
+bool usb_host_setup(
+    uint8_t hub, const struct usb_setup_req* req, const uint8_t* data);
 bool usb_host_in(uint8_t hub, uint8_t ep, uint8_t size);
 bool usb_host_out(uint8_t hub, uint8_t ep, uint8_t* data, uint8_t size);
 bool usb_host_hid_get_report(uint8_t hub, uint8_t id, uint8_t size);
