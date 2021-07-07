@@ -188,7 +188,7 @@ static bool find_string_index(uint8_t* index) {
   return false;
 }
 
-static void host_transact_cont(uint8_t hub) {
+static void host_transact_cont(uint8_t hub, uint8_t tog) {
   uint16_t size;
   if ((transaction_ep_pid >> 4) != USB_PID_IN) {
     size = (transaction_size < 64) ? transaction_size : 64;
@@ -210,45 +210,42 @@ static void host_transact_cont(uint8_t hub) {
 #endif  // _DBG_SEND_LOG
 
   UH_EP_PID = transaction_ep_pid;
+  UH_RX_CTRL = UH_TX_CTRL = tog;
   UIF_TRANSFER = 0;
   state[hub] = STATE_TRANSACTION;
 }
 
 static void host_transact(
     uint8_t hub, uint8_t* buffer, uint16_t size, uint8_t recv_state,
-    uint8_t ep, uint8_t pid, uint8_t tog) {
+    uint8_t ep, uint8_t pid) {
   transaction_buffer = buffer;
   transaction_size = size;
   transaction_recv_state = recv_state;
   transaction_ep_pid = (pid << 4) | (ep & 0x0f);
-  UH_RX_CTRL = UH_TX_CTRL = tog;
-  host_transact_cont(hub);
+  host_transact_cont(hub, 0);
 }
 
 static void host_setup_transfer(
     uint8_t hub, uint8_t* buffer, uint16_t size, uint8_t recv_state) {
   transaction_stage = 0;
-  host_transact(hub, buffer, size, recv_state, 0, USB_PID_SETUP, 0);
+  host_transact(hub, buffer, size, recv_state, 0, USB_PID_SETUP);
 }
 
 static void host_in_transfer(
     uint8_t hub, uint8_t ep, uint16_t size, uint8_t recv_state) {
-  uint8_t tog = bUH_R_TOG | bUH_R_AUTO_TOG | bUH_T_TOG | bUH_T_AUTO_TOG;
-  host_transact(hub, buffer, size, recv_state, ep, USB_PID_IN, tog);
+  host_transact(hub, buffer, size, recv_state, ep, USB_PID_IN);
 }
 
 static void host_out_transfer(
     uint8_t hub, uint8_t ep, uint8_t* buffer, uint16_t size,
     uint8_t recv_state) {
-  uint8_t tog = bUH_R_TOG | bUH_R_AUTO_TOG | bUH_T_TOG | bUH_T_AUTO_TOG;
-  host_transact(hub, buffer, size, recv_state, ep, USB_PID_OUT, tog);
+  host_transact(hub, buffer, size, recv_state, ep, USB_PID_OUT);
 }
 
 static void host_ack_transfer(
     uint8_t hub, uint8_t ep, uint8_t* buffer, uint16_t size,
     uint8_t recv_state) {
-  uint8_t tog = bUH_R_TOG | bUH_R_AUTO_TOG | bUH_T_TOG | bUH_T_AUTO_TOG;
-  host_transact(hub, buffer, size, recv_state, ep, USB_PID_ACK, tog);
+  host_transact(hub, buffer, size, recv_state, ep, USB_PID_ACK);
 }
 
 static bool state_idle(uint8_t hub) {
@@ -648,7 +645,7 @@ static bool state_transaction_ack(uint8_t hub) {
 }
 
 static bool state_transaction_cont(uint8_t hub) {
-  host_transact_cont(hub);
+  host_transact_cont(hub, bUH_R_TOG | bUH_R_AUTO_TOG | bUH_T_TOG | bUH_T_AUTO_TOG);
   return false;
 }
 
