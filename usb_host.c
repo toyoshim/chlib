@@ -26,6 +26,8 @@ enum {
   STATE_GET_FULL_CONFIGURATION_DESC,
   STATE_GET_FULL_CONFIGURATION_DESC_RECV,
   STATE_SET_CONFIGURATION,
+  STATE_SET_CONFIGURATION_DONE,
+  STATE_SET_FEATURE,
   STATE_HID_SETUP,
   STATE_GET_HID_REPORT_DESC,
   STATE_GET_HID_REPORT_DESC_RECV,
@@ -80,6 +82,13 @@ static struct usb_setup_req set_configuration_descriptor = {
   USB_REQ_DIR_OUT,
   USB_SET_CONFIGURATION,
   0x0000,  // configuration id: can be modified
+  0x0000,
+  0x0000,
+};
+static const struct usb_setup_req set_feature_descriptor = {
+  USB_REQ_DIR_OUT,
+  USB_SET_FEATURE,
+  0x0001,  // DEVICE_REMOTE_WAKEUP
   0x0000,
   0x0000,
 };
@@ -456,6 +465,20 @@ static bool state_set_configuration(uint8_t hub) {
       hub,
       (uint8_t*)&set_configuration_descriptor,
       sizeof(set_configuration_descriptor),
+      STATE_SET_CONFIGURATION_DONE);
+  return false;
+}
+
+static bool state_set_configuration_done(uint8_t hub) {
+  delay_us(hub, 250, STATE_SET_FEATURE);
+  return false;
+}
+
+static bool state_set_feature(uint8_t hub) {
+  host_setup_transfer(
+      hub,
+      (uint8_t*)&set_feature_descriptor,
+      sizeof(set_feature_descriptor),
       is_hid[hub] ? STATE_HID_SETUP : STATE_DONE);
   return false;
 }
@@ -681,6 +704,10 @@ static bool fsm(uint8_t hub) {
       return state_get_configuration_desc_recv(hub);
     case STATE_SET_CONFIGURATION:
       return state_set_configuration(hub);
+    case STATE_SET_CONFIGURATION_DONE:
+      return state_set_configuration_done(hub);
+    case STATE_SET_FEATURE:
+      return state_set_feature(hub);
     case STATE_HID_SETUP:
       return state_hid_setup(hub);
     case STATE_GET_HID_REPORT_DESC:
