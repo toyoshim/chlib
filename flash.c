@@ -48,7 +48,7 @@ static bool restore() {
   enter();
   bool result = true;
   uint16_t addr = (uint16_t)data_flash;
-  for (uint16_t i = 0; i < flash_size; i += 2) {
+  for (int16_t i = flash_size - 2; i >= 0; i -= 2) {
     ROM_ADDR_H = (addr + i) >> 8;
     ROM_ADDR_L = addr + i;
     ROM_DATA_H = code_flash[i + 1];
