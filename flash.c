@@ -109,9 +109,10 @@ bool flash_write(uint16_t offset, const uint8_t* data, uint16_t size) {
     ROM_ADDR_H = (uint16_t)(code_flash + i) >> 8;
     ROM_ADDR_L = (uint16_t)(code_flash + i);
     ROM_DATA_H = (offset <= (i + 1) && (i + 1) < (offset + size))
-        ?  data[i + 1 - offset] : data_flash[i + 1];
-    ROM_DATA_L = (offset <= i && i < (offset + size))
-        ?  data[i - offset] : data_flash[i];
+                     ? data[i + 1 - offset]
+                     : data_flash[i + 1];
+    ROM_DATA_L =
+        (offset <= i && i < (offset + size)) ? data[i - offset] : data_flash[i];
     ROM_CTRL = 0x9a;
     if (ROM_STATUS != 0xc0) {
       result = false;

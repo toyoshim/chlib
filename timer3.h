@@ -17,7 +17,7 @@ uint16_t timer3_tick_raw();
 uint16_t timer3_tick_from_usec(uint16_t usec);
 uint16_t timer3_tick_msec();
 uint16_t timer3_tick_sec();
-bool timer3_tick_raw_between(uint16_t begin, uint16_t end);  // inclusive
+bool timer3_tick_raw_between(uint16_t begin, uint16_t end);   // inclusive
 bool timer3_tick_msec_between(uint16_t begin, uint16_t end);  // inclusive
 
 #endif  // __timer3_h__

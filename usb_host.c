@@ -51,60 +51,45 @@ enum {
 };
 
 static struct usb_setup_req set_address_descriptor = {
-  USB_REQ_DIR_OUT,
-  USB_SET_ADDRESS,
-  0x0000,  // address: can be modified
-  0x0000,
-  0x0000,
+    USB_REQ_DIR_OUT, USB_SET_ADDRESS,
+    0x0000,  // address: can be modified
+    0x0000,          0x0000,
 };
 static struct usb_setup_req get_device_descriptor = {
-  USB_REQ_DIR_IN,
-  USB_GET_DESCRIPTOR,
-  USB_DESC_DEVICE << 8,
-  0x0000,
-  0x0012,  // requesting descriptor size: can be modified
+    USB_REQ_DIR_IN, USB_GET_DESCRIPTOR, USB_DESC_DEVICE << 8, 0x0000,
+    0x0012,  // requesting descriptor size: can be modified
 };
 static struct usb_setup_req get_string_descriptor = {
-  USB_REQ_DIR_IN,
-  USB_GET_DESCRIPTOR,
-  USB_DESC_STRING << 8,
-  0x0409,
-  0x0002,  // requesting descriptor size: can be modified
+    USB_REQ_DIR_IN, USB_GET_DESCRIPTOR, USB_DESC_STRING << 8, 0x0409,
+    0x0002,  // requesting descriptor size: can be modified
 };
 static struct usb_setup_req get_configuration_descriptor = {
-  USB_REQ_DIR_IN,
-  USB_GET_DESCRIPTOR,
-  USB_DESC_CONFIGURATION << 8,
-  0x0000,
-  0x0009,  // requesting descriptor size: can be modified
+    USB_REQ_DIR_IN, USB_GET_DESCRIPTOR, USB_DESC_CONFIGURATION << 8, 0x0000,
+    0x0009,  // requesting descriptor size: can be modified
 };
 static struct usb_setup_req set_configuration_descriptor = {
-  USB_REQ_DIR_OUT,
-  USB_SET_CONFIGURATION,
-  0x0000,  // configuration id: can be modified
-  0x0000,
-  0x0000,
+    USB_REQ_DIR_OUT, USB_SET_CONFIGURATION,
+    0x0000,  // configuration id: can be modified
+    0x0000,          0x0000,
 };
 static const struct usb_setup_req set_feature_descriptor = {
-  USB_REQ_DIR_OUT,
-  USB_SET_FEATURE,
-  0x0001,  // DEVICE_REMOTE_WAKEUP
-  0x0000,
-  0x0000,
+    USB_REQ_DIR_OUT, USB_SET_FEATURE,
+    0x0001,  // DEVICE_REMOTE_WAKEUP
+    0x0000,          0x0000,
 };
 static struct usb_setup_req get_hid_report_descriptor = {
-  USB_REQ_DIR_IN | USB_REQ_RECPT_INTERFACE,
-  USB_GET_DESCRIPTOR,
-  USB_DESC_HID_REPORT << 8,
-  0x0000,
-  0x0000,  // requesting descriptor size: can be modified
+    USB_REQ_DIR_IN | USB_REQ_RECPT_INTERFACE,
+    USB_GET_DESCRIPTOR,
+    USB_DESC_HID_REPORT << 8,
+    0x0000,
+    0x0000,  // requesting descriptor size: can be modified
 };
 static struct usb_setup_req hid_get_report = {
-  USB_REQ_DIR_IN | USB_REQ_TYPE_CLASS | USB_REQ_RECPT_INTERFACE,
-  USB_HID_GET_REPORT,
-  (1 << 8) | 0,  // report type, report id: can be modified
-  0x0000,  // interface: can be modified
-  0x0000,  // report length: can be modified
+    USB_REQ_DIR_IN | USB_REQ_TYPE_CLASS | USB_REQ_RECPT_INTERFACE,
+    USB_HID_GET_REPORT,
+    (1 << 8) | 0,  // report type, report id: can be modified
+    0x0000,        // interface: can be modified
+    0x0000,        // report length: can be modified
 };
 
 static struct usb_host* usb_host = 0;
@@ -123,17 +108,17 @@ static uint8_t transaction_recv_state = STATE_IDLE;
 static uint8_t transaction_ep_pid = 0;
 static uint8_t transaction_stage = 0;
 
-static uint8_t state[2] = { STATE_IDLE, STATE_IDLE };
-static bool initial_check[2] = { false, false };
-static uint16_t delay_begin[2] = { 0, 0 };
-static uint16_t delay_end[2] = { 0, 0 };
-static uint8_t delay_next_state[2] = { 0, 0 };
-static bool resetting[2] = { false, false };
-static bool is_hid[2] = { false, false };
-static uint8_t hid_interface_number[2] = { 0, 0 };
-static bool do_not_retry[2] = { false, false };
+static uint8_t state[2] = {STATE_IDLE, STATE_IDLE};
+static bool initial_check[2] = {false, false};
+static uint16_t delay_begin[2] = {0, 0};
+static uint16_t delay_end[2] = {0, 0};
+static uint8_t delay_next_state[2] = {0, 0};
+static bool resetting[2] = {false, false};
+static bool is_hid[2] = {false, false};
+static uint8_t hid_interface_number[2] = {0, 0};
+static bool do_not_retry[2] = {false, false};
 static uint16_t user_request_size = 0;
-static uint8_t string_index[3] = { 0, 0, 0 };
+static uint8_t string_index[3] = {0, 0, 0};
 
 static void halt(uint8_t hub) {
   state[hub] = STATE_HALT;
@@ -203,9 +188,10 @@ static void host_transact_cont(uint8_t hub, uint8_t tog) {
   }
 
 #ifdef _DBG_SEND_LOG
-  Serial.printf("ep: %d, pid: %d, size: %d; ", transaction_ep_pid & 0xf, transaction_ep_pid >> 4, size);
+  Serial.printf("ep: %d, pid: %d, size: %d; ", transaction_ep_pid & 0xf,
+                transaction_ep_pid >> 4, size);
   for (uint8_t i = 0; i < UH_TX_LEN; ++i)
-    Serial.printf("%x,",tx_buffer[i]);
+    Serial.printf("%x,", tx_buffer[i]);
   Serial.printf("\n");
 #endif  // _DBG_SEND_LOG
 
@@ -215,9 +201,12 @@ static void host_transact_cont(uint8_t hub, uint8_t tog) {
   state[hub] = STATE_TRANSACTION;
 }
 
-static void host_transact(
-    uint8_t hub, uint8_t* buffer, uint16_t size, uint8_t recv_state,
-    uint8_t ep, uint8_t pid) {
+static void host_transact(uint8_t hub,
+                          uint8_t* buffer,
+                          uint16_t size,
+                          uint8_t recv_state,
+                          uint8_t ep,
+                          uint8_t pid) {
   transaction_buffer = buffer;
   transaction_size = size;
   transaction_recv_state = recv_state;
@@ -225,26 +214,34 @@ static void host_transact(
   host_transact_cont(hub, 0);
 }
 
-static void host_setup_transfer(
-    uint8_t hub, uint8_t* buffer, uint16_t size, uint8_t recv_state) {
+static void host_setup_transfer(uint8_t hub,
+                                uint8_t* buffer,
+                                uint16_t size,
+                                uint8_t recv_state) {
   transaction_stage = 0;
   host_transact(hub, buffer, size, recv_state, 0, USB_PID_SETUP);
 }
 
-static void host_in_transfer(
-    uint8_t hub, uint8_t ep, uint16_t size, uint8_t recv_state) {
+static void host_in_transfer(uint8_t hub,
+                             uint8_t ep,
+                             uint16_t size,
+                             uint8_t recv_state) {
   host_transact(hub, buffer, size, recv_state, ep, USB_PID_IN);
 }
 
-static void host_out_transfer(
-    uint8_t hub, uint8_t ep, uint8_t* buffer, uint16_t size,
-    uint8_t recv_state) {
+static void host_out_transfer(uint8_t hub,
+                              uint8_t ep,
+                              uint8_t* buffer,
+                              uint16_t size,
+                              uint8_t recv_state) {
   host_transact(hub, buffer, size, recv_state, ep, USB_PID_OUT);
 }
 
-static void host_ack_transfer(
-    uint8_t hub, uint8_t ep, uint8_t* buffer, uint16_t size,
-    uint8_t recv_state) {
+static void host_ack_transfer(uint8_t hub,
+                              uint8_t ep,
+                              uint8_t* buffer,
+                              uint16_t size,
+                              uint8_t recv_state) {
   host_transact(hub, buffer, size, recv_state, ep, USB_PID_ACK);
 }
 
@@ -298,8 +295,8 @@ static bool state_enable(uint8_t hub) {
     UHUB1_CTRL |= bUH_PORT_EN;
   }
   // Wait >200us.
-  delay_us(
-      hub, 250, initial_check[hub] ? STATE_GET_DEVICE_DESC : STATE_SET_ADDRESS);
+  delay_us(hub, 250,
+           initial_check[hub] ? STATE_GET_DEVICE_DESC : STATE_SET_ADDRESS);
   return false;
 }
 
@@ -308,11 +305,8 @@ static bool state_set_address(uint8_t hub) {
     return false;
 
   set_address_descriptor.wValue = 1 + hub;
-  host_setup_transfer(
-      hub,
-      (uint8_t*)&set_address_descriptor,
-      sizeof(set_address_descriptor),
-      STATE_SET_ADDRESS_DONE);
+  host_setup_transfer(hub, (uint8_t*)&set_address_descriptor,
+                      sizeof(set_address_descriptor), STATE_SET_ADDRESS_DONE);
   return false;
 }
 
@@ -326,14 +320,12 @@ static bool state_set_address_done(uint8_t hub) {
 
 static bool state_get_device_desc(uint8_t hub) {
   if (initial_check[hub] && !lock_transaction(hub, 0))
-     return false;
+    return false;
 
   get_device_descriptor.wLength = initial_check[hub] ? 0x08 : 0x12;
-  host_setup_transfer(
-      hub,
-      (uint8_t*)&get_device_descriptor,
-      sizeof(get_device_descriptor),
-      STATE_GET_DEVICE_DESC_RECV);
+  host_setup_transfer(hub, (uint8_t*)&get_device_descriptor,
+                      sizeof(get_device_descriptor),
+                      STATE_GET_DEVICE_DESC_RECV);
   return false;
 }
 
@@ -371,11 +363,9 @@ static bool state_get_string_desc(uint8_t hub) {
     return true;
   }
   get_string_descriptor.wValue = (USB_DESC_STRING << 8) | string_index[i];
-  host_setup_transfer(
-      hub,
-      (uint8_t*)&get_string_descriptor,
-      sizeof(get_string_descriptor),
-      STATE_GET_STRING_DESC_RECV);
+  host_setup_transfer(hub, (uint8_t*)&get_string_descriptor,
+                      sizeof(get_string_descriptor),
+                      STATE_GET_STRING_DESC_RECV);
   return false;
 }
 
@@ -406,11 +396,9 @@ static bool state_get_string_desc_recv(uint8_t hub) {
 }
 
 static bool state_get_configuration_desc(uint8_t hub) {
-  host_setup_transfer(
-      hub,
-      (uint8_t*)&get_configuration_descriptor,
-      sizeof(get_configuration_descriptor),
-      STATE_GET_CONFIGURATION_DESC_RECV);
+  host_setup_transfer(hub, (uint8_t*)&get_configuration_descriptor,
+                      sizeof(get_configuration_descriptor),
+                      STATE_GET_CONFIGURATION_DESC_RECV);
   return false;
 }
 
@@ -431,12 +419,12 @@ static bool state_get_configuration_desc_recv(uint8_t hub) {
   for (uint8_t i = 1; i < 16; ++i)
     ep_max_packet_size[hub][i] = 0;
 
-  for (uint16_t offset = 0; offset < desc->wTotalLength; ) {
+  for (uint16_t offset = 0; offset < desc->wTotalLength;) {
     const struct usb_desc_head* head =
         (const struct usb_desc_head*)(buffer + offset);
     if (head->bDescriptorType == USB_DESC_INTERFACE) {
       const struct usb_desc_interface* intf =
-        (const struct usb_desc_interface*)(buffer + offset);
+          (const struct usb_desc_interface*)(buffer + offset);
       if (intf->bInterfaceClass == USB_CLASS_HID)
         is_hid[hub] = true;
       if (is_hid[hub])
@@ -448,8 +436,7 @@ static bool state_get_configuration_desc_recv(uint8_t hub) {
     } else if (head->bDescriptorType == USB_DESC_ENDPOINT) {
       const struct usb_desc_endpoint* ep =
           (const struct usb_desc_endpoint*)(buffer + offset);
-      ep_max_packet_size[hub][ep->bEndpointAddress & 0x0f] =
-          ep->wMaxPacketSize;
+      ep_max_packet_size[hub][ep->bEndpointAddress & 0x0f] = ep->wMaxPacketSize;
     }
     offset += head->bLength;
   }
@@ -458,11 +445,9 @@ static bool state_get_configuration_desc_recv(uint8_t hub) {
 }
 
 static bool state_set_configuration(uint8_t hub) {
-  host_setup_transfer(
-      hub,
-      (uint8_t*)&set_configuration_descriptor,
-      sizeof(set_configuration_descriptor),
-      STATE_SET_CONFIGURATION_DONE);
+  host_setup_transfer(hub, (uint8_t*)&set_configuration_descriptor,
+                      sizeof(set_configuration_descriptor),
+                      STATE_SET_CONFIGURATION_DONE);
   return false;
 }
 
@@ -472,11 +457,9 @@ static bool state_set_configuration_done(uint8_t hub) {
 }
 
 static bool state_set_feature(uint8_t hub) {
-  host_setup_transfer(
-      hub,
-      (uint8_t*)&set_feature_descriptor,
-      sizeof(set_feature_descriptor),
-      is_hid[hub] ? STATE_HID_SETUP : STATE_DONE);
+  host_setup_transfer(hub, (uint8_t*)&set_feature_descriptor,
+                      sizeof(set_feature_descriptor),
+                      is_hid[hub] ? STATE_HID_SETUP : STATE_DONE);
   return false;
 }
 
@@ -486,11 +469,9 @@ static bool state_hid_setup(uint8_t hub) {
 }
 
 static bool state_get_hid_report_desc(uint8_t hub) {
-  host_setup_transfer(
-      hub,
-      (uint8_t*)&get_hid_report_descriptor,
-      sizeof(get_hid_report_descriptor),
-      STATE_GET_HID_REPORT_DESC_RECV);
+  host_setup_transfer(hub, (uint8_t*)&get_hid_report_descriptor,
+                      sizeof(get_hid_report_descriptor),
+                      STATE_GET_HID_REPORT_DESC_RECV);
   return false;
 }
 
@@ -645,7 +626,8 @@ static bool state_transaction_ack(uint8_t hub) {
 }
 
 static bool state_transaction_cont(uint8_t hub) {
-  host_transact_cont(hub, bUH_R_TOG | bUH_R_AUTO_TOG | bUH_T_TOG | bUH_T_AUTO_TOG);
+  host_transact_cont(hub,
+                     bUH_R_TOG | bUH_R_AUTO_TOG | bUH_T_TOG | bUH_T_AUTO_TOG);
   return false;
 }
 
@@ -765,7 +747,7 @@ void usb_host_init(struct usb_host* host) {
   UH_TX_CTRL = 0x00;
   USB_CTRL = bUC_HOST_MODE | bUC_INT_BUSY | bUC_DMA_EN;
   UH_SETUP = bUH_SOF_EN;  // Enable automatic SOF
-  USB_INT_FG = 0xff;  // Clear interrupt flags
+  USB_INT_FG = 0xff;      // Clear interrupt flags
   if (host->flags & USE_HUB0)
     UHUB0_CTRL = 0x00;  // Enable HUB0
   if (host->flags & USE_HUB1)
@@ -774,15 +756,17 @@ void usb_host_init(struct usb_host* host) {
 
   for (uint8_t i = 0; i < 2; ++i)
     state[i] = STATE_IDLE;
-  
+
   timer3_tick_init();
 }
 
 void usb_host_poll() {
   if (usb_host->flags & USE_HUB0)
-    while (fsm(0));
+    while (fsm(0))
+      ;
   if (usb_host->flags & USE_HUB1)
-    while (fsm(1));
+    while (fsm(1))
+      ;
 }
 
 bool usb_host_ready(uint8_t hub) {
@@ -793,16 +777,17 @@ bool usb_host_idle() {
   return !is_transaction_locked();
 }
 
-bool usb_host_setup(
-    uint8_t hub, const struct usb_setup_req* req, const uint8_t* data) {
+bool usb_host_setup(uint8_t hub,
+                    const struct usb_setup_req* req,
+                    const uint8_t* data) {
   if (!usb_host_ready(hub) || !lock_transaction(hub, 1 + hub))
     return false;
   for (uint16_t i = 0; i < req->wLength; ++i)
     buffer[i] = data[i];
-  host_setup_transfer(
-      hub, (uint8_t*)req, sizeof(struct usb_setup_req),
-          ((req->bRequestType & USB_REQ_DIR_MASK) == USB_REQ_DIR_IN)
-              ? STATE_IN_RECV : STATE_DONE);
+  host_setup_transfer(hub, (uint8_t*)req, sizeof(struct usb_setup_req),
+                      ((req->bRequestType & USB_REQ_DIR_MASK) == USB_REQ_DIR_IN)
+                          ? STATE_IN_RECV
+                          : STATE_DONE);
   return true;
 }
 
@@ -837,10 +822,7 @@ bool usb_host_hid_get_report(uint8_t hub, uint8_t id, uint8_t size) {
   // Do not retry as hid returns NAK if the report isn't changed in idle state.
   // This flag keeps true if the request fails with NAK.
   do_not_retry[hub] = true;
-  host_setup_transfer(
-      hub,
-      (uint8_t*)&hid_get_report,
-      sizeof(hid_get_report),
-      STATE_HID_GET_REPORT);
+  host_setup_transfer(hub, (uint8_t*)&hid_get_report, sizeof(hid_get_report),
+                      STATE_HID_GET_REPORT);
   return true;
 }

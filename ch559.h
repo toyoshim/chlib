@@ -21,7 +21,7 @@ extern struct SerialLibrary {
   void (*printc)(int16_t val, uint8_t type);
   void (*print)(const char* val);
   void (*println)(const char* val);
-  void (*printf)(const char*fmt, ...);
+  void (*printf)(const char* fmt, ...);
 } Serial;
 
 void delayMicroseconds(uint32_t us);

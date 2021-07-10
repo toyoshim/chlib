@@ -18,12 +18,13 @@ void rs485_init() {
 
   // no parity, stop bit 1-bit, no interrupts by default
   SER1_LCR |= bLCR_WORD_SZ0 | bLCR_WORD_SZ1;  // data length 8-bits
-  SER1_MCR |= bMCR_HALF;  // enable half-duplex mode
-  SER1_FCR = bFCR_FIFO_EN;  // Enable FIFO
+  SER1_MCR |= bMCR_HALF;                      // enable half-duplex mode
+  SER1_FCR = bFCR_FIFO_EN;                    // Enable FIFO
 }
 
 void rs485_send(uint8_t val) {
-  while (!(SER1_LSR & bLSR_T_FIFO_EMP));
+  while (!(SER1_LSR & bLSR_T_FIFO_EMP))
+    ;
   SER1_FIFO = val;
 }
 
@@ -32,6 +33,7 @@ bool rs485_ready() {
 }
 
 uint8_t rs485_recv() {
-  while (!rs485_ready());
+  while (!rs485_ready())
+    ;
   return SER1_FIFO;
 }

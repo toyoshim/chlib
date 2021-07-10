@@ -43,7 +43,7 @@ static bool timer3_tick_le(uint16_t tick) {
 
 void timer3_tick_init() {
   T3_SETUP |= bT3_EN_CK_SE;  // Enable to access divisor settings register
-  T3_CK_SE_L = 0x80;  // Clock = Fsys(48M) / 48k = 1kHz
+  T3_CK_SE_L = 0x80;         // Clock = Fsys(48M) / 48k = 1kHz
   T3_CK_SE_H = 0xbb;
   T3_SETUP &= ~bT3_EN_CK_SE;  // Disable
   T3_END_L = 0x70;
@@ -51,10 +51,10 @@ void timer3_tick_init() {
   T3_CTRL |= bT3_CLR_ALL;
   T3_CTRL &= ~bT3_CLR_ALL;
   T3_SETUP |= bT3_IE_END;  // Enable end interrupt
-  T3_CTRL |= bT3_CNT_EN;  // Start counting
+  T3_CTRL |= bT3_CNT_EN;   // Start counting
   T3_STAT = 0xff;
   IE_TMR3 = 1;  // Enable timer3 interrupt
-  EA = 1;  // Enable interruprts
+  EA = 1;       // Enable interruprts
 }
 
 uint16_t timer3_tick_raw() {

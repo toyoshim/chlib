@@ -42,7 +42,8 @@ static void halt(const char* token) {
   Serial.printc(last_setup_req.wLength >> 8, HEX);
   Serial.printc(last_setup_req.wLength, HEX);
   Serial.println("");
-  for (;;);
+  for (;;)
+    ;
 }
 static void bus_reset() {
   UEP0_CTRL = UEP_R_RES_ACK | UEP_T_RES_NAK;
@@ -57,8 +58,9 @@ static void stall() {
 
 static void ep0_send(uint8_t len, const uint8_t* data) {
   uint8_t transfer_len = (len <= ep0_size) ? len : ep0_size;
-  if (data) for (uint8_t i = 0; i < transfer_len; ++i)
-    ep0_buffer[i] = data[i];
+  if (data)
+    for (uint8_t i = 0; i < transfer_len; ++i)
+      ep0_buffer[i] = data[i];
   UEP0_T_LEN = transfer_len;
   UEP0_CTRL = bUEP_R_TOG | bUEP_T_TOG | UEP_R_RES_ACK | UEP_T_RES_ACK;
   sending_data_ptr = &data[transfer_len];
@@ -66,7 +68,8 @@ static void ep0_send(uint8_t len, const uint8_t* data) {
 }
 
 static void ep0_cont() {
-  uint8_t transfer_len = (sending_data_len <= ep0_size) ? sending_data_len : ep0_size;
+  uint8_t transfer_len =
+      (sending_data_len <= ep0_size) ? sending_data_len : ep0_size;
   for (uint8_t i = 0; i < transfer_len; ++i)
     ep0_buffer[i] = sending_data_ptr[i];
   UEP0_T_LEN = transfer_len;
@@ -94,7 +97,7 @@ static void get_descriptor() {
     const struct usb_desc_device* device = (const struct usb_desc_device*)desc;
     is_hid = device->bDeviceClass == USB_CLASS_HID;
   } else if (type == USB_DESC_CONFIGURATION) {
-    for (uint8_t i = 0; i < size; ) {
+    for (uint8_t i = 0; i < size;) {
       const struct usb_desc_head* head =
           (const struct usb_desc_head*)(desc + i);
       if (head->bDescriptorType != USB_DESC_INTERFACE) {
@@ -132,7 +135,7 @@ static void setup() {
         last_setup_req = *req;
         ep0_send(0, 0);
         break;
-        case USB_GET_DESCRIPTOR:
+      case USB_GET_DESCRIPTOR:
         last_setup_req = *req;
         get_descriptor();
         break;
@@ -144,7 +147,8 @@ static void setup() {
         halt("setup");
         break;
     }
-  } else if ((req->bRequestType & USB_REQ_TYPE_MASK) == USB_REQ_TYPE_CLASS && is_hid) {
+  } else if ((req->bRequestType & USB_REQ_TYPE_MASK) == USB_REQ_TYPE_CLASS &&
+             is_hid) {
     switch (req->bRequest) {
       case USB_HID_GET_REPORT: {
         uint8_t len = usb_device->ep1_in(ep0_buffer);
@@ -223,7 +227,8 @@ void usb_int() __interrupt INT_NO_USB __using 1 {
             Serial.print("USB_INT_ST: ");
             Serial.printc(USB_INT_ST, HEX);
             Serial.println("");
-            for (;;);
+            for (;;)
+              ;
             break;
         }
         break;
@@ -246,7 +251,7 @@ void usb_device_init(struct usb_device* device) {
     ep0_buffer++;
   if ((uint16_t)ep1_buffer & 1)
     ep1_buffer++;
-  IE_USB = 0;  // Disable USB interrupts
+  IE_USB = 0;       // Disable USB interrupts
   USB_CTRL = 0x00;  // Device, full speed, disble, no pu--up, no pause, no DMA
   if (usb_device->ep1_in)
     UEP4_1_MOD = bUEP1_TX_EN;
@@ -260,8 +265,8 @@ void usb_device_init(struct usb_device* device) {
   UDEV_CTRL = bUD_DP_PD_DIS | bUD_DM_PD_DIS;  // Release pull-downs for host
   USB_CTRL = bUC_DEV_PU_EN | bUC_INT_BUSY | bUC_DMA_EN;
   UDEV_CTRL |= bUD_PORT_EN;  // Enable USB port
-  USB_INT_FG = 0xff;  // Clear interrupt flags
+  USB_INT_FG = 0xff;         // Clear interrupt flags
   USB_INT_EN = bUIE_TRANSFER | bUIE_BUS_RST;
   IE_USB = 1;  // Enable USB interrupts
-  EA = 1;  // Enable interrupts
+  EA = 1;      // Enable interrupts
 }

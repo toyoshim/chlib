@@ -19,19 +19,22 @@ static uint16_t shot_start_time = 0;
 static uint8_t polarity = LOW;
 
 static const uint8_t patterns[][8] = {
-  {  ON,  ON,  ON,  ON,  ON,  ON,  ON,  ON },  // ON
-  {  ON,  ON,  ON,  ON, OFF, OFF, OFF, OFF },  // Blink
-  {  ON,  ON, OFF, OFF,  ON,  ON, OFF, OFF },  // Fast Blink
-  {  ON, OFF,  ON, OFF,  ON, OFF,  ON, OFF },  // Faster Blink
-  {  ON, OFF,  ON, OFF, OFF, OFF, OFF, OFF },  // Blink Twice
-  {  ON, OFF,  ON, OFF,  ON, OFF, OFF, OFF },  // Blink Three times
-  { OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF },  // OFF
+    {ON, ON, ON, ON, ON, ON, ON, ON},          // ON
+    {ON, ON, ON, ON, OFF, OFF, OFF, OFF},      // Blink
+    {ON, ON, OFF, OFF, ON, ON, OFF, OFF},      // Fast Blink
+    {ON, OFF, ON, OFF, ON, OFF, ON, OFF},      // Faster Blink
+    {ON, OFF, ON, OFF, OFF, OFF, OFF, OFF},    // Blink Twice
+    {ON, OFF, ON, OFF, ON, OFF, OFF, OFF},     // Blink Three times
+    {OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF},  // OFF
 };
 
 static const uint8_t shots[][20] = {
-  { OFF,  ON, OFF, END, END, END, END, END, END, END, END, END, END, END, END, END, END, END, END, END }, // Pulse x1
-  { OFF,  ON, OFF,  ON, OFF, END, END, END, END, END, END, END, END, END, END, END, END, END, END, END }, // Pulse x2
-  { OFF,  ON, OFF,  ON, OFF,  ON, OFF, END, END, END, END, END, END, END, END, END, END, END, END, END }, // Pulse x3
+    {OFF, ON,  OFF, END, END, END, END, END, END, END,
+     END, END, END, END, END, END, END, END, END, END},  // Pulse x1
+    {OFF, ON,  OFF, ON,  OFF, END, END, END, END, END,
+     END, END, END, END, END, END, END, END, END, END},  // Pulse x2
+    {OFF, ON,  OFF, ON,  OFF, ON,  OFF, END, END, END,
+     END, END, END, END, END, END, END, END, END, END},  // Pulse x3
 
 };
 
