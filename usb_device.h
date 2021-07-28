@@ -14,9 +14,15 @@ extern void usb_int() __interrupt INT_NO_USB __using 1;
 struct usb_device {
   uint8_t (*get_descriptor_size)(uint8_t type, uint8_t no);
   const uint8_t* (*get_descriptor)(uint8_t type, uint8_t no);
-  uint8_t (*ep1_in)(uint8_t* buffer);
+  uint8_t (*ep_in)(uint8_t no, uint8_t* buffer);
 };
 
-void usb_device_init(struct usb_device* device);
+// flags
+enum {
+  UD_USE_EP1 = 1 << 0,
+  UD_USE_EP2 = 1 << 1,
+};
+
+void usb_device_init(struct usb_device* device, uint8_t flags);
 
 #endif  // __usb_device_h__

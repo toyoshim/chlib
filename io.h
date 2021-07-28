@@ -204,7 +204,8 @@ enum {
   bUD_PORT_EN = 0x01,      // UDEV_CTRL, Enable USB physical port I/O
   bUD_DM_PD_DIS = 0x10,    // UDEV_CTRL, Disable USB DM pull-down register
   bUD_DP_PD_DIS = 0x20,    // UDEV_CTRL, Disable USB DP pull-down register
-  bUEP1_TX_EN = 0x40,      // UEP4_1_MOD, Enable USB endpoint 1 receiving
+  bUEP1_TX_EN = 0x40,      // UEP4_1_MOD, Enable USB endpoint 1 transmittal
+  bUEP2_TX_EN = 0x04,      // UEP2_3_MOD, Enable USB endpoint 2 transmittal
   bUH_EP_RX_EN = 0x08,     // UH_EP_MOD, Enable USB host endpoint receiving
   bUH_EP_TX_EN = 0x40,     // UH_EP_MOD, Enable USB host endpoint transmittal
 };
@@ -216,6 +217,8 @@ __at(0x2448) uint8_t volatile UEP0_DMA_H;
 __at(0x2449) uint8_t volatile UEP0_DMA_L;
 __at(0x244a) uint8_t volatile UEP1_DMA_H;
 __at(0x244b) uint8_t volatile UEP1_DMA_L;
+__at(0x244c) uint8_t volatile UEP2_DMA_H;
+__at(0x244d) uint8_t volatile UEP2_DMA_L;
 __at(0x244c) uint8_t volatile UH_RX_DMA_H;
 __at(0x244d) uint8_t volatile UH_RX_DMA_L;
 __at(0x244e) uint8_t volatile UH_TX_DMA_H;
