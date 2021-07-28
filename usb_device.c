@@ -145,6 +145,9 @@ static void setup() {
         last_setup_req = *req;
         get_descriptor();
         break;
+      case USB_GET_CONFIGURATION:
+        ep0_send(1, "\0");
+        break;
       case USB_SET_CONFIGURATION:
         ep0_send(0, 0);
         break;
