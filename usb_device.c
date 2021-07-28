@@ -14,10 +14,12 @@ static uint8_t usb_device_flags = 0;
 static const uint8_t ep0_size = 64;
 static uint8_t _ep0_buffer[64 + 2 + 1];  // EP0 buffer size 64
 static uint8_t* ep0_buffer = _ep0_buffer;
-static uint8_t _ep1_buffer[128 + 2 + 1];  // EP1 buffer size 128
+static uint8_t _ep1_buffer[64 + 2 + 1];  // EP1 buffer size 64
 static uint8_t* ep1_buffer = _ep1_buffer;
-static uint8_t _ep2_buffer[128 + 2 + 1];  // EP2 buffer size 128
+static uint8_t _ep2_buffer[64 + 2 + 1];  // EP2 buffer size 64
 static uint8_t* ep2_buffer = _ep2_buffer;
+static uint8_t _ep3_buffer[64 + 2 + 1];  // EP3 buffer size 64
+static uint8_t* ep3_buffer = _ep3_buffer;
 
 
 static struct usb_setup_req last_setup_req;
