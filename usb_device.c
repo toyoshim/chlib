@@ -231,8 +231,10 @@ void in_ep(uint8_t ep) {
 
 void usb_int() __interrupt INT_NO_USB __using 1 {
   if (UIF_TRANSFER) {
+    uint8_t usb_int_st = USB_INT_ST;
+    UIF_TRANSFER = 0;
     // For EP0
-    switch (USB_INT_ST & (MASK_UIS_TOKEN | MASK_UIS_ENDP)) {
+    switch (usb_int_st & (MASK_UIS_TOKEN | MASK_UIS_ENDP)) {
       case UIS_TOKEN_SETUP:
         setup();
         break;
@@ -244,13 +246,13 @@ void usb_int() __interrupt INT_NO_USB __using 1 {
         break;
       default:
         // For other EP
-        switch (USB_INT_ST & MASK_UIS_TOKEN) {
+        switch (usb_int_st & MASK_UIS_TOKEN) {
           case UIS_TOKEN_IN:
-            in_ep(USB_INT_ST & MASK_UIS_ENDP);
+            in_ep(usb_int_st & MASK_UIS_ENDP);
             break;
           default:
             Serial.print("USB_INT_ST: ");
-            Serial.printc(USB_INT_ST, HEX);
+            Serial.printc(usb_int_st, HEX);
             Serial.println("");
             for (;;)
               ;
@@ -258,7 +260,6 @@ void usb_int() __interrupt INT_NO_USB __using 1 {
         }
         break;
     }
-    UIF_TRANSFER = 0;
   } else if (UIF_BUS_RST) {
     bus_reset();
     UIF_TRANSFER = 0;
