@@ -72,8 +72,11 @@ SFR(UH_SETUP, 0xd2);    // USB host auxiliary setup register
 SFR(UEP1_T_LEN, 0xd3);  // Endpoint1 transmittal length register
 SFR(UEP2_CTRL, 0xd4);   // Endpoint2 control register
 SFR(UH_RX_CTRL, 0xd4);  // USB host receiver endpoint control register
+SFR(UEP2_T_LEN, 0xd5);  // Endpoint2 transmittal length register
 SFR(UH_EP_PID, 0xd5);   // USB host endpoint and token PID register
+SFR(UEP3_CTRL, 0xd6);   // Endpoint3 control register
 SFR(UH_TX_CTRL, 0xd6);  // USB host transmittal endpoint control register
+SFR(UEP3_T_LEN, 0xd7);  // Endpoint3 transmittal length register
 SFR(UH_TX_LEN, 0xd7);   // USB host transmittal length register
 SFR(USB_INT_FG, 0xd8);  // USB interrupt flag register
 SFR(USB_INT_ST, 0xd9);  // USB interrupt status
@@ -206,6 +209,7 @@ enum {
   bUD_DP_PD_DIS = 0x20,    // UDEV_CTRL, Disable USB DP pull-down register
   bUEP1_TX_EN = 0x40,      // UEP4_1_MOD, Enable USB endpoint 1 transmittal
   bUEP2_TX_EN = 0x04,      // UEP2_3_MOD, Enable USB endpoint 2 transmittal
+  bUEP3_TX_EN = 0x40,      // UEP2_3_MOD, Enable USB endpoint 3 transmittal
   bUH_EP_RX_EN = 0x08,     // UH_EP_MOD, Enable USB host endpoint receiving
   bUH_EP_TX_EN = 0x40,     // UH_EP_MOD, Enable USB host endpoint transmittal
 };
@@ -219,6 +223,8 @@ __at(0x244a) uint8_t volatile UEP1_DMA_H;
 __at(0x244b) uint8_t volatile UEP1_DMA_L;
 __at(0x244c) uint8_t volatile UEP2_DMA_H;
 __at(0x244d) uint8_t volatile UEP2_DMA_L;
+__at(0x244e) uint8_t volatile UEP3_DMA_H;
+__at(0x244f) uint8_t volatile UEP3_DMA_L;
 __at(0x244c) uint8_t volatile UH_RX_DMA_H;
 __at(0x244d) uint8_t volatile UH_RX_DMA_L;
 __at(0x244e) uint8_t volatile UH_TX_DMA_H;

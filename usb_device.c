@@ -57,6 +57,8 @@ static void bus_reset() {
     UEP1_CTRL = bUEP_AUTO_TOG | UEP_R_RES_ACK;
   if (usb_device_flags & UD_USE_EP2)
     UEP2_CTRL = bUEP_AUTO_TOG | UEP_R_RES_ACK;
+  if (usb_device_flags & UD_USE_EP3)
+    UEP3_CTRL = bUEP_AUTO_TOG | UEP_R_RES_ACK;
   USB_DEV_AD = 0x00;
 }
 
@@ -211,10 +213,20 @@ void out() {
 
 void in_ep(uint8_t ep) {
   uint8_t len = 0;
-  if (usb_device->ep_in)
-    len = usb_device->ep_in(ep, (ep == 1) ? ep1_buffer : ep2_buffer);
-  UEP1_T_LEN = len;
-  UEP1_CTRL = UEP1_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;
+  if (usb_device->ep_in) {
+    len = usb_device->ep_in(
+        ep, (ep == 1) ? ep1_buffer : (ep == 2) ? ep2_buffer : ep3_buffer);
+  }
+  if (ep == 1) {
+    UEP1_T_LEN = len;
+    UEP1_CTRL = UEP1_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;
+  } else if (ep == 2) {
+    UEP2_T_LEN = len;
+    UEP2_CTRL = UEP2_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;
+  } else {
+    UEP3_T_LEN = len;
+    UEP3_CTRL = UEP2_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;
+  }
 }
 
 void usb_int() __interrupt INT_NO_USB __using 1 {
@@ -267,12 +279,18 @@ void usb_device_init(struct usb_device* device, uint8_t flags) {
     ep1_buffer++;
   if ((uint16_t)ep2_buffer & 1)
     ep2_buffer++;
+  if ((uint16_t)ep3_buffer & 1)
+    ep3_buffer++;
   IE_USB = 0;       // Disable USB interrupts
   USB_CTRL = 0x00;  // Device, full speed, disble, no pu--up, no pause, no DMA
+  UEP4_1_MOD = 0;
   if (flags & UD_USE_EP1)
-    UEP4_1_MOD = bUEP1_TX_EN;
+    UEP4_1_MOD |= bUEP1_TX_EN;
+  UEP2_3_MOD = 0;
   if (flags & UD_USE_EP2)
-    UEP2_3_MOD = bUEP2_TX_EN;
+    UEP2_3_MOD |= bUEP2_TX_EN;
+  if (flags & UD_USE_EP3)
+    UEP2_3_MOD |= bUEP3_TX_EN;
   UEP0_DMA_H = (uint16_t)ep0_buffer >> 8;
   UEP0_DMA_L = (uint16_t)ep0_buffer & 0xff;
   if (flags & UD_USE_EP1) {
@@ -282,6 +300,10 @@ void usb_device_init(struct usb_device* device, uint8_t flags) {
   if (flags & UD_USE_EP2) {
     UEP2_DMA_H = (uint16_t)ep2_buffer >> 8;
     UEP2_DMA_L = (uint16_t)ep2_buffer & 0xff;
+  }
+  if (flags & UD_USE_EP3) {
+    UEP3_DMA_H = (uint16_t)ep3_buffer >> 8;
+    UEP3_DMA_L = (uint16_t)ep3_buffer & 0xff;
   }
   bus_reset();
   UDEV_CTRL = bUD_DP_PD_DIS | bUD_DM_PD_DIS;  // Release pull-downs for host

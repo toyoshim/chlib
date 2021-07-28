@@ -21,6 +21,7 @@ struct usb_device {
 enum {
   UD_USE_EP1 = 1 << 0,
   UD_USE_EP2 = 1 << 1,
+  UD_USE_EP3 = 1 << 2,
 };
 
 void usb_device_init(struct usb_device* device, uint8_t flags);
