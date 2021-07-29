@@ -50,6 +50,7 @@ SFR(P3, 0xb0);          // P3 input/output register
 SFR(GLOBAL_CFG, 0xb1);  // Global configuration register
 SFR(PLL_CFG, 0xb2);     // PLL clock configuration register
 SFR(CLOCK_CFG, 0xb3);   // System clock configuration register
+SFR(P1_IE, 0xb9);       // P1 input enable register
 SFR(P1_DIR, 0xba);      // P1 direction control register
 SFR(P1_PU, 0xbb);       // P1 pull-up enable register
 SFR(P2_DIR, 0xbc);      // P2 direction control register
@@ -91,6 +92,14 @@ SFR(UDEV_CTRL, 0xe4);   // USB device port control register
 SFR(UHUB0_CTRL, 0xe4);  // USB HUB0 control register
 SFR(UHUB1_CTRL, 0xe5);  // USB HUB1 control register
 SFR(IE_EX, 0xe8);       // Extend interrupt enable register
+SFR(ADC_CK_SE, 0xef);   // ADC clock divisor setting
+SFR(ADC_STAT, 0xf1);    // ADC status
+SFR(ADC_CTRL, 0xf2);    // ADC control
+SFR(ADC_CHANN, 0xf3);   // ADC channel selection
+SFR(ADC_FIFO_L, 0xf4);  // ADC FIFO low byte
+SFR(ADC_FIFO_H, 0xf5);  // ADC FIFO high byte
+SFR(ADC_SETUP, 0xf6);   // ADC setup
+SFR(ADC_EX_SW, 0xf7);   // ADC extend switch control
 SFR(RESET_KEEP, 0xfe);  // Reset-keeping register
 
 SBIT(TR0, 0x88, 4);           // TCON, Timer0 start/stop bit
@@ -212,6 +221,10 @@ enum {
   bUEP3_TX_EN = 0x40,      // UEP2_3_MOD, Enable USB endpoint 3 transmittal
   bUH_EP_RX_EN = 0x08,     // UH_EP_MOD, Enable USB host endpoint receiving
   bUH_EP_TX_EN = 0x40,     // UH_EP_MOD, Enable USB host endpoint transmittal
+  bADC_IF_ACT = 0x10,      // ADC_STAT, ADC finished flag
+  bADC_SAMPLE = 0x80,      // ADC_CTRL, Sampling pulse control
+  bADC_POWER_EN = 0x04,    // ADC_SETUP, ADC power control
+  bADC_RESOLUTION = 0x04,  // ADC_EX_SW, ADC resolution
 };
 
 __at(0x2446) uint8_t volatile UEP4_1_MOD;
