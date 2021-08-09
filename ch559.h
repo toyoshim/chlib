@@ -12,18 +12,6 @@ void initialize();
 
 // Arduino-like APIs
 
-// type
-#define BIN 0  // support uint8
-#define HEX 1  // support uint8
-#define DEC 2  // support int16
-extern struct SerialLibrary {
-  void (*putc)(uint8_t val);
-  void (*printc)(int16_t val, uint8_t type);
-  void (*print)(const char* val);
-  void (*println)(const char* val);
-  void (*printf)(const char* fmt, ...);
-} Serial;
-
 void delayMicroseconds(uint32_t us);
 void delay(uint32_t ms);
 

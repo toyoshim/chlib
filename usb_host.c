@@ -6,6 +6,7 @@
 
 #include "ch559.h"
 #include "io.h"
+#include "serial.h"
 
 //#define _DBG_SEND_LOG
 

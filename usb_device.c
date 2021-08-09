@@ -6,6 +6,7 @@
 
 #include "ch559.h"
 #include "io.h"
+#include "serial.h"
 #include "usb.h"
 
 static struct usb_device* usb_device = 0;
