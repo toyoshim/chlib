@@ -5,6 +5,8 @@
 #include "serial.h"
 
 #include <stdarg.h>
+#include <stdbool.h>
+#include <stdio.h>
 
 static char U4ToHex(uint8_t val) {
   if (val < 10)
