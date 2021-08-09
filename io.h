@@ -50,6 +50,7 @@ SFR(P3, 0xb0);          // P3 input/output register
 SFR(GLOBAL_CFG, 0xb1);  // Global configuration register
 SFR(PLL_CFG, 0xb2);     // PLL clock configuration register
 SFR(CLOCK_CFG, 0xb3);   // System clock configuration register
+SFR(P1_IE, 0xb9);       // P1 input enable register
 SFR(P1_DIR, 0xba);      // P1 direction control register
 SFR(P1_PU, 0xbb);       // P1 pull-up enable register
 SFR(P2_DIR, 0xbc);      // P2 direction control register
@@ -72,8 +73,11 @@ SFR(UH_SETUP, 0xd2);    // USB host auxiliary setup register
 SFR(UEP1_T_LEN, 0xd3);  // Endpoint1 transmittal length register
 SFR(UEP2_CTRL, 0xd4);   // Endpoint2 control register
 SFR(UH_RX_CTRL, 0xd4);  // USB host receiver endpoint control register
+SFR(UEP2_T_LEN, 0xd5);  // Endpoint2 transmittal length register
 SFR(UH_EP_PID, 0xd5);   // USB host endpoint and token PID register
+SFR(UEP3_CTRL, 0xd6);   // Endpoint3 control register
 SFR(UH_TX_CTRL, 0xd6);  // USB host transmittal endpoint control register
+SFR(UEP3_T_LEN, 0xd7);  // Endpoint3 transmittal length register
 SFR(UH_TX_LEN, 0xd7);   // USB host transmittal length register
 SFR(USB_INT_FG, 0xd8);  // USB interrupt flag register
 SFR(USB_INT_ST, 0xd9);  // USB interrupt status
@@ -88,6 +92,14 @@ SFR(UDEV_CTRL, 0xe4);   // USB device port control register
 SFR(UHUB0_CTRL, 0xe4);  // USB HUB0 control register
 SFR(UHUB1_CTRL, 0xe5);  // USB HUB1 control register
 SFR(IE_EX, 0xe8);       // Extend interrupt enable register
+SFR(ADC_CK_SE, 0xef);   // ADC clock divisor setting
+SFR(ADC_STAT, 0xf1);    // ADC status
+SFR(ADC_CTRL, 0xf2);    // ADC control
+SFR(ADC_CHANN, 0xf3);   // ADC channel selection
+SFR(ADC_FIFO_L, 0xf4);  // ADC FIFO low byte
+SFR(ADC_FIFO_H, 0xf5);  // ADC FIFO high byte
+SFR(ADC_SETUP, 0xf6);   // ADC setup
+SFR(ADC_EX_SW, 0xf7);   // ADC extend switch control
 SFR(RESET_KEEP, 0xfe);  // Reset-keeping register
 
 SBIT(TR0, 0x88, 4);           // TCON, Timer0 start/stop bit
@@ -204,9 +216,15 @@ enum {
   bUD_PORT_EN = 0x01,      // UDEV_CTRL, Enable USB physical port I/O
   bUD_DM_PD_DIS = 0x10,    // UDEV_CTRL, Disable USB DM pull-down register
   bUD_DP_PD_DIS = 0x20,    // UDEV_CTRL, Disable USB DP pull-down register
-  bUEP1_TX_EN = 0x40,      // UEP4_1_MOD, Enable USB endpoint 1 receiving
+  bUEP1_TX_EN = 0x40,      // UEP4_1_MOD, Enable USB endpoint 1 transmittal
+  bUEP2_TX_EN = 0x04,      // UEP2_3_MOD, Enable USB endpoint 2 transmittal
+  bUEP3_TX_EN = 0x40,      // UEP2_3_MOD, Enable USB endpoint 3 transmittal
   bUH_EP_RX_EN = 0x08,     // UH_EP_MOD, Enable USB host endpoint receiving
   bUH_EP_TX_EN = 0x40,     // UH_EP_MOD, Enable USB host endpoint transmittal
+  bADC_IF_ACT = 0x10,      // ADC_STAT, ADC finished flag
+  bADC_SAMPLE = 0x80,      // ADC_CTRL, Sampling pulse control
+  bADC_POWER_EN = 0x04,    // ADC_SETUP, ADC power control
+  bADC_RESOLUTION = 0x04,  // ADC_EX_SW, ADC resolution
 };
 
 __at(0x2446) uint8_t volatile UEP4_1_MOD;
@@ -216,6 +234,10 @@ __at(0x2448) uint8_t volatile UEP0_DMA_H;
 __at(0x2449) uint8_t volatile UEP0_DMA_L;
 __at(0x244a) uint8_t volatile UEP1_DMA_H;
 __at(0x244b) uint8_t volatile UEP1_DMA_L;
+__at(0x244c) uint8_t volatile UEP2_DMA_H;
+__at(0x244d) uint8_t volatile UEP2_DMA_L;
+__at(0x244e) uint8_t volatile UEP3_DMA_H;
+__at(0x244f) uint8_t volatile UEP3_DMA_L;
 __at(0x244c) uint8_t volatile UH_RX_DMA_H;
 __at(0x244d) uint8_t volatile UH_RX_DMA_L;
 __at(0x244e) uint8_t volatile UH_TX_DMA_H;

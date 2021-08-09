@@ -10,12 +10,18 @@
 #include "usb.h"
 
 static struct usb_device* usb_device = 0;
+static uint8_t usb_device_flags = 0;
 
 static const uint8_t ep0_size = 64;
 static uint8_t _ep0_buffer[64 + 2 + 1];  // EP0 buffer size 64
 static uint8_t* ep0_buffer = _ep0_buffer;
-static uint8_t _ep1_buffer[128 + 2 + 1];  // EP1 buffer size 128
+static uint8_t _ep1_buffer[64 + 2 + 1];  // EP1 buffer size 64
 static uint8_t* ep1_buffer = _ep1_buffer;
+static uint8_t _ep2_buffer[64 + 2 + 1];  // EP2 buffer size 64
+static uint8_t* ep2_buffer = _ep2_buffer;
+static uint8_t _ep3_buffer[64 + 2 + 1];  // EP3 buffer size 64
+static uint8_t* ep3_buffer = _ep3_buffer;
+
 
 static struct usb_setup_req last_setup_req;
 static const uint8_t* sending_data_ptr = 0;
@@ -48,8 +54,12 @@ static void halt(const char* token) {
 }
 static void bus_reset() {
   UEP0_CTRL = UEP_R_RES_ACK | UEP_T_RES_NAK;
-  if (usb_device->ep1_in)
+  if (usb_device_flags & UD_USE_EP1)
     UEP1_CTRL = bUEP_AUTO_TOG | UEP_R_RES_ACK;
+  if (usb_device_flags & UD_USE_EP2)
+    UEP2_CTRL = bUEP_AUTO_TOG | UEP_R_RES_ACK;
+  if (usb_device_flags & UD_USE_EP3)
+    UEP3_CTRL = bUEP_AUTO_TOG | UEP_R_RES_ACK;
   USB_DEV_AD = 0x00;
 }
 
@@ -140,6 +150,9 @@ static void setup() {
         last_setup_req = *req;
         get_descriptor();
         break;
+      case USB_GET_CONFIGURATION:
+        ep0_send(1, "\0");
+        break;
       case USB_SET_CONFIGURATION:
         ep0_send(0, 0);
         break;
@@ -152,7 +165,9 @@ static void setup() {
              is_hid) {
     switch (req->bRequest) {
       case USB_HID_GET_REPORT: {
-        uint8_t len = usb_device->ep1_in(ep0_buffer);
+        // Reuse ep_in for EP1 to obtain the report. This doesn't work in
+        // complicated configuration such as one for a composite device.
+        uint8_t len = usb_device->ep_in(1, ep0_buffer);
         ep0_send(len, 0);
         break;
       }
@@ -199,16 +214,28 @@ void out() {
 
 void in_ep(uint8_t ep) {
   uint8_t len = 0;
-  if (1 == ep && usb_device->ep1_in)
-    len = usb_device->ep1_in(ep1_buffer);
-  UEP1_T_LEN = len;
-  UEP1_CTRL = UEP1_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;
+  if (usb_device->ep_in) {
+    len = usb_device->ep_in(
+        ep, (ep == 1) ? ep1_buffer : (ep == 2) ? ep2_buffer : ep3_buffer);
+  }
+  if (ep == 1) {
+    UEP1_T_LEN = len;
+    UEP1_CTRL = UEP1_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;
+  } else if (ep == 2) {
+    UEP2_T_LEN = len;
+    UEP2_CTRL = UEP2_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;
+  } else {
+    UEP3_T_LEN = len;
+    UEP3_CTRL = UEP2_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;
+  }
 }
 
 void usb_int() __interrupt INT_NO_USB __using 1 {
   if (UIF_TRANSFER) {
+    uint8_t usb_int_st = USB_INT_ST;
+    UIF_TRANSFER = 0;
     // For EP0
-    switch (USB_INT_ST & (MASK_UIS_TOKEN | MASK_UIS_ENDP)) {
+    switch (usb_int_st & (MASK_UIS_TOKEN | MASK_UIS_ENDP)) {
       case UIS_TOKEN_SETUP:
         setup();
         break;
@@ -220,13 +247,13 @@ void usb_int() __interrupt INT_NO_USB __using 1 {
         break;
       default:
         // For other EP
-        switch (USB_INT_ST & MASK_UIS_TOKEN) {
+        switch (usb_int_st & MASK_UIS_TOKEN) {
           case UIS_TOKEN_IN:
-            in_ep(USB_INT_ST & MASK_UIS_ENDP);
+            in_ep(usb_int_st & MASK_UIS_ENDP);
             break;
           default:
             Serial.print("USB_INT_ST: ");
-            Serial.printc(USB_INT_ST, HEX);
+            Serial.printc(usb_int_st, HEX);
             Serial.println("");
             for (;;)
               ;
@@ -234,7 +261,6 @@ void usb_int() __interrupt INT_NO_USB __using 1 {
         }
         break;
     }
-    UIF_TRANSFER = 0;
   } else if (UIF_BUS_RST) {
     bus_reset();
     UIF_TRANSFER = 0;
@@ -244,23 +270,42 @@ void usb_int() __interrupt INT_NO_USB __using 1 {
   }
 }
 
-void usb_device_init(struct usb_device* device) {
+void usb_device_init(struct usb_device* device, uint8_t flags) {
   usb_device = device;
+  usb_device_flags = flags;
 
   // DMA addresses must be even
   if ((uint16_t)ep0_buffer & 1)
     ep0_buffer++;
   if ((uint16_t)ep1_buffer & 1)
     ep1_buffer++;
+  if ((uint16_t)ep2_buffer & 1)
+    ep2_buffer++;
+  if ((uint16_t)ep3_buffer & 1)
+    ep3_buffer++;
   IE_USB = 0;       // Disable USB interrupts
   USB_CTRL = 0x00;  // Device, full speed, disble, no pu--up, no pause, no DMA
-  if (usb_device->ep1_in)
-    UEP4_1_MOD = bUEP1_TX_EN;
+  UEP4_1_MOD = 0;
+  if (flags & UD_USE_EP1)
+    UEP4_1_MOD |= bUEP1_TX_EN;
+  UEP2_3_MOD = 0;
+  if (flags & UD_USE_EP2)
+    UEP2_3_MOD |= bUEP2_TX_EN;
+  if (flags & UD_USE_EP3)
+    UEP2_3_MOD |= bUEP3_TX_EN;
   UEP0_DMA_H = (uint16_t)ep0_buffer >> 8;
   UEP0_DMA_L = (uint16_t)ep0_buffer & 0xff;
-  if (usb_device->ep1_in) {
+  if (flags & UD_USE_EP1) {
     UEP1_DMA_H = (uint16_t)ep1_buffer >> 8;
     UEP1_DMA_L = (uint16_t)ep1_buffer & 0xff;
+  }
+  if (flags & UD_USE_EP2) {
+    UEP2_DMA_H = (uint16_t)ep2_buffer >> 8;
+    UEP2_DMA_L = (uint16_t)ep2_buffer & 0xff;
+  }
+  if (flags & UD_USE_EP3) {
+    UEP3_DMA_H = (uint16_t)ep3_buffer >> 8;
+    UEP3_DMA_L = (uint16_t)ep3_buffer & 0xff;
   }
   bus_reset();
   UDEV_CTRL = bUD_DP_PD_DIS | bUD_DM_PD_DIS;  // Release pull-downs for host
