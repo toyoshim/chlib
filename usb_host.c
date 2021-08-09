@@ -51,6 +51,8 @@ enum {
   STATE_TRANSACTION_RETRY,
 };
 
+#define AUTO_TOGGLE (bUH_R_TOG | bUH_R_AUTO_TOG | bUH_T_TOG | bUH_T_AUTO_TOG)
+
 static struct usb_setup_req set_address_descriptor = {
     USB_REQ_DIR_OUT, USB_SET_ADDRESS,
     0x0000,  // address: can be modified
@@ -107,7 +109,7 @@ static uint8_t* transaction_buffer = 0;
 static uint16_t transaction_size = 0;
 static uint8_t transaction_recv_state = STATE_IDLE;
 static uint8_t transaction_ep_pid = 0;
-static uint8_t transaction_stage = 0;
+static uint8_t transaction_stage = 0;  // 0: setup, 1: status, 2: non-setup data
 
 static uint8_t state[2] = {STATE_IDLE, STATE_IDLE};
 static bool initial_check[2] = {false, false};
@@ -207,12 +209,13 @@ static void host_transact(uint8_t hub,
                           uint16_t size,
                           uint8_t recv_state,
                           uint8_t ep,
-                          uint8_t pid) {
+                          uint8_t pid,
+                          uint8_t tog) {
   transaction_buffer = buffer;
   transaction_size = size;
   transaction_recv_state = recv_state;
   transaction_ep_pid = (pid << 4) | (ep & 0x0f);
-  host_transact_cont(hub, 0);
+  host_transact_cont(hub, tog);
 }
 
 static void host_setup_transfer(uint8_t hub,
@@ -220,22 +223,24 @@ static void host_setup_transfer(uint8_t hub,
                                 uint16_t size,
                                 uint8_t recv_state) {
   transaction_stage = 0;
-  host_transact(hub, buffer, size, recv_state, 0, USB_PID_SETUP);
+  host_transact(hub, buffer, size, recv_state, 0, USB_PID_SETUP, 0);
 }
 
 static void host_in_transfer(uint8_t hub,
                              uint8_t ep,
                              uint16_t size,
-                             uint8_t recv_state) {
-  host_transact(hub, buffer, size, recv_state, ep, USB_PID_IN);
+                             uint8_t recv_state,
+                             uint8_t tog) {
+  host_transact(hub, buffer, size, recv_state, ep, USB_PID_IN, tog);
 }
 
 static void host_out_transfer(uint8_t hub,
                               uint8_t ep,
                               uint8_t* buffer,
                               uint16_t size,
-                              uint8_t recv_state) {
-  host_transact(hub, buffer, size, recv_state, ep, USB_PID_OUT);
+                              uint8_t recv_state,
+                              uint8_t tog) {
+  host_transact(hub, buffer, size, recv_state, ep, USB_PID_OUT, tog);
 }
 
 static void host_ack_transfer(uint8_t hub,
@@ -243,7 +248,7 @@ static void host_ack_transfer(uint8_t hub,
                               uint8_t* buffer,
                               uint16_t size,
                               uint8_t recv_state) {
-  host_transact(hub, buffer, size, recv_state, ep, USB_PID_ACK);
+  host_transact(hub, buffer, size, recv_state, ep, USB_PID_ACK, 0);
 }
 
 static bool state_idle(uint8_t hub) {
@@ -608,7 +613,8 @@ static bool state_transaction_in(uint8_t hub) {
   const struct usb_setup_req* req = (const struct usb_setup_req*)tx_buffer;
   const uint8_t ep = transaction_ep_pid & 0x0f;
   user_request_size = (transaction_stage == 1) ? 0 : req->wLength;
-  host_in_transfer(hub, ep, user_request_size, transaction_recv_state);
+  uint8_t tog = (transaction_stage == 1) ? AUTO_TOGGLE : 0;
+  host_in_transfer(hub, ep, user_request_size, transaction_recv_state, tog);
   return false;
 }
 
@@ -616,7 +622,8 @@ static bool state_transaction_out(uint8_t hub) {
   const struct usb_setup_req* req = (const struct usb_setup_req*)tx_buffer;
   const uint8_t ep = transaction_ep_pid & 0x0f;
   uint16_t size = (transaction_stage == 1) ? 0 : req->wLength;
-  host_out_transfer(hub, ep, buffer, size, transaction_recv_state);
+  uint8_t tog = (transaction_stage == 1) ? AUTO_TOGGLE : 0;
+  host_out_transfer(hub, ep, buffer, size, transaction_recv_state, tog);
   return false;
 }
 
@@ -627,8 +634,7 @@ static bool state_transaction_ack(uint8_t hub) {
 }
 
 static bool state_transaction_cont(uint8_t hub) {
-  host_transact_cont(hub,
-                     bUH_R_TOG | bUH_R_AUTO_TOG | bUH_T_TOG | bUH_T_AUTO_TOG);
+  host_transact_cont(hub, AUTO_TOGGLE);
   return false;
 }
 
@@ -800,7 +806,7 @@ bool usb_host_in(uint8_t hub, uint8_t ep, uint8_t size) {
   // This flag keeps true if the request fails with NAK.
   do_not_retry[hub] = true;
   user_request_size = size;
-  host_in_transfer(hub, ep, size, STATE_IN_RECV);
+  host_in_transfer(hub, ep, size, STATE_IN_RECV, 0);
   return true;
 }
 
@@ -808,7 +814,7 @@ bool usb_host_out(uint8_t hub, uint8_t ep, uint8_t* data, uint8_t size) {
   if (!usb_host_ready(hub) || !lock_transaction(hub, 1 + hub))
     return false;
   transaction_stage = 2;
-  host_out_transfer(hub, ep, data, size, STATE_OUT_DONE);
+  host_out_transfer(hub, ep, data, size, STATE_OUT_DONE, 0);
   return false;
 }
 
