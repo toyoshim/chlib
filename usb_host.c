@@ -117,6 +117,7 @@ static uint16_t delay_begin[2] = {0, 0};
 static uint16_t delay_end[2] = {0, 0};
 static uint8_t delay_next_state[2] = {0, 0};
 static bool resetting[2] = {false, false};
+static bool no_remote_wakeup[2] = {false, false};
 static bool is_hid[2] = {false, false};
 static uint8_t hid_interface_number[2] = {0, 0};
 static bool do_not_retry[2] = {false, false};
@@ -417,6 +418,7 @@ static bool state_get_configuration_desc_recv(uint8_t hub) {
     delay_us(hub, 250, STATE_GET_CONFIGURATION_DESC);
     return false;
   }
+  no_remote_wakeup[hub] = (desc->bmAttributes & 0x20) == 0;
   if (usb_host->check_configuration_desc)
     usb_host->check_configuration_desc(hub, buffer);
   set_configuration_descriptor.wValue = desc->bConfigurationValue;
@@ -463,9 +465,13 @@ static bool state_set_configuration_done(uint8_t hub) {
 }
 
 static bool state_set_feature(uint8_t hub) {
+  uint8_t next_state = is_hid[hub] ? STATE_HID_SETUP : STATE_DONE;
+  if (no_remote_wakeup[hub]) {
+    state[hub] = next_state;
+    return true;
+  }
   host_setup_transfer(hub, (uint8_t*)&set_feature_descriptor,
-                      sizeof(set_feature_descriptor),
-                      is_hid[hub] ? STATE_HID_SETUP : STATE_DONE);
+                      sizeof(set_feature_descriptor), next_state);
   return false;
 }
 
