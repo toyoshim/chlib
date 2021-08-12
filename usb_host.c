@@ -603,6 +603,7 @@ static bool state_transaction(uint8_t hub) {
   }
   if (token == USB_PID_NAK) {
     if (do_not_retry[hub] == true) {
+      // Keeping `do_not_retry` means it fails with NAK.
       state[hub] = transaction_recv_state;
       return true;
     }
