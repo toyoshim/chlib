@@ -507,7 +507,7 @@ static bool state_ready(uint8_t hub) {
 }
 
 static bool state_in_recv(uint8_t hub) {
-  if (usb_host->in && !do_not_retry[hub])
+  if (usb_host->in)
     usb_host->in(hub, buffer, user_request_size - transaction_size);
   do_not_retry[hub] = false;
   unlock_transaction(hub);
