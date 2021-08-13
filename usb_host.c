@@ -562,7 +562,8 @@ static bool state_transaction(uint8_t hub) {
     transaction_size -= size;
   }
 
-  if (U_TOG_OK || token == USB_PID_DATA0 || token == USB_PID_DATA1) {
+  if (U_TOG_OK || token == USB_PID_DATA0 || token == USB_PID_DATA1 ||
+      token == 0) {
     if (transaction_size &&
         USB_RX_LEN == ep_max_packet_size[hub][transaction_ep_pid & 0x0f]) {
       delay_us(hub, 250, STATE_TRANSACTION_CONT);
@@ -810,6 +811,18 @@ bool usb_host_setup(uint8_t hub,
 }
 
 bool usb_host_in(uint8_t hub, uint8_t ep, uint8_t size) {
+  if (!usb_host_ready(hub) || !lock_transaction(hub, 1 + hub))
+    return false;
+  transaction_stage = 2;
+  // Do not retry as hid returns NAK if the report isn't changed in idle state.
+  // This flag keeps true if the request fails with NAK.
+  do_not_retry[hub] = true;
+  user_request_size = size;
+  host_in_transfer(hub, ep, size, STATE_IN_RECV, 0);
+  return true;
+}
+
+bool usb_host_in_data0(uint8_t hub, uint8_t ep, uint8_t size) {
   if (!usb_host_ready(hub) || !lock_transaction(hub, 1 + hub))
     return false;
   transaction_stage = 0;
