@@ -812,7 +812,7 @@ bool usb_host_setup(uint8_t hub,
 bool usb_host_in(uint8_t hub, uint8_t ep, uint8_t size) {
   if (!usb_host_ready(hub) || !lock_transaction(hub, 1 + hub))
     return false;
-  transaction_stage = 2;
+  transaction_stage = 0;
   // Do not retry as hid returns NAK if the report isn't changed in idle state.
   // This flag keeps true if the request fails with NAK.
   do_not_retry[hub] = true;
