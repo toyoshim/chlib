@@ -9,6 +9,7 @@
 #include "serial.h"
 
 //#define _DBG_SEND_LOG
+//#define _DBG_RECV_LOG
 
 enum {
   STATE_IDLE,
@@ -602,6 +603,9 @@ static bool state_transaction(uint8_t hub) {
     return true;
   }
   if (token == USB_PID_NAK) {
+#ifdef _DBG_RECV_LOG
+    Serial.println("nak");
+#endif  // _DBG_RECV_LOG
     if (do_not_retry[hub] == true) {
       // Keeping `do_not_retry` means it fails with NAK.
       state[hub] = transaction_recv_state;
