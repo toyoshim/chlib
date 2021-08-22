@@ -140,6 +140,12 @@ enum {
   USB_CLASS_AUDIO = 0x01,
   USB_CLASS_CDC = 0x02,
   USB_CLASS_HID = 0x03,
+
+  // subclass
+  USB_HID_SUBCLASS_BOOT = 0x01,
+
+  // protocol
+  USB_HID_BOOT_PROTOCOL_KEYBOARD = 0x01,
 };
 
 #endif  // __usb_h__

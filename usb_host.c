@@ -33,6 +33,7 @@ enum {
   STATE_HID_SETUP,
   STATE_GET_HID_REPORT_DESC,
   STATE_GET_HID_REPORT_DESC_RECV,
+  STATE_HID_SET_PROTOCOL,
 
   STATE_DONE,
   STATE_READY,
@@ -95,6 +96,13 @@ static struct usb_setup_req hid_get_report = {
     0x0000,        // interface: can be modified
     0x0000,        // report length: can be modified
 };
+static struct usb_setup_req hid_set_protocol = {
+    USB_REQ_DIR_OUT | USB_REQ_TYPE_CLASS | USB_REQ_RECPT_INTERFACE,
+    USB_HID_SET_PROTOCOL,
+    0,       // Boot protocol
+    0x0000,  // interface
+    0x0000,
+};
 
 static struct usb_host* usb_host = 0;
 
@@ -120,6 +128,7 @@ static uint8_t delay_next_state[2] = {0, 0};
 static bool resetting[2] = {false, false};
 static bool no_remote_wakeup[2] = {false, false};
 static bool is_hid[2] = {false, false};
+static bool is_hid_boot[2] = {false, false};
 static uint8_t hid_interface_number[2] = {0, 0};
 static bool do_not_retry[2] = {false, false};
 static uint16_t user_request_size = 0;
@@ -352,6 +361,8 @@ static bool state_get_device_desc_recv(uint8_t hub) {
 
   ep_max_packet_size[hub][0] = desc->bMaxPacketSize0;
   is_hid[hub] = desc->bDeviceClass == USB_CLASS_HID;
+  is_hid_boot[hub] = desc->bDeviceClass == USB_CLASS_HID &&
+                     desc->bDeviceSubClass == USB_HID_SUBCLASS_BOOT;
   string_index[0] = desc->iManufacturer;
   string_index[1] = desc->iProduct;
   string_index[2] = desc->iSerialNumber;
@@ -434,8 +445,11 @@ static bool state_get_configuration_desc_recv(uint8_t hub) {
     if (head->bDescriptorType == USB_DESC_INTERFACE) {
       const struct usb_desc_interface* intf =
           (const struct usb_desc_interface*)(buffer + offset);
-      if (intf->bInterfaceClass == USB_CLASS_HID)
+      if (intf->bInterfaceClass == USB_CLASS_HID) {
         is_hid[hub] = true;
+        if (intf->bInterfaceSubClass == USB_HID_SUBCLASS_BOOT)
+          is_hid_boot[hub] = true;
+      }
       if (is_hid[hub])
         hid_interface_number[hub] = intf->bInterfaceNumber;
     } else if (head->bDescriptorType == USB_DESC_HID) {
@@ -477,7 +491,9 @@ static bool state_set_feature(uint8_t hub) {
 }
 
 static bool state_hid_setup(uint8_t hub) {
-  delay_us(hub, 250, STATE_GET_HID_REPORT_DESC);
+  delay_us(
+      hub, 250,
+      is_hid_boot[hub] ? STATE_HID_SET_PROTOCOL : STATE_GET_HID_REPORT_DESC);
   return false;
 }
 
@@ -493,6 +509,12 @@ static bool state_get_hid_report_desc_recv(uint8_t hub) {
     usb_host->check_hid_report_desc(hub, buffer);
   unlock_transaction(hub);
   delay_ms(hub, 5, STATE_READY);
+  return false;
+}
+
+static bool state_hid_set_protocol(uint8_t hub) {
+  host_setup_transfer(hub, (uint8_t*)&hid_set_protocol,
+                      sizeof(hid_set_protocol), STATE_DONE);
   return false;
 }
 
@@ -712,6 +734,8 @@ static bool fsm(uint8_t hub) {
       return state_get_hid_report_desc(hub);
     case STATE_GET_HID_REPORT_DESC_RECV:
       return state_get_hid_report_desc_recv(hub);
+    case STATE_HID_SET_PROTOCOL:
+      return state_hid_set_protocol(hub);
     case STATE_DONE:
       return state_done(hub);
     case STATE_READY:
