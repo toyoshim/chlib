@@ -26,7 +26,7 @@ void pinMode(uint8_t port, uint8_t bit, uint8_t mode);
 // value
 #define LOW 0
 #define HIGH 1
-// note: port 4-5 is not supported yet
+// note: port 5 is not supported yet
 void digitalWrite(uint8_t port, uint8_t bit, uint8_t value);
 // note: port 5 is not supported yet
 uint8_t digitalReadPort(uint8_t port);

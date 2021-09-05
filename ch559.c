@@ -210,6 +210,9 @@ void digitalWrite(uint8_t port, uint8_t bit, uint8_t value) {
       case 3:
         P3 |= mask;
         break;
+      case 4:
+        P4_OUT |= mask;
+        break;
       default:
         Serial.println("N/A");
         break;
@@ -228,6 +231,9 @@ void digitalWrite(uint8_t port, uint8_t bit, uint8_t value) {
         break;
       case 3:
         P3 &= mask;
+        break;
+      case 4:
+        P4_OUT &= mask;
         break;
       default:
         Serial.println("N/A");
