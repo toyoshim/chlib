@@ -265,14 +265,14 @@ static void host_ack_transfer(uint8_t hub,
 static bool state_idle(uint8_t hub) {
   if ((hub == 0 && (USB_HUB_ST & bUHS_H0_ATTACH)) ||
       (hub == 1 && (USB_HUB_ST & bUHS_H1_ATTACH))) {
-    // Wait 100ms for devices to be stable.
-    delay_ms(hub, 100, STATE_CONNECT);
+    // Wait 500ms (>100ms) for devices to be stable.
+    delay_ms(hub, 500, STATE_CONNECT);
   }
   return false;
 }
 
 static bool state_connect(uint8_t hub) {
-  // Reset the bus, and wait 15ms.
+  // Reset the bus, and wait 100ms (>15ms).
   // The device may be disconnected during the reset.
   resetting[hub] = true;
   if (!hub)
@@ -280,7 +280,7 @@ static bool state_connect(uint8_t hub) {
   else
     UHUB1_CTRL = bUHS_BUS_RESET;
   initial_check[hub] = true;
-  delay_ms(hub, 15, STATE_RESET);
+  delay_ms(hub, 100, STATE_RESET);
   return false;
 }
 
