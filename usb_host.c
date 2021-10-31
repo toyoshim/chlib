@@ -353,6 +353,7 @@ static bool state_get_device_desc_recv(uint8_t hub) {
     unlock_transaction(hub);
     state_connect(hub);
     initial_check[hub] = false;
+    ep_max_packet_size[hub][0] = desc->bMaxPacketSize0;
     delay_ms(hub, 15, STATE_RESET);
     return false;
   }
@@ -580,6 +581,12 @@ static bool state_transaction(uint8_t hub) {
     uint16_t size = USB_RX_LEN;
     for (uint16_t i = 0; i < size; ++i)
       transaction_buffer[i] = rx_buffer[i];
+#ifdef _DBG_RECV_LOG
+    Serial.printf("recv ep%d: ", transaction_ep_pid & 0x0f);
+    for (uint8_t i = 0; i < size; ++i)
+      Serial.printf("%x,", transaction_buffer[i]);
+    Serial.printf("\n");
+#endif
     transaction_buffer = &transaction_buffer[size];
     transaction_size -= size;
   }
