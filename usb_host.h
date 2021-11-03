@@ -39,5 +39,6 @@ bool usb_host_in(uint8_t hub, uint8_t ep, uint8_t size);
 bool usb_host_in_data0(uint8_t hub, uint8_t ep, uint8_t size);
 bool usb_host_out(uint8_t hub, uint8_t ep, uint8_t* data, uint8_t size);
 bool usb_host_hid_get_report(uint8_t hub, uint8_t id, uint8_t size);
+void usb_host_hub_switch(uint8_t hub, uint8_t address);
 
 #endif  // __usb_host_h__

@@ -79,6 +79,15 @@ struct usb_desc_endpoint {
   uint8_t bInterval;
 };
 
+struct usb_desc_hub {
+  uint8_t bDescLength;
+  uint8_t bDescriptorType;
+  uint8_t bNbPorts;
+  uint16_t wHubCharacteristics;
+  uint8_t bPwrOn2PwrGood;
+  uint8_t bHubContrCurrent;
+};
+
 enum {
   // bRequestType
   USB_REQ_DIR_MASK = 0x80,
@@ -94,6 +103,7 @@ enum {
   USB_REQ_RECPT_DEVICE = 0x00,
   USB_REQ_RECPT_INTERFACE = 0x01,
   USB_REQ_RECPT_ENDPOINT = 0x02,
+  USB_REQ_RECPT_OTHER = 0x03,
 
   // bRequest
   USB_GET_STATUS = 0x00,
@@ -125,6 +135,13 @@ enum {
   USB_DESC_INTERFACE_ASSOCIATION = 0x0b,
   USB_DESC_HID = 0x21,
   USB_DESC_HID_REPORT = 0x22,
+  USB_DESC_HUB = 0x29,
+
+  // feature selector
+  USB_FEATURE_PORT_RESET = 0x04,
+  USB_FEATURE_PORT_POWER = 0x08,
+  USB_FEATURE_C_PORT_CONNECTION = 0x10,
+  USB_FEATURE_C_PORT_RESET = 0x14,
 
   // pid
   USB_PID_OUT = 0x01,
@@ -140,6 +157,7 @@ enum {
   USB_CLASS_AUDIO = 0x01,
   USB_CLASS_CDC = 0x02,
   USB_CLASS_HID = 0x03,
+  USB_CLASS_HUB = 0x09,
 
   // subclass
   USB_HID_SUBCLASS_BOOT = 0x01,
