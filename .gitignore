@@ -1,8 +1,11 @@
-test/*.o
+test/*\.o
 test/out
 test/test
-*.asm
-*.lst
-*.rel
-*.rst
-*.sym
+test\.*
+*\.asm
+*\.lst
+*\.rel
+*\.rst
+*\.sym
+makefile
+main.c
