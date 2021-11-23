@@ -1,5 +1,5 @@
-CXXFLAGS	= -std=c++17 -Igoogletest/googletest/include -I../ -D__timer3_h__
-CFLAGS		= -I../ -D__timer3_h__
+CXXFLAGS	= -std=c++17 -Igoogletest/googletest/include -I../src -D__timer3_h__
+CFLAGS		= -I../src -D__timer3_h__
 LFLAGS		= -Lout/lib -lgtest -lgtest_main -lpthread
 LIBGTEST	= out/lib/libgtest.a
 OBJS			= test.o serial.o hid.o hid_keyboard.o hid_guncon3.o hid_switch.o hid_xbox.o mock.o
@@ -10,7 +10,7 @@ test: ${LIBGTEST} ${OBJS}
 clean:
 	rm -rf out *.o test
 
-%.o: ../%.c *.h
+%.o: ../src/%.c ../src/*.h
 	clang -c ${CFLAGS} -o $@ $<
 
 %.o: %.cc *.h

@@ -5,6 +5,9 @@
 #ifndef __hid_h__
 #define __hid_h__
 
+#include <stdbool.h>
+#include <stdint.h>
+
 #include "usb_host.h"
 
 enum {
