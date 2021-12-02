@@ -28,6 +28,10 @@ void rs485_send(uint8_t val) {
   SER1_FIFO = val;
 }
 
+bool rs485_sent() {
+  return SER1_LSR & bLSR_T_ALL_EMP;
+}
+
 bool rs485_ready() {
   return (SER1_LSR & bLSR_DATA_RDY) != 0;
 }

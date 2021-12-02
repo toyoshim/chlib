@@ -11,6 +11,7 @@
 // note: pins are fixed to XA/XB for now
 void rs485_init();
 void rs485_send(uint8_t val);
+bool rs485_sent();
 bool rs485_ready();
 uint8_t rs485_recv();
 

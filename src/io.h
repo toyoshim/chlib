@@ -155,6 +155,7 @@ enum {
   bLCR_WORD_SZ1 = 0x02,    // SER1_LCR, UART1 word bit length high bit
   bLCR_DLAB = 0x80,        // SER1_LCR, UART1 divisor latch access bit enable
   bMCR_HALF = 0x80,        // SE1_MCR, UART1 enable half-duplex mode
+  bLSR_T_ALL_EMP = 0x40,   // SER1_LSR, UART1 transmitter all empty status
   bLSR_T_FIFO_EMP = 0x20,  // SER1_LSR, UART1 transmitter FIFO empty status
   bLSR_DATA_RDY = 0x01,    // SER1_LSR, UART1 receiver FIFO data ready status
   bPWM_CLR_ALL = 0x02,     // PWM_CTRL, clear FIFO and count of PWM1/2
