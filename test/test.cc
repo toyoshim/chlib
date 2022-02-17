@@ -118,7 +118,7 @@ TEST_F(PS4CompatTest, HoripadFpsPlusForPlayStation4_ModePS4) {
   hub_info expected = {
       sizeof(hid_report_desc),
       504,
-      {0, 8, 16, 24, 0xffff, 0xffff},
+      {0, 8, 16, 24, 56, 64},
       32,
       {0xffff, 0xffff, 0xffff, 0xffff},
       {36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48},
@@ -154,7 +154,7 @@ TEST_F(PS4CompatTest, HoripadFpsPlusForPlayStation4_ModePS3) {
   hub_info expected = {
       sizeof(hid_report_desc),
       216,
-      {24, 32, 40, 48, 0xffff, 0xffff},
+      {24, 32, 40, 48, 56, 64},
       16,
       {0xffff, 0xffff, 0xffff, 0xffff},
       {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12},
@@ -221,7 +221,7 @@ TEST_F(PS4CompatTest, WirelessController_DualShock4_CUH_ZCT2J) {
   hub_info expected = {
       sizeof(hid_report_desc),
       504,
-      {0, 8, 16, 24, 0xffff, 0xffff},
+      {0, 8, 16, 24, 56, 64},
       32,
       {0xffff, 0xffff, 0xffff, 0xffff},
       {36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48},
@@ -255,7 +255,7 @@ TEST_F(PS4PseudoCompatTest, WirelessController_DualShock4_CUH_ZCT1J) {
   hub_info expected = {
       sizeof(pseudo_hid_report_desc),
       504,
-      {0, 8, 16, 24, 0xffff, 0xffff},
+      {0, 8, 16, 24, 56, 64},
       32,
       {0xffff, 0xffff, 0xffff, 0xffff},
       {36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48},
@@ -288,7 +288,7 @@ TEST_F(PS4PseudoCompatTest, WirelessController_DualShock4_CUH_ZCT2J) {
   hub_info expected = {
       sizeof(pseudo_hid_report_desc),
       504,
-      {0, 8, 16, 24, 0xffff, 0xffff},
+      {0, 8, 16, 24, 56, 64},
       32,
       {0xffff, 0xffff, 0xffff, 0xffff},
       {36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48},
@@ -365,7 +365,7 @@ TEST_F(SwitchCompatTest, HoripadMiniForNintendoSwitch) {
   hub_info expected = {
       sizeof(hid_report_desc),
       216,
-      {24, 32, 40, 48, 0xffff, 0xffff},
+      {24, 32, 40, 48, 56, 64},
       16,
       {0xffff, 0xffff, 0xffff, 0xffff},
       {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12},

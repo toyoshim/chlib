@@ -232,7 +232,7 @@ static void check_hid_report_desc(uint8_t hub, const uint8_t* data) {
                   hub_info[hub].report_size + i;
             }
           } else if ((data[i + 1] & 1) == 0) {  // Analog buttons
-            for (uint8_t i = 0; i < report_count && analog_index < 4; ++i) {
+            for (uint8_t i = 0; i < report_count && analog_index < 6; ++i) {
               if (usages[i] == 0x00010030)
                 analog_index = 0;
               else if (usages[i] == 0x00010031)
@@ -246,7 +246,7 @@ static void check_hid_report_desc(uint8_t hub, const uint8_t* data) {
               hub_info[hub].axis_polarity[analog_index] = false;
               hub_info[hub].axis[analog_index++] =
                   hub_info[hub].report_size + report_size * i;
-              while (analog_index < 4 &&
+              while (analog_index < 6 &&
                      hub_info[hub].axis[analog_index] != 0xffff) {
                 analog_index++;
               }
