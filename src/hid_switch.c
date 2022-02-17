@@ -98,6 +98,16 @@ bool hid_switch_initialize(struct hub_info* hub_info) {
   hub_info->axis_size[1] = 12;
   hub_info->axis_sign[1] = false;
   hub_info->axis_polarity[1] = true;
+  hub_info->axis[2] = 8 * 8;
+  hub_info->axis_size[2] = 12;
+  hub_info->axis_sign[2] = false;
+  hub_info->axis_polarity[2] = false;
+  hub_info->axis[3] = 9 * 8 + 4;
+  hub_info->axis_size[3] = 12;
+  hub_info->axis_sign[3] = false;
+  hub_info->axis_polarity[3] = true;
+  hub_info->axis[4] = 0xffff;
+  hub_info->axis[5] = 0xffff;
   hub_info->hat = 0xffff;
   hub_info->dpad[0] = 4 * 8 + 1;
   hub_info->dpad[1] = 4 * 8 + 0;
