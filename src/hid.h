@@ -48,13 +48,13 @@ enum {
 struct hub_info {
   uint16_t report_desc_size;
   uint16_t report_size;
-  uint16_t axis[4];
+  uint16_t axis[6];
   uint16_t hat;
   uint16_t dpad[4];
   uint16_t button[13];
-  uint8_t axis_size[4];
-  bool axis_sign[4];
-  bool axis_polarity[4];
+  uint8_t axis_size[6];
+  bool axis_sign[6];
+  bool axis_polarity[6];
   uint8_t report_id;
   uint8_t type;
   uint8_t ep;

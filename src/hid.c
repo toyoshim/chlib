@@ -153,7 +153,7 @@ static void check_hid_report_desc(uint8_t hub, const uint8_t* data) {
 #endif
   const uint16_t size = hub_info[hub].report_desc_size;
   hub_info[hub].report_size = 0;
-  for (uint8_t button = 0; button < 4; ++button)
+  for (uint8_t button = 0; button < 6; ++button)
     hub_info[hub].axis[button] = 0xffff;
   hub_info[hub].hat = 0xffff;
   for (uint8_t button = 0; button < 4; ++button)

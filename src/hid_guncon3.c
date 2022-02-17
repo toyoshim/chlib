@@ -122,7 +122,7 @@ bool hid_guncon3_initialize(struct hub_info* hub_info,
   hub_info->axis_sign[1] = true;
   hub_info->axis_polarity[0] = false;
   hub_info->axis_polarity[1] = true;
-  for (uint8_t i = 2; i < 4; ++i)
+  for (uint8_t i = 2; i < 6; ++i)
     hub_info->axis[i] = 0xffff;
   hub_info->hat = 0xffff;
   for (uint8_t i = 0; i < 4; ++i)
