@@ -64,9 +64,6 @@ bool hid_xbox_one_check_interface_desc(struct hub_info* hub_info,
 }
 
 bool hid_xbox_initialize(struct hub_info* hub_info, struct usb_info* usb_info) {
-  if (hub_info->state != HID_STATE_NOT_READY)
-    return false;
-
   if (hub_info->type != HID_TYPE_XBOX_360 &&
       hub_info->type != HID_TYPE_XBOX_ONE) {
     return false;

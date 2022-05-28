@@ -22,7 +22,8 @@ bool hid_guncon3_check_interface_desc(struct usb_info* usb_info);
 bool hid_guncon3_initialize(struct hub_info* hub_info,
                             struct usb_info* usb_info);
 
-bool hid_guncon3_report(struct usb_info* usb_info,
+bool hid_guncon3_report(struct hub_info* hub_info,
+                        struct usb_info* usb_info,
                         uint8_t* data,
                         uint16_t size);
 

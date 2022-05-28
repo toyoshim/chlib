@@ -352,7 +352,7 @@ quit:
 }
 
 static void hid_report(uint8_t hub, uint8_t* data, uint16_t size) {
-  if (hid_guncon3_report(&usb_info[hub], data, size))
+  if (hid_guncon3_report(&hub_info[hub], &usb_info[hub], data, size))
     return;
   if (hid_xbox_report(&hub_info[hub], data, size))
     return;
