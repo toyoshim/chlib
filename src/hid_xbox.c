@@ -12,6 +12,7 @@
 enum {
   CONNECTED,
   INITIALIZED,
+  STARTED,
 };
 
 bool hid_xbox_check_device_desc(struct hub_info* hub_info,
@@ -201,6 +202,11 @@ void hid_xbox_one_poll(uint8_t hub,
     usb_host_out(hub, usb_info->ep, initialize, sizeof(initialize));
     usb_info->state = INITIALIZED;
   } else if (usb_info->state == INITIALIZED) {
+    static uint8_t start[] = {0x06, 0x20, 0x00, 0x02, 0x01, 0x00};
+    start[2] = usb_info->cmd_count++;
+    usb_host_out(hub, usb_info->ep, start, sizeof(start));
+    usb_info->state = STARTED;
+  } else if (usb_info->state == STARTED) {
     usb_host_in(hub, hub_info->ep, usb_info->ep_max_packet_size);
   }
 }
