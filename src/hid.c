@@ -5,11 +5,17 @@
 #include "hid.h"
 
 #include "ch559.h"
+#if !defined(_HID_NO_GUNCON3)
 #include "hid_guncon3.h"
+#endif
 #include "hid_internal.h"
 #include "hid_keyboard.h"
+#if !defined(_HID_NO_SWITCH)
 #include "hid_switch.h"
+#endif
+#if !defined(_HID_NO_XBOX)
 #include "hid_xbox.h"
+#endif
 #include "led.h"
 #include "serial.h"
 #include "usb.h"
@@ -23,6 +29,8 @@ static struct hid* hid;
 static struct usb_host host;
 static struct hub_info hub_info[2];
 static struct usb_info usb_info[2];
+
+static void do_nothing() {}
 
 static void disconnected(uint8_t hub) {
   hub_info[hub].state = HID_STATE_DISCONNECTED;
@@ -54,9 +62,16 @@ static void check_device_desc(uint8_t hub, const uint8_t* data) {
   usb_info[hub].pid = desc->idProduct;
 
   if (hid_keyboard_check_device_desc(&hub_info[hub], desc) ||
+#if !defined(_HID_NO_XBOX)
       hid_xbox_check_device_desc(&hub_info[hub], desc) ||
+#endif
+#if !defined(_HID_NO_SWITCH)
       hid_switch_check_device_desc(&hub_info[hub], &usb_info[hub], desc) ||
-      hid_guncon3_check_device_desc(&hub_info[hub], &usb_info[hub], desc)) {
+#endif
+#if !defined(_HID_NO_GUNCON3)
+      hid_guncon3_check_device_desc(&hub_info[hub], &usb_info[hub], desc) ||
+#endif
+      false) {
     return;
   }
 }
@@ -80,11 +95,19 @@ static void check_configuration_desc(uint8_t hub, const uint8_t* data) {
 #endif  // _DBG_DESC
         if (usb_info[hub].class == 0)
           class = intf->bInterfaceClass;
-        target_interface =
-            hid_keyboard_check_interface_desc(&hub_info[hub], intf) ||
+        if (hid_keyboard_check_interface_desc(&hub_info[hub], intf) ||
+#if !defined(_HID_NO_XBOX)
             hid_xbox_360_check_interface_desc(&hub_info[hub], intf) ||
             hid_xbox_one_check_interface_desc(&hub_info[hub], intf) ||
-            hid_guncon3_check_interface_desc(&usb_info[hub]);
+#endif
+#if !defined(_HID_NO_GUNCON3)
+            hid_guncon3_check_interface_desc(&usb_info[hub]) ||
+#endif
+            false) {
+          target_interface = true;
+        } else {
+          target_interface = false;
+        }
         break;
       }
       case USB_DESC_HID: {
@@ -96,8 +119,11 @@ static void check_configuration_desc(uint8_t hub, const uint8_t* data) {
         if (hub_info[hub].type == HID_TYPE_UNKNOWN && class != USB_CLASS_HID)
           break;
         if ((hub_info[hub].type == HID_TYPE_KEYBOARD ||
+#if !defined(_HID_NO_XBOX)
              hub_info[hub].type == HID_TYPE_XBOX_360 ||
-             hub_info[hub].type == HID_TYPE_XBOX_ONE) &&
+             hub_info[hub].type == HID_TYPE_XBOX_ONE ||
+#endif
+             false) &&
             !target_interface) {
           break;
         }
@@ -125,9 +151,14 @@ static void check_configuration_desc(uint8_t hub, const uint8_t* data) {
     hub_info[hub].state = HID_STATE_NOT_READY;
 
   if (hid_keyboard_initialize(&hub_info[hub]) ||
+#if !defined(_HID_NO_GUNCON3)
       hid_guncon3_initialize(&hub_info[hub], &usb_info[hub]) ||
-      hid_xbox_initialize(&hub_info[hub], &usb_info[hub])) {
-    led_oneshot(L_PULSE_ONCE);
+#endif
+#if !defined(_HID_NO_XBOX)
+      hid_xbox_initialize(&hub_info[hub], &usb_info[hub]) ||
+#endif
+      false) {
+    hid->detected();
   }
 }
 
@@ -345,30 +376,45 @@ quit:
     }
   }
   hub_info[hub].state = HID_STATE_READY;
+#if !defined(_HID_NO_SWITCH)
   if (hub_info[hub].type == HID_TYPE_SWITCH)
     hid_switch_initialize(&hub_info[hub]);
+#endif
   if (hub_info[hub].type != HID_TYPE_UNKNOWN)
-    led_oneshot(L_PULSE_ONCE);
+    hid->detected();
 }
 
 static void hid_report(uint8_t hub, uint8_t* data, uint16_t size) {
+#if !defined(_HID_NO_GUNCON3)
   if (hid_guncon3_report(&hub_info[hub], &usb_info[hub], data, size))
     return;
+#endif
+#if !defined(_HID_NO_XBOX)
   if (hid_xbox_report(&hub_info[hub], data, size))
     return;
+#endif
+#if !defined(_HID_NO_SWITCH)
   if (hid_switch_report(hub, &hub_info[hub], &usb_info[hub], data, size))
     return;
+#endif
   if (hid->report && size)
     hid->report(hub, &hub_info[hub], data, size);
 }
 
 void hid_init(struct hid* new_hid) {
   hid = new_hid;
+  if (hid->get_flags) {
+    host.flags = hid->get_flags();
+  } else {
 #ifdef _DBG_WITH_ONLY_HUB1
-  host.flags = USE_HUB1;
+    host.flags = USE_HUB1;
 #else
-  host.flags = USE_HUB1 | USE_HUB0;
+    host.flags = USE_HUB1 | USE_HUB0;
 #endif
+  }
+  if (!hid->detected)
+    hid->detected = do_nothing;
+
   host.disconnected = disconnected;
   host.check_device_desc = check_device_desc;
   host.check_string_desc = 0;
@@ -389,18 +435,24 @@ void hid_poll() {
     return;
   if (hub_info[hub].state == HID_STATE_READY && usb_host_ready(hub)) {
     switch (hub_info[hub].type) {
+#if !defined(_HID_NO_GUNCON3)
       case HID_TYPE_ZAPPER:
         hid_guncon3_poll(hub, &usb_info[hub]);
         break;
+#endif
+#if !defined(_HID_NO_XBOX)
       case HID_TYPE_XBOX_360:
         hid_xbox_360_poll(hub, &hub_info[hub], &usb_info[hub]);
         break;
       case HID_TYPE_XBOX_ONE:
         hid_xbox_one_poll(hub, &hub_info[hub], &usb_info[hub]);
         break;
+#endif
+#if !defined(_HID_NO_SWITCH)
       case HID_TYPE_SWITCH:
         hid_switch_poll(hub, &usb_info[hub]);
         break;
+#endif
       default: {
         uint16_t size = hub_info[hub].report_size / 8;
         if (hub_info[hub].report_id)

@@ -88,7 +88,7 @@ class CompatTest : public ::testing::Test {
  private:
   void SetUp() override {
     serial_init();
-    hid.report = nullptr;
+    memset(&hid, 0, sizeof(hid));
     hid_init(&hid);
   }
 

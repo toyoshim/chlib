@@ -66,6 +66,9 @@ struct hid {
                  const struct hub_info*,
                  const uint8_t* data,
                  uint16_t size);
+  void (*detected)();
+
+  uint8_t (*get_flags)();
 };
 
 void hid_init(struct hid* hid);
