@@ -102,6 +102,14 @@ SFR(ADC_SETUP, 0xf6);   // ADC setup
 SFR(ADC_EX_SW, 0xf7);   // ADC extend switch control
 SFR(RESET_KEEP, 0xfe);  // Reset-keeping register
 
+SBIT(P0_0, 0x80, 0);          // P0, 0
+SBIT(P0_1, 0x80, 1);          // P0, 1
+SBIT(P0_2, 0x80, 2);          // P0, 2
+SBIT(P0_3, 0x80, 3);          // P0, 3
+SBIT(P0_4, 0x80, 4);          // P0, 4
+SBIT(P0_5, 0x80, 5);          // P0, 5
+SBIT(P0_6, 0x80, 6);          // P0, 6
+SBIT(P0_7, 0x80, 7);          // P0, 7
 SBIT(TR0, 0x88, 4);           // TCON, Timer0 start/stop bit
 SBIT(TR1, 0x88, 6);           // TCON, Timer1 start/stop bit
 SBIT(P1_0, 0x90, 0);          // P1, 0
