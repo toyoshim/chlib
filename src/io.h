@@ -22,11 +22,13 @@ SFR(TH1, 0x8d);         // High byte of timer1 count
 SFR(P1, 0x90);          // P1 input/output register
 SFR(SER1_IER, 0x91);    // UART1 interrupt enable
 SFR(SER1_DLM, 0x91);    // UART1 divisor latch MSB byte, only when DLAB=1
+SFR(SER1_IIR, 0x92);    // UART1 interrupt identification
 SFR(SER1_FCR, 0x92);    // UART1 FIFO control
 SFR(SER1_LCR, 0x93);    // UART1 line control
 SFR(SER1_MCR, 0x94);    // UART1 modem control
 SFR(SER1_LSR, 0x95);    // UART1 line status
 SFR(SER1_DIV, 0x97);    // UART1 pre-divisor latch byte, only when DLAB=1
+SFR(SER1_ADDR, 0x97);   // UART1 bus address preset register
 SFR(SBUF, 0x99);        // UART0 data buffer register
 SFR(SER1_FIFO, 0x9a);   // UART1 FIFO register
 SFR(SER1_DLL, 0x9a);    // UART1 divisor latch LSB byte, only when DLAB=1
@@ -148,23 +150,28 @@ SBIT(UIF_SUSPEND, 0xd8, 2);   // USB_INT_FG, USB suspend or resume
 SBIT(U_TOG_OK, 0xd8, 6);      // USB_INT_FG, Current USB transmit data toggle
 SBIT(IE_TMR3, 0xe8, 1);       // IE_EX, Timer3 interruprt enable bit
 SBIT(IE_USB, 0xe8, 2);        // IE_EX, USB interruprt enable bit
+SBIT(IE_UART1, 0xe8, 4);      // IE_EX, UART1 interruprt enable bit
 
 enum {
   SMOD = 0x80,             // PCON, Baud rate selection for UART0 mode 1/2/3
   bT0_M0 = 0x01,           // TMOD, Timer0 mode low bit
   bT0_M1 = 0x02,           // TMOD, Timer0 mode high bit
   bT1_M1 = 0x20,           // TMOD, Timer1 mode high bit
+  bIER_RESET = 0x80,       // SER1_IER, UART1 software reset
   bIER_PIN_MOD1 = 0x20,    // SER1_IER, UART1 pin mode high bit
   bIER_PIN_MOD0 = 0x10,    // SER1_IER, UART1 pin mode low bit
+  bIER_RECV_RDY = 0x01,    // SER1_IER, UART1 receiver data ready
   bFCR_FIFO_EN = 0x01,     // SER1_FCR, UART1 FIFO enable
   bFCR_R_FIFO_CLR = 0x02,  // SER1_FCR, UART1 receiver FIFO clear
   bFCR_T_FIFO_CLR = 0x04,  // SER1_FCR, UART1 transmitter FIFO clear
   bLCR_WORD_SZ0 = 0x01,    // SER1_LCR, UART1 word bit length low bit
   bLCR_WORD_SZ1 = 0x02,    // SER1_LCR, UART1 word bit length high bit
   bLCR_DLAB = 0x80,        // SER1_LCR, UART1 divisor latch access bit enable
-  bMCR_HALF = 0x80,        // SE1_MCR, UART1 enable half-duplex mode
+  bMCR_OUT2 = 0x08,        // SER1_MCR, UART1 enable interrupt requuest output
+  bMCR_HALF = 0x80,        // SER1_MCR, UART1 enable half-duplex mode
   bLSR_T_ALL_EMP = 0x40,   // SER1_LSR, UART1 transmitter all empty status
   bLSR_T_FIFO_EMP = 0x20,  // SER1_LSR, UART1 transmitter FIFO empty status
+  bLSR_OVER_ERR = 0x02,    // SER1_LSR, UART1 receiver overflow error
   bLSR_DATA_RDY = 0x01,    // SER1_LSR, UART1 receiver FIFO data ready status
   bPWM_CLR_ALL = 0x02,     // PWM_CTRL, clear FIFO and count of PWM1/2
   bPWM_OUT_EN = 0x08,      // PWM_CTRL, PWM1 output enable
