@@ -208,6 +208,7 @@ enum {
   bUHS_H1_ATTACH = 0x80,   // USB_HUB_ST, USB HUB1 attached status
   bUH_PORT_EN = 0x01,      // UHUBn_CTRL, Enable USB hub port
   bUH_LOW_SPEED = 0x04,    // UHUBn_CTRL, Enable USB hub low speed
+  bUH_DISABLE = 0x80,      // UHUBn_CTRL, Disable USB hub pin (only for UHUB1)
   bUEP_R_TOG = 0x80,       // UEPx_CTRL, Expected data toggle flag of USB EPn RX
   bUEP_T_TOG = 0x40,       // UEPx_CTRL, Expected data toggle flag of USB EPn TX
   MASK_UEP_T_RES = 0x03,   // UEPx_CTRL, mask for UEP_T_RES_*
