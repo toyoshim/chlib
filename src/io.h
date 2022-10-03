@@ -38,6 +38,7 @@ SFR(PWM_CK_SE, 0x9e);   // PWM clock divisor register
 SFR(PWM_CYCLE, 0x9f);   // PWM cycle period register
 SFR(P2, 0xa0);          // P2 input/output register
 SFR(SAFE_MOD, 0xa1);    // Safe mode control register
+SFR(XBUS_AUX, 0xa2);    // XBUS auxiliary setting register
 SFR(T3_SETUP, 0xa3);    // Timer3 setup register
 SFR(T3_CK_SE_L, 0xa4);  // Timer3 clock divisor setting low byte
 SFR(T3_COUNT_L, 0xa4);  // Timer3 current count low byte
@@ -175,6 +176,7 @@ enum {
   bLSR_DATA_RDY = 0x01,    // SER1_LSR, UART1 receiver FIFO data ready status
   bPWM_CLR_ALL = 0x02,     // PWM_CTRL, clear FIFO and count of PWM1/2
   bPWM_OUT_EN = 0x08,      // PWM_CTRL, PWM1 output enable
+  bALE_CLK_EN = 0x10,      // XBUS_AUX, Pin ALE clock output enable
   bT3_EN_CK_SE = 0x01,     // T3_SETUP, enable to access divisor setting
   bT3_IE_END = 0x80,       // T3_SETUP, enable interrupt for capture mode count
   bT3_IF_END = 0x10,       // T3_STAT, Interrupt flag for count over

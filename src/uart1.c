@@ -8,26 +8,33 @@
 
 void uart1_init(uint8_t options, uint8_t speed) {
   if (options & UART1_RS485) {
+    // Enable half-duplex mode.
+    SER1_MCR |= bMCR_HALF;
+    // Disable ALE clock.
+    XBUS_AUX &= ~bALE_CLK_EN;
     // Use only XA/XB pins.
+    SER1_IER &= ~bIER_PIN_MOD0;
     SER1_IER |= bIER_PIN_MOD1;
   } else {
-    // Enable USB Hub 1 to disable RS485 mode. The USB receiver is still
-    // disabled to use GPIOs.
-    UHUB1_CTRL &= ~bUH_DISABLE;
+    // Disable half-duplex mode.
+    SER1_MCR &= ~bMCR_HALF;
+    // Enable AL clock to disable iRS485 mode.
+    XBUS_AUX |= bALE_CLK_EN;
     if (options & UART1_P4) {
       // RXD1/TXD1 connect P4.0/P4.4.
       SER1_IER |= bIER_PIN_MOD0;
       SER1_IER &= ~bIER_PIN_MOD1;
+      P4_DIR |= (1 << 4);
     } else {
       // RXD1/TXD1 connect P2.6/P2.7.
       SER1_IER &= ~bIER_PIN_MOD0;
       SER1_IER |= bIER_PIN_MOD1;
+      P2_DIR |= (1 << 7);
     }
   }
 
   // no parity, stop bit 1-bit, no interrupts by default
-  SER1_LCR |= bLCR_WORD_SZ0 | bLCR_WORD_SZ1;  // data length 8-bits
-  SER1_MCR |= bMCR_HALF;                      // enable half-duplex mode
+  SER1_LCR = bLCR_WORD_SZ0 | bLCR_WORD_SZ1;  // data length 8-bits
 
   uart1_set_speed(speed);
 }
