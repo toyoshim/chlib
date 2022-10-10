@@ -54,6 +54,7 @@ void uart1_set_speed(uint8_t speed) {
       // { SER1_DLM, SER1_DLL } = Fsys(48M) * 2 / SER1_DIV / 16 / baudrate(1M)
       SER1_DLM = 0;
       SER1_DLL = 6;  // should be set before enabling FIFO
+      break;
     case UART1_3M:
       // { SER1_DLM, SER1_DLL } = Fsys(48M) * 2 / SER1_DIV / 16 / baudrate(3M)
       SER1_DLM = 0;
