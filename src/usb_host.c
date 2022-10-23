@@ -335,7 +335,7 @@ static bool state_reset(uint8_t hub) {
     UHUB0_CTRL &= ~bUHS_BUS_RESET;
   else
     UHUB1_CTRL &= ~bUHS_BUS_RESET;
-  delay_us(hub, 250, STATE_ENABLE);
+  delay_us(hub, 500, STATE_ENABLE);
   return false;
 }
 
