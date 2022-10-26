@@ -8,23 +8,43 @@
 #include "io.h"
 
 void adc_init() {
-  P1_IE = 0;  // Port 1 disable
-  ADC_SETUP = bADC_POWER_EN;
-  ADC_CK_SE = 2;  // clock not divided
-  ADC_CTRL = 0;
-  ADC_CHANN = 1;  // use AIN0
+  ADC_SETUP = bADC_POWER_EN;    // ADC power enabled.
+  ADC_CK_SE = 4;                // Set 4 for frequency division.
+  ADC_CTRL = 0;                 // Manual sampling.
   ADC_EX_SW = bADC_RESOLUTION;  // 11-bits
-  delayMicroseconds(100);
+}
+
+void adc_select(uint8_t ch) {
+  uint8_t mask = (1 << ch);
+  P1_IE &= ~mask;
+  ADC_CHANN = mask;
+
+  // Take the first sample.
+  ADC_CTRL |= bADC_SAMPLE;
+  ADC_CTRL &= ~bADC_SAMPLE;
+}
+
+bool adc_peek(uint16_t* value) {
+  if (!(ADC_STAT & bADC_IF_ACT))
+    return false;
+
+  // Write 1 to reset.
+  ADC_STAT |= bADC_IF_ACT;
+
+  // Read the value.
+  *value = (ADC_FIFO_H << 8) | ADC_FIFO_L;
+
+  // Take the next sample.
+  ADC_CTRL |= bADC_SAMPLE;
+  ADC_CTRL &= ~bADC_SAMPLE;
+
+  return true;
 }
 
 uint16_t adc_get(uint8_t ch) {
-  ADC_CHANN = (1 << ch);
-  delayMicroseconds(10);
-  ADC_CTRL |= bADC_SAMPLE;
-  delayMicroseconds(5);
-  ADC_CTRL &= ~bADC_SAMPLE;
-  while (!(ADC_STAT & bADC_IF_ACT))  // wait til completion
+  adc_select(ch);
+  uint16_t value;
+  while (!adc_peek(&value))
     ;
-  ADC_STAT |= bADC_IF_ACT;  // clear
-  return (ADC_FIFO_H << 8) | ADC_FIFO_L;
+  return value;
 }
