@@ -233,7 +233,6 @@ void in_ep(uint8_t ep) {
 void usb_int() __interrupt INT_NO_USB __using 1 {
   if (UIF_TRANSFER) {
     uint8_t usb_int_st = USB_INT_ST;
-    UIF_TRANSFER = 0;
     // For EP0
     switch (usb_int_st & (MASK_UIS_TOKEN | MASK_UIS_ENDP)) {
       case UIS_TOKEN_SETUP:
@@ -261,6 +260,7 @@ void usb_int() __interrupt INT_NO_USB __using 1 {
         }
         break;
     }
+    UIF_TRANSFER = 0;
   } else if (UIF_BUS_RST) {
     bus_reset();
     UIF_TRANSFER = 0;
