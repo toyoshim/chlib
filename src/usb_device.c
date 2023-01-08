@@ -226,7 +226,7 @@ void in_ep(uint8_t ep) {
     UEP2_CTRL = UEP2_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;
   } else {
     UEP3_T_LEN = len;
-    UEP3_CTRL = UEP2_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;
+    UEP3_CTRL = UEP3_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;
   }
 }
 
