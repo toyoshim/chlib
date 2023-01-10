@@ -63,6 +63,12 @@ static bool restore() {
   return result;
 }
 
+// To protect data safely, the initialization code can restore data from a
+// back-up if shutdown happend during the write operations.
+// 1. Checks the MAGIC in the data flash and returns if it's valid.
+// 2. Checks the MAGIC in the code flash, and restores it and returns if it's
+//    valid.
+// 3. Initializes the data flash with the MAGIC.
 bool flash_init(uint32_t new_magic) {
   magic = new_magic;
   __code uint32_t* flash = (__code uint32_t*)data_flash;
@@ -96,6 +102,16 @@ bool flash_init(uint32_t new_magic) {
   return result;
 }
 
+// To be safe, the write operations;
+// 1. erases the code flash area.
+// 2. stores new data into the code flash area. MAGIC is stored lastly.
+// 3. erases the data flash area.
+// 4. copies the new data in code flash to the data flash in reversed order so
+//    to copy the MAGIC lastly.
+// If operations are interrupted by a shutdown, we can recover safely.
+// If it happens on 1 and 2, the data flash is still valid.
+// If it does on 3 and 4, the MAGIC in the data flash is missed, and data is
+// restored from the back-up in the code flash, preparated at the step 2.
 bool flash_write(uint16_t offset, const uint8_t* data, uint16_t size) {
   // Protect magic region.
   if (offset < 4)
