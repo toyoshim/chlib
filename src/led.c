@@ -7,7 +7,7 @@
 #include "ch559.h"
 #include "timer3.h"
 
-#define ON HIGH
+#define ON_ HIGH
 #define OFF LOW
 #define END 0xff
 
@@ -16,26 +16,32 @@ static int8_t pin = -1;
 static uint8_t mode = 0;
 static uint8_t shot = END;
 static uint16_t shot_start_time = 0;
+static uint8_t shot_phase = 0;
 static uint8_t polarity = LOW;
 
 static const uint8_t patterns[][8] = {
-    {ON, ON, ON, ON, ON, ON, ON, ON},          // ON
-    {ON, ON, ON, ON, OFF, OFF, OFF, OFF},      // Blink
-    {ON, ON, OFF, OFF, ON, ON, OFF, OFF},      // Fast Blink
-    {ON, OFF, ON, OFF, ON, OFF, ON, OFF},      // Faster Blink
-    {ON, OFF, ON, OFF, OFF, OFF, OFF, OFF},    // Blink Twice
-    {ON, OFF, ON, OFF, ON, OFF, OFF, OFF},     // Blink Three times
+    {ON_, ON_, ON_, ON_, ON_, ON_, ON_, ON_},  // ON
+    {ON_, ON_, ON_, ON_, OFF, OFF, OFF, OFF},  // Blink
+    {ON_, ON_, OFF, OFF, ON_, ON_, OFF, OFF},  // Fast Blink
+    {ON_, OFF, ON_, OFF, ON_, OFF, ON_, OFF},  // Faster Blink
+    {ON_, OFF, ON_, OFF, OFF, OFF, OFF, OFF},  // Blink Twice
+    {ON_, OFF, ON_, OFF, ON_, OFF, OFF, OFF},  // Blink Three times
     {OFF, OFF, OFF, OFF, OFF, OFF, OFF, OFF},  // OFF
 };
 
 static const uint8_t shots[][20] = {
-    {OFF, ON,  OFF, END, END, END, END, END, END, END,
+    {OFF, ON_, OFF, END, END, END, END, END, END, END,
      END, END, END, END, END, END, END, END, END, END},  // Pulse x1
-    {OFF, ON,  OFF, ON,  OFF, END, END, END, END, END,
+    {OFF, ON_, OFF, ON_, OFF, END, END, END, END, END,
      END, END, END, END, END, END, END, END, END, END},  // Pulse x2
-    {OFF, ON,  OFF, ON,  OFF, ON,  OFF, END, END, END,
+    {OFF, ON_, OFF, ON_, OFF, ON_, OFF, END, END, END,
      END, END, END, END, END, END, END, END, END, END},  // Pulse x3
-
+    {OFF, ON_, OFF, ON_, OFF, ON_, OFF, ON_, OFF, END,
+     END, END, END, END, END, END, END, END, END, END},  // Pulse x4
+    {OFF, ON_, OFF, ON_, OFF, ON_, OFF, ON_, OFF, ON_,
+     OFF, END, END, END, END, END, END, END, END, END},  // Pulse x5
+    {OFF, ON_, OFF, ON_, OFF, ON_, OFF, ON_, OFF, ON_,
+     OFF, ON_, OFF, END, END, END, END, END, END, END},  // Pulse x6
 };
 
 void led_init(uint8_t new_port, uint8_t new_pin, uint8_t new_polarity) {
@@ -52,19 +58,23 @@ void led_mode(uint8_t new_mode) {
 }
 
 void led_oneshot(uint8_t new_shot) {
-  shot = new_shot % 3;
+  shot = new_shot % 6;
   shot_start_time = timer3_tick_msec();
+  shot_phase = 0;
 }
 
 void led_poll() {
   if (shot != END) {
-    uint16_t phase = ((timer3_tick_msec() - shot_start_time) % 1000) / 50;
-    if (shots[shot][phase] == END) {
-      shot = END;
-    } else {
-      digitalWrite(port, pin, shots[shot][phase] == polarity ? HIGH : LOW);
-      return;
+    if (!timer3_tick_msec_between(shot_start_time, shot_start_time + 50)) {
+      shot_phase++;
+      if (shot_phase >= 20 || shots[shot][shot_phase] == END) {
+        shot = END;
+      } else {
+        shot_start_time = timer3_tick_msec();
+      }
+      digitalWrite(port, pin, shots[shot][shot_phase] == polarity ? HIGH : LOW);
     }
+    return;
   }
   uint16_t phase = timer3_tick_msec() / 125;
   digitalWrite(port, pin, patterns[mode][phase] == polarity ? HIGH : LOW);

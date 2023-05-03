@@ -26,6 +26,9 @@ enum {
   L_PULSE_ONCE,
   L_PULSE_TWICE,
   L_PULSE_THREE_TIMES,
+  L_PULSE_FOUR_TIMES,
+  L_PULSE_FIVE_TIMES,
+  L_PULSE_SIX_TIMES,
 };
 
 void led_init(uint8_t port, uint8_t pin, uint8_t polarity);
