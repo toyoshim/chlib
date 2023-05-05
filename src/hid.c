@@ -19,10 +19,9 @@
 #include "serial.h"
 #include "usb.h"
 
-//#define _DBG_DESC
-//#define _DBG_HID_REPORT_DESC
-//#define _DBG_HID_REPORT_DESC_DUMP
-//#define _DBG_WITH_ONLY_HUB1
+// #define _DBG_DESC
+// #define _DBG_HID_REPORT_DESC
+// #define _DBG_HID_REPORT_DESC_DUMP
 
 static struct hid* hid;
 static struct usb_host host;
@@ -405,11 +404,7 @@ void hid_init(struct hid* new_hid) {
   if (hid->get_flags) {
     host.flags = hid->get_flags();
   } else {
-#ifdef _DBG_WITH_ONLY_HUB1
-    host.flags = USE_HUB1;
-#else
     host.flags = USE_HUB1 | USE_HUB0;
-#endif
   }
   if (!hid->detected)
     hid->detected = do_nothing;
