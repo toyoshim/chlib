@@ -28,7 +28,7 @@ static uint8_t key[8] = {
     0x01, 0x12, 0x6f, 0x32, 0x24, 0x60, 0x17, 0x21,
 };
 
-static const uint8_t table[320] = {
+static const uint8_t table[256] = {
     0x75, 0xc3, 0x10, 0x31, 0xb5, 0xd3, 0x69, 0x84, 0x89, 0xba, 0xd6, 0x89,
     0xbd, 0x70, 0x19, 0x8e, 0x58, 0xa8, 0x3d, 0x9b, 0x5d, 0xf0, 0x49, 0xe8,
     0xad, 0x9d, 0x7a, 0x0d, 0x7e, 0x24, 0xda, 0xfc, 0x0d, 0x14, 0xc5, 0x23,
@@ -50,12 +50,7 @@ static const uint8_t table[320] = {
     0x25, 0x1f, 0xc9, 0x18, 0xe3, 0x6d, 0x81, 0x84, 0x80, 0x3b, 0xb1, 0xe5,
     0x4d, 0xf7, 0x51, 0x78, 0xa9, 0x13, 0xad, 0xe9, 0x80, 0xc1, 0x0b, 0x25,
     0x93, 0xfc, 0x4d, 0x89, 0x23, 0xc2, 0x7c, 0x0b, 0x59, 0x15, 0xf6, 0x01,
-    0x50, 0x55, 0xbf, 0x81, 0x75, 0xc3, 0x10, 0x31, 0xb5, 0xd3, 0x69, 0x84,
-    0x89, 0xba, 0xd6, 0x89, 0xbd, 0x70, 0x19, 0x8e, 0x58, 0xa8, 0x3d, 0x9b,
-    0x5d, 0xf0, 0x49, 0xe8, 0xad, 0x9d, 0x7a, 0x0d, 0x7e, 0x24, 0xda, 0xfc,
-    0x0d, 0x14, 0xc5, 0x23, 0x91, 0x11, 0xf5, 0xc0, 0x4b, 0xcd, 0x44, 0x1c,
-    0xc5, 0x21, 0xdf, 0x61, 0x54, 0xed, 0xa2, 0x81, 0xb7, 0xe5, 0x74, 0x94,
-    0xb0, 0x47, 0xee, 0xf1, 0xa5, 0xbb, 0x21, 0xc8};
+    0x50, 0x55, 0xbf, 0x81};
 
 void decode(uint8_t* data) {
   uint8_t key_offset =
@@ -69,17 +64,17 @@ void decode(uint8_t* data) {
     for (int8_t y = 4; y > 1; y--) {
       key_offset--;
 
-      uint8_t bkey = table[key_offset + 0x41];
+      uint8_t bkey = table[(key_offset + 0x41) & 0xff];
       uint8_t keyr = key[key_index];
       if (--key_index == 0)
         key_index = 7;
 
       if ((bkey & 3) == 0)
-        byte = (byte - bkey) - keyr;
+        byte = byte - bkey - keyr;
       else if ((bkey & 3) == 1)
-        byte = ((byte + bkey) + keyr);
+        byte = byte + bkey + keyr;
       else
-        byte = ((byte ^ bkey) ^ keyr);
+        byte = byte ^ bkey ^ keyr;
     }
     data[x] = byte;
   }
@@ -112,10 +107,10 @@ bool hid_guncon3_initialize(struct hub_info* hub_info,
                             struct usb_info* usb_info) {
   if (usb_info->state == IDLE)
     return false;
-  hub_info->report_size = 13;
+  hub_info->report_size = 15;
   hub_info->report_id = 0;
-  hub_info->axis[0] = 24;
-  hub_info->axis[1] = 40;
+  hub_info->axis[0] = 24;  // Screen X
+  hub_info->axis[1] = 40;  // Screen Y
   hub_info->axis_size[0] = 16;
   hub_info->axis_size[1] = 16;
   hub_info->axis_shift[0] = 0;
@@ -124,15 +119,40 @@ bool hid_guncon3_initialize(struct hub_info* hub_info,
   hub_info->axis_sign[1] = true;
   hub_info->axis_polarity[0] = false;
   hub_info->axis_polarity[1] = true;
-  for (uint8_t i = 2; i < 6; ++i)
-    hub_info->axis[i] = 0xffff;
+  hub_info->axis[2] = 72;  // LX
+  hub_info->axis[3] = 80;  // LY
+  hub_info->axis[4] = 88;  // RX
+  hub_info->axis[5] = 96;  // RY
+  hub_info->axis_size[2] = 8;
+  hub_info->axis_size[3] = 8;
+  hub_info->axis_size[4] = 8;
+  hub_info->axis_size[5] = 8;
+  hub_info->axis_shift[2] = 0;
+  hub_info->axis_shift[3] = 0;
+  hub_info->axis_shift[4] = 0;
+  hub_info->axis_shift[5] = 0;
+  hub_info->axis_sign[2] = false;
+  hub_info->axis_sign[3] = false;
+  hub_info->axis_sign[4] = false;
+  hub_info->axis_sign[5] = false;
+  hub_info->axis_polarity[2] = false;
+  hub_info->axis_polarity[3] = false;
+  hub_info->axis_polarity[4] = false;
+  hub_info->axis_polarity[5] = false;
   hub_info->hat = 0xffff;
   for (uint8_t i = 0; i < 4; ++i)
     hub_info->dpad[i] = 0xffff;
-  hub_info->button[0] = 0x0d;
-  for (uint8_t i = 1; i < 13; ++i)
+  hub_info->button[0] = 0x02;  // A1
+  hub_info->button[1] = 0x01;  // A2
+  hub_info->button[2] = 0x0a;  // B1
+  hub_info->button[3] = 0x09;  // B2
+  hub_info->button[4] = 0x0f;  // C1
+  hub_info->button[5] = 0x03;  // C2
+  hub_info->button[6] = 0x17;  // JA
+  hub_info->button[7] = 0x16;  // JB
+  hub_info->button[8] = 0x0d;  // Trigger
+  for (uint8_t i = 9; i < 13; ++i)
     hub_info->button[i] = 0xffff;
-  hub_info->button[9] = 0x03;
   hub_info->state = HID_STATE_READY;
   return false;
 }
