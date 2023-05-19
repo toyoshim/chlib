@@ -53,6 +53,7 @@ struct hub_info {
   uint16_t dpad[4];
   uint16_t button[13];
   uint8_t axis_size[6];
+  uint8_t axis_shift[6];
   bool axis_sign[6];
   bool axis_polarity[6];
   uint8_t report_id;

@@ -118,6 +118,8 @@ bool hid_guncon3_initialize(struct hub_info* hub_info,
   hub_info->axis[1] = 40;
   hub_info->axis_size[0] = 16;
   hub_info->axis_size[1] = 16;
+  hub_info->axis_shift[0] = 0;
+  hub_info->axis_shift[1] = 0;
   hub_info->axis_sign[0] = true;
   hub_info->axis_sign[1] = true;
   hub_info->axis_polarity[0] = false;

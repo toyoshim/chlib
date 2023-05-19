@@ -271,6 +271,7 @@ static void check_hid_report_desc(uint8_t hub, const uint8_t* data) {
               else if (usages[i] == 0x00010035)
                 analog_index = 3;
               hub_info[hub].axis_size[analog_index] = report_size;
+              hub_info[hub].axis_shift[analog_index] = 0;
               hub_info[hub].axis_sign[analog_index] = false;
               hub_info[hub].axis_polarity[analog_index] = false;
               hub_info[hub].axis[analog_index++] =
