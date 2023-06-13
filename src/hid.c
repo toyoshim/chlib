@@ -43,6 +43,8 @@ static void check_device_desc(uint8_t hub, const uint8_t* data) {
   hub_info[hub].ep = 0;
   hub_info[hub].state = HID_STATE_CONNECTED;
   hub_info[hub].type = HID_TYPE_UNKNOWN;
+  hub_info[hub].wait = 0;
+  hub_info[hub].tick = timer3_tick_raw();
   const struct usb_desc_device* desc = (const struct usb_desc_device*)data;
 
 #ifdef _DBG_DESC
@@ -58,6 +60,10 @@ static void check_device_desc(uint8_t hub, const uint8_t* data) {
   usb_info[hub].class = desc->bDeviceClass;
   usb_info[hub].vid = desc->idVendor;
   usb_info[hub].pid = desc->idProduct;
+
+  if (desc->idVendor == 0x17a7 && desc->idProduct == 0x0005) {
+    hub_info[hub].wait = 750;
+  }
 
   if (hid_keyboard_check_device_desc(&hub_info[hub], desc) ||
 #if !defined(_HID_NO_XBOX)
@@ -376,11 +382,13 @@ quit:
   }
   hub_info[hub].state = HID_STATE_READY;
 #if !defined(_HID_NO_SWITCH)
-  if (hub_info[hub].type == HID_TYPE_SWITCH)
+  if (hub_info[hub].type == HID_TYPE_SWITCH) {
     hid_switch_initialize(&hub_info[hub]);
+  }
 #endif
-  if (hub_info[hub].type != HID_TYPE_UNKNOWN)
+  if (hub_info[hub].type != HID_TYPE_UNKNOWN) {
     hid->detected();
+  }
 }
 
 static void hid_report(uint8_t hub, uint8_t* data, uint16_t size) {
@@ -396,8 +404,12 @@ static void hid_report(uint8_t hub, uint8_t* data, uint16_t size) {
   if (hid_switch_report(hub, &hub_info[hub], &usb_info[hub], data, size))
     return;
 #endif
-  if (hid->report && size)
+  if (hid->report && size) {
     hid->report(hub, &hub_info[hub], data, size);
+  }
+  if (hub_info[hub].wait) {
+    hub_info[hub].tick = timer3_tick_raw();
+  }
 }
 
 void hid_init(struct hid* new_hid) {
@@ -428,6 +440,13 @@ void hid_poll() {
   usb_host_poll();
   if (!usb_host_idle())
     return;
+  uint16_t wait = hub_info[hub].wait;
+  if (wait) {
+    uint16_t begin = hub_info[hub].tick;
+    if (timer3_tick_raw_between(begin, begin + wait)) {
+      return;
+    }
+  }
   if (hub_info[hub].state == HID_STATE_READY && usb_host_ready(hub)) {
     switch (hub_info[hub].type) {
 #if !defined(_HID_NO_GUNCON3)
