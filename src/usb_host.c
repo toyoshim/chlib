@@ -8,8 +8,8 @@
 #include "io.h"
 #include "serial.h"
 
-//#define _DBG_SEND_LOG
-//#define _DBG_RECV_LOG
+// #define _DBG_SEND_LOG
+// #define _DBG_RECV_LOG
 
 enum {
   STATE_IDLE,
@@ -682,7 +682,7 @@ static bool state_transaction(uint8_t hub) {
 
   uint8_t pid = transaction_ep_pid >> 4;
   uint8_t token = USB_INT_ST & MASK_UIS_HRES;
-  if (pid == USB_PID_IN && token != USB_PID_NAK) {
+  if (pid == USB_PID_IN && token != USB_PID_NAK && token != USB_PID_STALL) {
     uint16_t size = USB_RX_LEN;
     for (uint16_t i = 0; i < size; ++i)
       transaction_buffer[i] = rx_buffer[i];
@@ -696,8 +696,15 @@ static bool state_transaction(uint8_t hub) {
     transaction_size -= size;
   }
 
-  if (U_TOG_OK || token == USB_PID_DATA0 || token == USB_PID_DATA1 ||
-      token == 0) {
+  if (token == USB_PID_STALL) {
+#ifdef _DBG_RECV_LOG
+    Serial.println("stall");
+#endif
+    // Try resetting, but may be no luck.
+    state[hub] = STATE_CONNECT;
+    return true;
+  } else if (U_TOG_OK || token == USB_PID_DATA0 || token == USB_PID_DATA1 ||
+             token == 0) {
     if (transaction_size &&
         USB_RX_LEN == ep_max_packet_size[hub][transaction_ep_pid & 0x0f]) {
       delay_us(hub, 250, STATE_TRANSACTION_CONT);
@@ -736,8 +743,7 @@ static bool state_transaction(uint8_t hub) {
     state[hub] = transaction_recv_state;
     do_not_retry[hub] = false;
     return true;
-  }
-  if (token == USB_PID_NAK) {
+  } else if (token == USB_PID_NAK) {
 #ifdef _DBG_RECV_LOG
     Serial.println("nak");
 #endif  // _DBG_RECV_LOG
