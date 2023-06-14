@@ -389,6 +389,27 @@ quit:
   if (hub_info[hub].type != HID_TYPE_UNKNOWN) {
     hid->detected();
   }
+
+  // Device specific fix-up.
+  if (usb_info[hub].vid == 0x046d && usb_info[hub].pid == 0xc260) {
+    // G29 Driving Force Racing Wheel [PS4]
+    hub_info[hub].axis[0] = 336;
+    hub_info[hub].axis_size[0] = 16;
+    hub_info[hub].axis[1] = 352;
+    hub_info[hub].axis_size[1] = 16;
+    hub_info[hub].axis_polarity[1] = true;
+    hub_info[hub].axis[2] = 368;
+    hub_info[hub].axis_size[2] = 16;
+    hub_info[hub].axis_polarity[2] = true;
+    hub_info[hub].axis[3] = 384;
+    hub_info[hub].axis_size[3] = 16;
+    hub_info[hub].axis_polarity[3] = true;
+  } else if (usb_info[hub].vid == 0x046d && usb_info[hub].pid == 0xc294) {
+    // G29 Driving Force Racing Wheel [PS3]
+    hub_info[hub].axis[1] = 136;
+    hub_info[hub].axis[2] = 144;
+    hub_info[hub].type = HID_TYPE_PS4;
+  }
 }
 
 static void hid_report(uint8_t hub, uint8_t* data, uint16_t size) {
