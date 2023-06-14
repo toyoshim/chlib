@@ -10,7 +10,9 @@
 
 #include "interrupt.h"
 
+#ifdef __SDCC
 extern void timer3_int() __interrupt INT_NO_TMR3 __using 1;
+#endif
 
 void timer3_tick_init();
 uint16_t timer3_tick_raw();

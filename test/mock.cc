@@ -9,8 +9,17 @@ struct usb_host* usb_host = nullptr;
 extern "C" {
 
 #include "led.h"
+#include "timer3.h"
 
 void led_oneshot(uint8_t shot) {}
+
+uint16_t timer3_tick_raw() {
+  return 0;
+}
+
+bool timer3_tick_raw_between(uint16_t begin, uint16_t end) {
+  return begin == end;
+}
 
 void usb_host_init(struct usb_host* host) {
   usb_host = host;

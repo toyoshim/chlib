@@ -5,6 +5,10 @@
 #ifndef __io_h__
 #define __io_h__
 
+#ifndef __SDCC
+#error should be compiled with sdcc
+#endif
+
 #include <compiler.h>
 
 SFR(P0, 0x80);          // P0 input/output register
