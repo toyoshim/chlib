@@ -219,7 +219,7 @@ static void check_hid_report_desc(uint8_t hub, const uint8_t* data) {
         i += data[i + 1] + 3;
         continue;
       } else {
-        break; // for
+        break;  // for
       }
     }
     // Short items
