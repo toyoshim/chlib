@@ -97,8 +97,9 @@ static void check_configuration_desc(uint8_t hub, const uint8_t* data) {
         Serial.printf("interface subclass: %x\n", intf->bInterfaceSubClass);
         Serial.printf("interface protocol: %x\n", intf->bInterfaceProtocol);
 #endif  // _DBG_DESC
-        if (usb_info[hub].class == 0)
+        if (usb_info[hub].class == 0) {
           class = intf->bInterfaceClass;
+        }
         if (hid_keyboard_check_interface_desc(&hub_info[hub], intf) ||
 #if !defined(_HID_NO_XBOX)
             hid_xbox_360_check_interface_desc(&hub_info[hub], intf) ||
@@ -120,8 +121,9 @@ static void check_configuration_desc(uint8_t hub, const uint8_t* data) {
         break;
       }
       case USB_DESC_ENDPOINT: {
-        if (hub_info[hub].type == HID_TYPE_UNKNOWN && class != USB_CLASS_HID)
+        if (hub_info[hub].type == HID_TYPE_UNKNOWN && class != USB_CLASS_HID) {
           break;
+        }
         if ((hub_info[hub].type == HID_TYPE_KEYBOARD ||
 #if !defined(_HID_NO_XBOX)
              hub_info[hub].type == HID_TYPE_XBOX_360 ||
@@ -188,13 +190,16 @@ static void check_hid_report_desc(uint8_t hub, const uint8_t* data) {
 #endif
   const uint16_t size = hub_info[hub].report_desc_size;
   hub_info[hub].report_size = 0;
-  for (uint8_t button = 0; button < 6; ++button)
+  for (uint8_t button = 0; button < 6; ++button) {
     hub_info[hub].axis[button] = 0xffff;
+  }
   hub_info[hub].hat = 0xffff;
-  for (uint8_t button = 0; button < 4; ++button)
+  for (uint8_t button = 0; button < 4; ++button) {
     hub_info[hub].dpad[button] = 0xffff;
-  for (uint8_t button = 0; button < 13; ++button)
+  }
+  for (uint8_t button = 0; button < 13; ++button) {
     hub_info[hub].button[button] = 0xffff;
+  }
   hub_info[hub].report_id = 0;
   uint8_t report_size = 0;
   uint8_t report_count = 0;
@@ -202,8 +207,9 @@ static void check_hid_report_desc(uint8_t hub, const uint8_t* data) {
   uint8_t usage_index = 0;
   uint32_t usages[12];
   uint8_t button_index = 0;
-  for (usage_index = 0; usage_index < 12; ++usage_index)
+  for (usage_index = 0; usage_index < 12; ++usage_index) {
     usages[usage_index] = 0;
+  }
   usage_index = 0;
   uint8_t analog_index = 0;
   for (uint16_t i = 0; i < size;) {
@@ -213,7 +219,7 @@ static void check_hid_report_desc(uint8_t hub, const uint8_t* data) {
         i += data[i + 1] + 3;
         continue;
       } else {
-        break;
+        break; // for
       }
     }
     // Short items
@@ -222,8 +228,9 @@ static void check_hid_report_desc(uint8_t hub, const uint8_t* data) {
       switch (data[i]) {
         case 0xc0:
           REPORT0("M:End Collection");
-          for (usage_index = 0; usage_index < 12; ++usage_index)
+          for (usage_index = 0; usage_index < 12; ++usage_index) {
             usages[usage_index] = 0;
+          }
           usage_index = 0;
           break;
         default:  // ignore
@@ -231,8 +238,9 @@ static void check_hid_report_desc(uint8_t hub, const uint8_t* data) {
       }
       i++;
     } else if (b_size == 1) {  // 1 bytes items
-      if ((i + 1) >= size)
-        break;
+      if ((i + 1) >= size) {
+        break;  // for
+      }
       switch (data[i]) {
         case 0x05:
           REPORT1("G:Usage Page");
@@ -240,8 +248,9 @@ static void check_hid_report_desc(uint8_t hub, const uint8_t* data) {
           break;
         case 0x09:
           REPORT1("L:Usage");
-          if (usage_index < 12)
+          if (usage_index < 12) {
             usages[usage_index++] = ((uint32_t)usage_page << 16) | data[i + 1];
+          }
           break;
         case 0x15:
           REPORT1("G:Logical Minimum");
@@ -255,11 +264,13 @@ static void check_hid_report_desc(uint8_t hub, const uint8_t* data) {
           break;
         case 0x81:
           REPORT1("M:Input");
-          if (usages[0] == 0x00010039 && report_size == 4 &&
-              (data[i + 1] & 1) == 0) {  // Hat switch
+          if (data[i + 1] & 1) {
+            // Skip constant
+          } else if (usages[0] == 0x00010039 && report_size == 4 &&
+                     (data[i + 1] & 1) == 0) {  // Hat switch
             hub_info[hub].hat = hub_info[hub].report_size;
-          } else if (usages[0] == 0xff000020 &&
-                     report_size == 6) {  // PS4 counter
+          } else if (usages[0] == 0xff000020 && report_size == 6) {
+            // PS4 counter
             hub_info[hub].type = HID_TYPE_PS4;
           } else if (report_size == 1) {  // Buttons
             for (uint8_t i = 0; i < report_count && button_index < 13; ++i) {
@@ -268,14 +279,15 @@ static void check_hid_report_desc(uint8_t hub, const uint8_t* data) {
             }
           } else if ((data[i + 1] & 1) == 0) {  // Analog buttons
             for (uint8_t i = 0; i < report_count && analog_index < 6; ++i) {
-              if (usages[i] == 0x00010030)
+              if (usages[i] == 0x00010030) {
                 analog_index = 0;
-              else if (usages[i] == 0x00010031)
+              } else if (usages[i] == 0x00010031) {
                 analog_index = 1;
-              else if (usages[i] == 0x00010032)
+              } else if (usages[i] == 0x00010032) {
                 analog_index = 2;
-              else if (usages[i] == 0x00010035)
+              } else if (usages[i] == 0x00010035) {
                 analog_index = 3;
+              }
               hub_info[hub].axis_size[analog_index] = report_size;
               hub_info[hub].axis_shift[analog_index] = 0;
               hub_info[hub].axis_sign[analog_index] = false;
@@ -299,15 +311,19 @@ static void check_hid_report_desc(uint8_t hub, const uint8_t* data) {
             goto quit;
           }
           hub_info[hub].report_size = 0;
-          for (uint8_t button = 0; button < 2; ++button)
+          for (uint8_t button = 0; button < 6; ++button) {
             hub_info[hub].axis[button] = 0xffff;
+          }
           hub_info[hub].hat = 0xffff;
-          for (uint8_t button = 0; button < 4; ++button)
+          for (uint8_t button = 0; button < 4; ++button) {
             hub_info[hub].dpad[button] = 0xffff;
-          for (uint8_t button = 0; button < 12; ++button)
+          }
+          for (uint8_t button = 0; button < 13; ++button) {
             hub_info[hub].button[button] = 0xffff;
-          for (uint8_t button = 0; button < 12; ++button)
+          }
+          for (uint8_t button = 0; button < 12; ++button) {
             usages[button] = 0;
+          }
           usage_index = 0;
           button_index = 0;
           analog_index = 0;
@@ -320,8 +336,9 @@ static void check_hid_report_desc(uint8_t hub, const uint8_t* data) {
           break;
         case 0xa1:
           REPORT1("M:Collection");
-          for (usage_index = 0; usage_index < 12; ++usage_index)
+          for (usage_index = 0; usage_index < 12; ++usage_index) {
             usages[usage_index] = 0;
+          }
           usage_index = 0;
           break;
         default:  // not supported
@@ -330,8 +347,9 @@ static void check_hid_report_desc(uint8_t hub, const uint8_t* data) {
       i += 2;
     } else if (b_size == 2) {
       // 2 bytes items
-      if ((i + 2) >= size)
+      if ((i + 2) >= size) {
         break;
+      }
       switch (data[i]) {
         case 0x06:
           REPORT2("G:Usage Page");
@@ -363,12 +381,14 @@ quit:
   Serial.printf("Report Size for ID (%d): %d-bits (%d-Bytes)\n",
                 hub_info[hub].report_id, hub_info[hub].report_size,
                 hub_info[hub].report_size / 8);
-  for (uint8_t i = 0; i < 4; ++i)
+  for (uint8_t i = 0; i < 4; ++i) {
     Serial.printf("axis %d: %d, %d\n", i, hub_info[hub].axis[i],
                   hub_info[hub].axis_size[i]);
+  }
   Serial.printf("hat: %d\n", hub_info[hub].hat);
-  for (uint8_t i = 0; i < 13; ++i)
+  for (uint8_t i = 0; i < 13; ++i) {
     Serial.printf("button %d: %d\n", i, hub_info[hub].button[i]);
+  }
 #endif
   if (hub_info[hub].type == HID_TYPE_UNKNOWN) {
     if (hub_info[hub].report_size && hub_info[hub].button[12] != 0xfff &&
