@@ -23,8 +23,8 @@ enum {
 void uart1_init(uint8_t options, uint8_t speed);
 void uart1_set_speed(uint8_t speed);
 inline void uart1_send(uint8_t val);
-inline bool uart1_sent();
-inline bool uart1_ready();
-inline uint8_t uart1_recv();
+inline bool uart1_sent(void);
+inline bool uart1_ready(void);
+inline uint8_t uart1_recv(void);
 
 #endif  // __uart1_h__

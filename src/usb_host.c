@@ -196,7 +196,7 @@ static void delay_ms(uint8_t hub, uint16_t delay_ms, uint8_t next_state) {
   state[hub] = STATE_DELAY_MS;
 }
 
-static bool is_transaction_locked() {
+static bool is_transaction_locked(void) {
   return transaction_lock >= 0;
 }
 
@@ -933,7 +933,7 @@ void usb_host_init(struct usb_host* host) {
   timer3_tick_init();
 }
 
-void usb_host_poll() {
+void usb_host_poll(void) {
   if (usb_host->flags & USE_HUB0)
     while (fsm(0))
       ;
@@ -946,7 +946,7 @@ bool usb_host_ready(uint8_t hub) {
   return state[hub] == STATE_READY && !is_transaction_locked();
 }
 
-bool usb_host_idle() {
+bool usb_host_idle(void) {
   return !is_transaction_locked();
 }
 

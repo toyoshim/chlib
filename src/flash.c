@@ -11,22 +11,22 @@ static __code uint8_t* data_flash = (__code uint8_t*)0xf000;
 static __code uint8_t* code_flash = (__code uint8_t*)0xec00;
 static uint32_t magic = 0;
 
-static inline void enter_safe_mode() {
+static inline void enter_safe_mode(void) {
   SAFE_MOD = 0x55;
   SAFE_MOD = 0xaa;
 }
 
-static inline void leave_safe_mode() {
+static inline void leave_safe_mode(void) {
   SAFE_MOD = 0;
 }
 
-static void enter() {
+static void enter(void) {
   enter_safe_mode();
   GLOBAL_CFG |= bDATA_WE | bCODE_WE;
   leave_safe_mode();
 }
 
-static void leave() {
+static void leave(void) {
   enter_safe_mode();
   GLOBAL_CFG &= ~(bDATA_WE | bCODE_WE);
   leave_safe_mode();
@@ -42,7 +42,7 @@ static bool erase(__code uint8_t* addr) {
   return result;
 }
 
-static bool restore() {
+static bool restore(void) {
   if (!erase(data_flash))
     return false;
   enter();

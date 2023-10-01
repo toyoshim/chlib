@@ -71,15 +71,15 @@ void uart1_send(uint8_t val) {
   SER1_FIFO = val;
 }
 
-bool uart1_sent() {
+bool uart1_sent(void) {
   return SER1_LSR & bLSR_T_ALL_EMP;
 }
 
-bool uart1_ready() {
+bool uart1_ready(void) {
   return (SER1_LSR & bLSR_DATA_RDY) != 0;
 }
 
-uint8_t uart1_recv() {
+uint8_t uart1_recv(void) {
   while (!uart1_ready())
     ;
   return SER1_FIFO;

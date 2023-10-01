@@ -8,7 +8,7 @@
 
 static uint16_t timer3_tick = 0;
 
-void timer3_int() __interrupt INT_NO_TMR3 __using 1 {
+void timer3_int(void) __interrupt(INT_NO_TMR3) __using(1) {
   timer3_tick++;
   T3_STAT |= bT3_IF_END;
 }
@@ -41,7 +41,7 @@ static bool timer3_tick_le(uint16_t tick) {
   return T3_COUNT_H <= h;
 }
 
-void timer3_tick_init() {
+void timer3_tick_init(void) {
   T3_SETUP |= bT3_EN_CK_SE;  // Enable to access divisor settings register
   T3_CK_SE_L = 0x80;         // Clock = Fsys(48M) / 48k = 1kHz
   T3_CK_SE_H = 0xbb;
@@ -57,7 +57,7 @@ void timer3_tick_init() {
   EA = 1;       // Enable interruprts
 }
 
-uint16_t timer3_tick_raw() {
+uint16_t timer3_tick_raw(void) {
   uint16_t tick;
   for (;;) {
     uint8_t h = T3_COUNT_H;
@@ -78,11 +78,11 @@ uint16_t timer3_tick_from_usec(uint16_t usec) {
   return tick;
 }
 
-uint16_t timer3_tick_msec() {
+uint16_t timer3_tick_msec(void) {
   return timer3_tick_raw() >> 4;
 }
 
-uint16_t timer3_tick_sec() {
+uint16_t timer3_tick_sec(void) {
   return timer3_tick;
 }
 

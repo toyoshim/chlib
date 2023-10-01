@@ -22,7 +22,6 @@ static uint8_t* ep2_buffer = _ep2_buffer;
 static uint8_t _ep3_buffer[64 + 2 + 1];  // EP3 buffer size 64
 static uint8_t* ep3_buffer = _ep3_buffer;
 
-
 static struct usb_setup_req last_setup_req;
 static const uint8_t* sending_data_ptr = 0;
 static uint8_t sending_data_len = 0;
@@ -52,7 +51,7 @@ static void halt(const char* token) {
   for (;;)
     ;
 }
-static void bus_reset() {
+static void bus_reset(void) {
   UEP0_CTRL = UEP_R_RES_ACK | UEP_T_RES_NAK;
   if (usb_device_flags & UD_USE_EP1)
     UEP1_CTRL = bUEP_AUTO_TOG | UEP_R_RES_ACK;
@@ -63,7 +62,7 @@ static void bus_reset() {
   USB_DEV_AD = 0x00;
 }
 
-static void stall() {
+static void stall(void) {
   UEP0_CTRL = bUEP_R_TOG | bUEP_T_TOG | UEP_R_RES_STALL | UEP_T_RES_STALL;
 }
 
@@ -78,7 +77,7 @@ static void ep0_send(uint8_t len, const uint8_t* data) {
   sending_data_len = len - transfer_len;
 }
 
-static void ep0_cont() {
+static void ep0_cont(void) {
   uint8_t transfer_len =
       (sending_data_len <= ep0_size) ? sending_data_len : ep0_size;
   for (uint8_t i = 0; i < transfer_len; ++i)
@@ -89,7 +88,7 @@ static void ep0_cont() {
   sending_data_len -= transfer_len;
 }
 
-static void get_descriptor() {
+static void get_descriptor(void) {
   uint8_t type = last_setup_req.wValue >> 8;
   uint8_t no = last_setup_req.wValue & 0xff;
   uint8_t size = usb_device->get_descriptor_size(type, no);
@@ -127,7 +126,7 @@ static void get_descriptor() {
   ep0_send(size, desc);
 }
 
-static void setup() {
+static void setup(void) {
   if (USB_RX_LEN != sizeof(struct usb_setup_req)) {
     Serial.println("unexpected size");
     stall();
@@ -186,7 +185,7 @@ static void setup() {
   }
 }
 
-void in() {
+void in(void) {
   switch (last_setup_req.bRequest) {
     case USB_SET_ADDRESS:
       USB_DEV_AD = last_setup_req.wValue;
@@ -201,7 +200,7 @@ void in() {
   }
 }
 
-void out() {
+void out(void) {
   switch (last_setup_req.bRequest) {
     case USB_GET_DESCRIPTOR:
       UEP0_CTRL = UEP_R_RES_ACK | UEP_T_RES_NAK;
@@ -215,8 +214,9 @@ void out() {
 void in_ep(uint8_t ep) {
   uint8_t len = 0;
   if (usb_device->ep_in) {
-    len = usb_device->ep_in(
-        ep, (ep == 1) ? ep1_buffer : (ep == 2) ? ep2_buffer : ep3_buffer);
+    len = usb_device->ep_in(ep, (ep == 1)   ? ep1_buffer
+                                : (ep == 2) ? ep2_buffer
+                                            : ep3_buffer);
   }
   if (ep == 1) {
     UEP1_T_LEN = len;
@@ -230,7 +230,7 @@ void in_ep(uint8_t ep) {
   }
 }
 
-void usb_int() __interrupt INT_NO_USB __using 1 {
+void usb_int(void) __interrupt(INT_NO_USB) __using(1) {
   if (UIF_TRANSFER) {
     uint8_t usb_int_st = USB_INT_ST;
     // For EP0

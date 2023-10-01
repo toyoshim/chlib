@@ -9,7 +9,7 @@
 #include <stdint.h>
 
 // currently, the sampring width is fixed at 11-bits.
-void adc_init();
+void adc_init(void);
 void adc_select(uint8_t ch);
 bool adc_peek(uint16_t* value);
 uint16_t adc_get(uint8_t ch);

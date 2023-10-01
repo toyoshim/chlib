@@ -63,7 +63,7 @@ void led_oneshot(uint8_t new_shot) {
   shot_phase = 0;
 }
 
-void led_poll() {
+void led_poll(void) {
   if (shot != END) {
     if (!timer3_tick_msec_between(shot_start_time, shot_start_time + 50)) {
       shot_phase++;

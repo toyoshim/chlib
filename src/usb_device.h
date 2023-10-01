@@ -9,7 +9,7 @@
 
 #include "interrupt.h"
 
-extern void usb_int() __interrupt INT_NO_USB __using 1;
+extern void usb_int(void) __interrupt(INT_NO_USB) __using(1);
 
 struct usb_device {
   uint8_t (*get_descriptor_size)(uint8_t type, uint8_t no);

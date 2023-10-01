@@ -69,13 +69,13 @@ struct hid {
                  const struct hub_info*,
                  const uint8_t* data,
                  uint16_t size);
-  void (*detected)();
+  void (*detected)(void);
 
-  uint8_t (*get_flags)();
+  uint8_t (*get_flags)(void);
 };
 
 void hid_init(struct hid* hid);
 struct hub_info* hid_get_info(uint8_t hub);
-void hid_poll();
+void hid_poll(void);
 
 #endif  // __hid_h__

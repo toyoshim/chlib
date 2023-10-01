@@ -7,7 +7,7 @@
 #include "ch559.h"
 #include "io.h"
 
-void adc_init() {
+void adc_init(void) {
   ADC_SETUP = bADC_POWER_EN;    // ADC power enabled.
   ADC_CK_SE = 4;                // Set 4 for frequency division.
   ADC_CTRL = 0;                 // Manual sampling.

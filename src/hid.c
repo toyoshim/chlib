@@ -28,7 +28,7 @@ static struct usb_host host;
 static struct hub_info hub_info[2];
 static struct usb_info usb_info[2];
 
-static void do_nothing() {}
+static void do_nothing(void) {}
 
 static void disconnected(uint8_t hub) {
   hub_info[hub].state = HID_STATE_DISCONNECTED;
@@ -476,7 +476,7 @@ struct hub_info* hid_get_info(uint8_t hub) {
   return &hub_info[hub];
 }
 
-void hid_poll() {
+void hid_poll(void) {
   static uint8_t hub = 0;
   usb_host_poll();
   if (!usb_host_idle())
