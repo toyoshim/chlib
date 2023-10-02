@@ -9,7 +9,7 @@
 #include "io.h"
 #include "serial.h"
 
-void (*runBootloader)() = 0xf400;
+void (*runBootloader)(void) = 0xf400;
 
 int putchar(int c) {
   while (!TI)
@@ -38,16 +38,16 @@ __endasm;
   // clang-format on
 }
 
-static inline void enter_safe_mode() {
+static inline void enter_safe_mode(void) {
   SAFE_MOD = 0x55;
   SAFE_MOD = 0xaa;
 }
 
-static inline void leave_safe_mode() {
+static inline void leave_safe_mode(void) {
   SAFE_MOD = 0;
 }
 
-void initialize() {
+void initialize(void) {
   // Clock
   // Fosc = 12MHz, Fpll = 288MHz, Fusb4x = 48MHz by PLL_CFG default
   enter_safe_mode();

@@ -10,13 +10,13 @@
 
 #include "interrupt.h"
 
-extern void timer3_int() __interrupt INT_NO_TMR3 __using 1;
+extern void timer3_int(void) __interrupt(INT_NO_TMR3) __using(1);
 
-void timer3_tick_init();
-uint16_t timer3_tick_raw();
+void timer3_tick_init(void);
+uint16_t timer3_tick_raw(void);
 uint16_t timer3_tick_from_usec(uint16_t usec);
-uint16_t timer3_tick_msec();
-uint16_t timer3_tick_sec();
+uint16_t timer3_tick_msec(void);
+uint16_t timer3_tick_sec(void);
 bool timer3_tick_raw_between(uint16_t begin, uint16_t end);   // inclusive
 bool timer3_tick_msec_between(uint16_t begin, uint16_t end);  // inclusive
 

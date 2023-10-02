@@ -7,12 +7,12 @@
 #include "ch559.h"
 #include "io.h"
 
-void adc_init() {
+void adc_init(void) {
   P1_IE = 0;  // Port 1 disable
   ADC_SETUP = bADC_POWER_EN;
   ADC_CK_SE = 2;  // clock not divided
   ADC_CTRL = 0;
-  ADC_CHANN = 1;  // use AIN0
+  ADC_CHANN = 1;                // use AIN0
   ADC_EX_SW = bADC_RESOLUTION;  // 11-bits
   delayMicroseconds(100);
 }

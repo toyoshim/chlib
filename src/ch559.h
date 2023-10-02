@@ -8,7 +8,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-void initialize();
+void initialize(void);
 
 // Arduino-like APIs
 

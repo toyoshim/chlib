@@ -1,3 +1,5 @@
+build
+build.bin
 test/*\.o
 test/out
 test/test
@@ -7,5 +9,3 @@ test\.*
 *\.rel
 *\.rst
 *\.sym
-makefile
-main.c

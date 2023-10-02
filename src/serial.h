@@ -19,6 +19,6 @@ extern struct SerialLibrary {
   void (*printf)(const char* fmt, ...);
 } Serial;
 
-void serial_init();
+void serial_init(void);
 
 #endif  // __serial_h__

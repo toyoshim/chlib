@@ -56,7 +56,7 @@ void led_oneshot(uint8_t new_shot) {
   shot_start_time = timer3_tick_msec();
 }
 
-void led_poll() {
+void led_poll(void) {
   if (shot != END) {
     uint16_t phase = ((timer3_tick_msec() - shot_start_time) % 1000) / 50;
     if (shots[shot][phase] == END) {

@@ -6,7 +6,7 @@
 
 #include "io.h"
 
-void pwm1_init() {
+void pwm1_init(void) {
   // Use P4.3
   PIN_FUNC |= bPWM1_PIN_X;
   P4_DIR |= (1 << 3);   // Set P4.3 output

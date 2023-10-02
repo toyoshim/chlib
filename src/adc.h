@@ -7,7 +7,7 @@
 
 #include <stdint.h>
 
-void adc_init();
+void adc_init(void);
 uint16_t adc_get(uint8_t ch);  // 11-bit
 
 #endif  // __rs485_h__

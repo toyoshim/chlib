@@ -91,7 +91,7 @@ static void s_printf(const char* fmt, ...) {
   va_end(ap);
 }
 
-void serial_init() {
+void serial_init(void) {
   Serial.putc = s_putc;
   Serial.printc = s_printc;
   Serial.print = s_print;
