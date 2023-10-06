@@ -439,11 +439,13 @@ static bool state_get_string_desc(uint8_t hub) {
 
 static bool state_get_string_desc_recv(uint8_t hub) {
   if (get_string_descriptor.wLength == 2) {
-    // Request full part.
     const struct usb_desc_head* head = (const struct usb_desc_head*)buffer;
-    get_string_descriptor.wLength = head->bLength;
-    delay_us(hub, 250, STATE_GET_STRING_DESC);
-    return false;
+    if (head->bLength != 2) {
+      // Request full part.
+      get_string_descriptor.wLength = head->bLength;
+      delay_us(hub, 250, STATE_GET_STRING_DESC);
+      return false;
+    }
   }
 
   uint8_t i = 0;
