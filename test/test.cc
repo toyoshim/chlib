@@ -778,6 +778,37 @@ TEST_F(GenericCompatTest, XE1AJ_USB_MegaDriveMini2) {
   CheckHubInfo(expected, *hid_get_info(0));
 }
 
+// VID: 0x33dd
+// PID: 0x0013
+TEST_F(GenericCompatTest, X68000Z_JOYCARD_BLACK) {
+  const uint8_t pseudo_hid_report_desc[] = {
+      0x05, 0x01, 0x09, 0x04, 0xa1, 0x01, 0x15, 0x00, 0x25, 0x01,
+      0x35, 0x00, 0x45, 0x01, 0x75, 0x01, 0x95, 0x0c, 0x05, 0x09,
+      0x19, 0x01, 0x29, 0x0c, 0x81, 0x02, 0x95, 0x04, 0x81, 0x01,
+      0x05, 0x01, 0x26, 0xff, 0x00, 0x46, 0xff, 0x00, 0x09, 0x30,
+      0x09, 0x31, 0x75, 0x08, 0x95, 0x02, 0x81, 0x02, 0xc0};
+  hub_info expected = {
+      sizeof(pseudo_hid_report_desc),
+      32,
+      {16, 24, 0xffff, 0xffff, 0xffff, 0xffff},
+      0xffff,
+      {0xffff, 0xffff, 0xffff, 0xffff},
+      {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 0xffff},
+      {8, 8, 8, 8},
+      {0, 0, 0, 0},
+      {false, false, false, false, false, false},
+      {false, false, false, false, false, false},
+      0,
+      HID_TYPE_GENERIC,
+      1,
+      HID_STATE_READY,
+  };
+
+  SetReportSize(sizeof(pseudo_hid_report_desc));
+  CheckHidReportDescriptor(pseudo_hid_report_desc);
+  CheckHubInfo(expected, *hid_get_info(0));
+}
+
 // Compatibility tests for other controllers with pseudo descriptors
 using GenericPseudoCompatTest = CompatTest;
 
