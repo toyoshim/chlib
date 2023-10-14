@@ -8,8 +8,11 @@
 #include "io.h"
 #include "serial.h"
 
-// #define _DBG_SEND_LOG
-// #define _DBG_RECV_LOG
+// #define _USB_HOST_DBG_LOG
+// #define _IMPL_USB_HOST_LOG_SEND
+// #define _IMPL_USB_HOST_LOG_RECV
+// #define _IMPL_USB_HOST_LOG_STALL
+// #define _IMPL_USB_HOST_LOG_NAK
 
 enum {
   STATE_IDLE,
@@ -178,6 +181,11 @@ static bool do_not_retry[2] = {false, false};
 static uint16_t user_request_size = 0;
 static uint8_t string_index[3] = {0, 0, 0};
 
+void usb_host_log_send(uint8_t ep, uint8_t pid, uint8_t size, uint8_t* buffer);
+void usb_host_log_recv(uint8_t ep, uint8_t pid, uint8_t size, uint8_t* buffer);
+void usb_host_log_stall(void);
+void usb_host_log_nak(void);
+
 static void halt(uint8_t hub) {
   state[hub] = STATE_HALT;
 }
@@ -245,13 +253,10 @@ static void host_transact_cont(uint8_t hub, uint8_t tog) {
     UH_TX_LEN = 0;
   }
 
-#ifdef _DBG_SEND_LOG
-  Serial.printf("ep: %d, pid: %d, size: %d; ", transaction_ep_pid & 0xf,
-                transaction_ep_pid >> 4, size);
-  for (uint8_t i = 0; i < UH_TX_LEN; ++i)
-    Serial.printf("%x,", tx_buffer[i]);
-  Serial.printf("\n");
-#endif  // _DBG_SEND_LOG
+#ifdef _USB_HOST_DBG_LOG
+  usb_host_log_send(transaction_ep_pid & 0x0f, transaction_ep_pid >> 4, size,
+                    tx_buffer);
+#endif  // _USB_HOST_DBG_LOG
 
   UH_EP_PID = transaction_ep_pid;
   UH_RX_CTRL = UH_TX_CTRL = tog;
@@ -688,20 +693,18 @@ static bool state_transaction(uint8_t hub) {
     uint16_t size = USB_RX_LEN;
     for (uint16_t i = 0; i < size; ++i)
       transaction_buffer[i] = rx_buffer[i];
-#ifdef _DBG_RECV_LOG
-    Serial.printf("recv ep%d: ", transaction_ep_pid & 0x0f);
-    for (uint8_t i = 0; i < size; ++i)
-      Serial.printf("%x,", transaction_buffer[i]);
-    Serial.printf("\n");
-#endif
+#ifdef _USB_HOST_DBG_LOG
+    usb_host_log_recv(transaction_ep_pid & 0x0f, transaction_ep_pid >> 4, size,
+                      transaction_buffer);
+#endif  // _USB_HOST_DBG_LOG
     transaction_buffer = &transaction_buffer[size];
     transaction_size -= size;
   }
 
   if (token == USB_PID_STALL) {
-#ifdef _DBG_RECV_LOG
-    Serial.println("stall");
-#endif
+#ifdef _USB_HOST_DBG_LOG
+    usb_host_log_stall();
+#endif  // _USB_HOST_DBG_LOG
     // Try resetting, but may be no luck.
     state[hub] = STATE_CONNECT;
     return true;
@@ -746,9 +749,9 @@ static bool state_transaction(uint8_t hub) {
     do_not_retry[hub] = false;
     return true;
   } else if (token == USB_PID_NAK) {
-#ifdef _DBG_RECV_LOG
-    Serial.println("nak");
-#endif  // _DBG_RECV_LOG
+#ifdef _USB_HOST_DBG_LOG
+    usb_host_log_nak();
+#endif  // _USB_HOST_DBG_LOG
     if (do_not_retry[hub] == true) {
       // Keeping `do_not_retry` means it fails with NAK.
       state[hub] = transaction_recv_state;
@@ -901,6 +904,36 @@ static bool fsm(uint8_t hub) {
   }
   return false;
 }
+
+#ifdef _IMPL_USB_HOST_LOG_SEND
+void usb_host_log_send(uint8_t ep, uint8_t pid, uint8_t size, uint8_t* buffer) {
+  Serial.printf("send ep: %d, pid: %d, size: %d; ", ep, pid, size);
+  for (uint8_t i = 0; i < size; ++i)
+    Serial.printf("%x,", buffer[i]);
+  Serial.printf("\n");
+}
+#endif  // _IMPL_USB_HOST_SEND_LOG
+
+#ifdef _IMPL_USB_HOST_LOG_RECV
+void usb_host_log_recv(uint8_t ep, uint8_t pid, uint8_t size, uint8_t* buffer) {
+  Serial.printf("recv ep: %d, pid: %d, size: %d; ", ep, pid, size);
+  for (uint8_t i = 0; i < size; ++i)
+    Serial.printf("%x,", buffer[i]);
+  Serial.printf("\n");
+}
+#endif  // _IMPL_USB_HOST_RECV_LOG
+
+#ifdef _IMPL_USB_HOST_LOG_STALL
+void usb_host_log_stall(void) {
+  Serial.println("stall");
+}
+#endif  // _IMPL_USB_HOST_STALL_LOG
+
+#ifdef _IMPL_USB_HOST_LOG_NAK
+void usb_host_log_nak(void) {
+  Serial.println("nak");
+}
+#endif  // _IMPL_USB_HOST_LOG_NAK
 
 void usb_host_init(struct usb_host* host) {
   usb_host = host;
