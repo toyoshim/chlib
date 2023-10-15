@@ -53,5 +53,12 @@ bool usb_host_out(uint8_t hub, uint8_t ep, uint8_t* data, uint8_t size) {
   return false;
 }
 
+bool usb_host_hid_get_report(uint8_t hub,
+                             uint8_t type,
+                             uint8_t id,
+                             uint8_t size) {
+  return false;
+}
+
 void usb_host_hub_switch(uint8_t hub, uint8_t address) {}
 }
