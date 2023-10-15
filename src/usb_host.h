@@ -25,7 +25,7 @@ struct usb_host {
   void (*check_configuration_desc)(uint8_t hub, const uint8_t* desc);
   void (*check_hid_report_desc)(uint8_t hub, const uint8_t* desc);
   void (*in)(uint8_t hub, uint8_t* data, uint16_t size);
-  void (*hid_report)(uint8_t hub, const uint8_t* data);
+  void (*hid_report)(uint8_t hub, const uint8_t* data, uint16_t size);
 };
 
 void usb_host_init(struct usb_host* host);
