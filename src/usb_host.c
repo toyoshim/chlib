@@ -116,7 +116,7 @@ static struct usb_setup_req get_hid_report_descriptor = {
 static struct usb_setup_req hid_get_report = {
     USB_REQ_DIR_IN | USB_REQ_TYPE_CLASS | USB_REQ_RECPT_INTERFACE,
     USB_HID_GET_REPORT,
-    (1 << 8) | 0,  // report type, report id: can be modified
+    (1 << 8) | 0,  // report type, report id: both can be modified
     0x0000,        // interface: can be modified
     0x0000,        // report length: can be modified
 };
@@ -1042,19 +1042,20 @@ bool usb_host_out(uint8_t hub, uint8_t ep, uint8_t* data, uint8_t size) {
   return false;
 }
 
-bool usb_host_hid_get_report(uint8_t hub, uint8_t id, uint8_t size) {
+bool usb_host_hid_get_report(uint8_t hub,
+                             uint8_t type,
+                             uint8_t id,
+                             uint8_t size) {
   if (!is_hid[hub])
     return false;
   if (!usb_host_ready(hub) ||
       !lock_transaction(hub, hub_address[hub] ? hub_address[hub] : 1 + hub)) {
     return false;
   }
-  hid_get_report.wValue = (1 << 8) | id;
+  hid_get_report.wValue = (type << 8) | id;
   hid_get_report.wIndex = hid_interface_number[hub];
   hid_get_report.wLength = size;
-  // Do not retry as hid returns NAK if the report isn't changed in idle state.
-  // This flag keeps true if the request fails with NAK.
-  do_not_retry[hub] = true;
+  do_not_retry[hub] = false;
   host_setup_transfer(hub, (uint8_t*)&hid_get_report, sizeof(hid_get_report),
                       STATE_HID_GET_REPORT);
   return true;
