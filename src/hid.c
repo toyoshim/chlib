@@ -106,7 +106,7 @@ static void check_configuration_desc(uint8_t hub, const uint8_t* data) {
             hid_xbox_one_check_interface_desc(&hub_info[hub], intf) ||
 #endif
 #if !defined(_HID_NO_GUNCON3)
-            hid_guncon3_check_interface_desc(&usb_info[hub]) ||
+            hid_guncon3_check_interface_desc(&hub_info[hub], &usb_info[hub]) ||
 #endif
             false) {
           target_interface = true;

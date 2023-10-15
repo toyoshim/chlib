@@ -93,20 +93,22 @@ bool hid_guncon3_check_device_desc(struct hub_info* hub_info,
     usb_info->state = DEVICE_CONNECTED;
     return true;
   }
-  usb_info->state = IDLE;
   return false;
 }
 
-bool hid_guncon3_check_interface_desc(struct usb_info* usb_info) {
-  if (usb_info->state != IDLE)
+bool hid_guncon3_check_interface_desc(struct hub_info* hub_info,
+                                      struct usb_info* usb_info) {
+  if (hub_info->type == HID_TYPE_ZAPPER && usb_info->state != IDLE) {
     return true;
+  }
   return false;
 }
 
 bool hid_guncon3_initialize(struct hub_info* hub_info,
                             struct usb_info* usb_info) {
-  if (usb_info->state == IDLE)
+  if (hub_info->type != HID_TYPE_ZAPPER || usb_info->state == IDLE) {
     return false;
+  }
   hub_info->report_size = 15;
   hub_info->report_id = 0;
   hub_info->axis[0] = 24;  // Screen X
@@ -140,8 +142,9 @@ bool hid_guncon3_initialize(struct hub_info* hub_info,
   hub_info->axis_polarity[4] = false;
   hub_info->axis_polarity[5] = false;
   hub_info->hat = 0xffff;
-  for (uint8_t i = 0; i < 4; ++i)
+  for (uint8_t i = 0; i < 4; ++i) {
     hub_info->dpad[i] = 0xffff;
+  }
   hub_info->button[0] = 0x02;  // A1
   hub_info->button[1] = 0x01;  // A2
   hub_info->button[2] = 0x0a;  // B1
@@ -151,8 +154,9 @@ bool hid_guncon3_initialize(struct hub_info* hub_info,
   hub_info->button[6] = 0x17;  // JA
   hub_info->button[7] = 0x16;  // JB
   hub_info->button[8] = 0x0d;  // Trigger
-  for (uint8_t i = 9; i < 13; ++i)
+  for (uint8_t i = 9; i < 13; ++i) {
     hub_info->button[i] = 0xffff;
+  }
   hub_info->state = HID_STATE_READY;
   return false;
 }
@@ -161,8 +165,9 @@ bool hid_guncon3_report(struct hub_info* hub_info,
                         struct usb_info* usb_info,
                         uint8_t* data,
                         uint16_t size) {
-  if (hub_info->type != HID_TYPE_ZAPPER || usb_info->state == IDLE)
+  if (hub_info->type != HID_TYPE_ZAPPER || usb_info->state == IDLE) {
     return false;
+  }
 
   switch (usb_info->state) {
     case HUB_GET_PORT_STATUS:

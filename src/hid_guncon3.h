@@ -17,7 +17,8 @@ bool hid_guncon3_check_device_desc(struct hub_info* hub_info,
                                    struct usb_info* usb_info,
                                    const struct usb_desc_device* desc);
 
-bool hid_guncon3_check_interface_desc(struct usb_info* usb_info);
+bool hid_guncon3_check_interface_desc(struct hub_info* hub_info,
+                                      struct usb_info* usb_info);
 
 bool hid_guncon3_initialize(struct hub_info* hub_info,
                             struct usb_info* usb_info);
