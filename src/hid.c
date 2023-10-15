@@ -10,6 +10,9 @@
 #endif
 #include "hid_internal.h"
 #include "hid_keyboard.h"
+#if !defined(_HID_NO_PS3)
+#include "hid_dualshock3.h"
+#endif
 #if !defined(_HID_NO_SWITCH)
 #include "hid_switch.h"
 #endif
@@ -74,6 +77,9 @@ static void check_device_desc(uint8_t hub, const uint8_t* data) {
 #endif
 #if !defined(_HID_NO_GUNCON3)
       hid_guncon3_check_device_desc(&hub_info[hub], &usb_info[hub], desc) ||
+#endif
+#if !defined(_HID_NO_DUALSHOCK3)
+      hid_dualshock3_check_device_desc(&hub_info[hub], &usb_info[hub], desc) ||
 #endif
       false) {
     return;
@@ -153,8 +159,13 @@ static void check_configuration_desc(uint8_t hub, const uint8_t* data) {
       }
     }
   }
-  if (hub_info[hub].report_desc_size && hub_info[hub].ep)
+#ifdef _DBG_DESC
+  Serial.printf("report_desc_size: %d, ep: %d\n",
+                hub_info[hub].report_desc_size, hub_info[hub].ep);
+#endif
+  if (hub_info[hub].report_desc_size && hub_info[hub].ep) {
     hub_info[hub].state = HID_STATE_NOT_READY;
+  }
 
   if (hid_keyboard_initialize(&hub_info[hub]) ||
 #if !defined(_HID_NO_GUNCON3)
@@ -180,8 +191,9 @@ static void check_configuration_desc(uint8_t hub, const uint8_t* data) {
 #endif
 
 static void check_hid_report_desc(uint8_t hub, const uint8_t* data) {
-  if (hub_info[hub].state != HID_STATE_NOT_READY)
+  if (hub_info[hub].state != HID_STATE_NOT_READY) {
     return;
+  }
 #ifdef _DBG_HID_REPORT_DESC_DUMP
   {
     for (uint16_t i = 0; i < hub_info[hub].report_desc_size; ++i)
@@ -406,6 +418,11 @@ quit:
     hid_switch_initialize(&hub_info[hub]);
   }
 #endif
+#if !defined(_HID_NO_PS3)
+  if (hub_info[hub].type == HID_TYPE_PS3) {
+    hid_dualshock3_initialize(&hub_info[hub]);
+  }
+#endif
   if (hub_info[hub].type != HID_TYPE_UNKNOWN) {
     hid->detected();
   }
@@ -433,17 +450,25 @@ quit:
 }
 
 static void hid_report(uint8_t hub, uint8_t* data, uint16_t size) {
-#if !defined(_HID_NO_GUNCON3)
-  if (hid_guncon3_report(&hub_info[hub], &usb_info[hub], data, size))
+#if !defined(_HID_NO_PS3)
+  if (hid_dualshock3_report(&hub_info[hub], &usb_info[hub], data, size)) {
     return;
+  }
+#endif
+#if !defined(_HID_NO_GUNCON3)
+  if (hid_guncon3_report(&hub_info[hub], &usb_info[hub], data, size)) {
+    return;
+  }
 #endif
 #if !defined(_HID_NO_XBOX)
-  if (hid_xbox_report(&hub_info[hub], data, size))
+  if (hid_xbox_report(&hub_info[hub], data, size)) {
     return;
+  }
 #endif
 #if !defined(_HID_NO_SWITCH)
-  if (hid_switch_report(hub, &hub_info[hub], &usb_info[hub], data, size))
+  if (hid_switch_report(hub, &hub_info[hub], &usb_info[hub], data, size)) {
     return;
+  }
 #endif
   if (hid->report && size) {
     hid->report(hub, &hub_info[hub], data, size);
@@ -469,6 +494,7 @@ void hid_init(struct hid* new_hid) {
   host.check_configuration_desc = check_configuration_desc;
   host.check_hid_report_desc = check_hid_report_desc;
   host.in = hid_report;
+  host.hid_report = hid_report;
   usb_host_init(&host);
 }
 
@@ -495,6 +521,11 @@ void hid_poll(void) {
         hid_guncon3_poll(hub, &usb_info[hub]);
         break;
 #endif
+#if !defined(_HID_NO_PS3)
+      case HID_TYPE_PS3:
+        hid_dualshock3_poll(hub, &hub_info[hub], &usb_info[hub]);
+        break;
+#endif
 #if !defined(_HID_NO_XBOX)
       case HID_TYPE_XBOX_360:
         hid_xbox_360_poll(hub, &hub_info[hub], &usb_info[hub]);
@@ -510,10 +541,10 @@ void hid_poll(void) {
 #endif
       default: {
         uint16_t size = hub_info[hub].report_size / 8;
-        if (hub_info[hub].report_id)
+        if (hub_info[hub].report_id) {
           size++;
+        }
         usb_host_in(hub, hub_info[hub].ep, size);
-        // usb_host_hid_get_report(hub, hub_info[hub].report_id, size);
         break;
       }
     }
