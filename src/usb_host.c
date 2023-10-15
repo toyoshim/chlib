@@ -254,8 +254,8 @@ static void host_transact_cont(uint8_t hub, uint8_t tog) {
   }
 
 #ifdef _USB_HOST_DBG_LOG
-  usb_host_log_send(transaction_ep_pid & 0x0f, transaction_ep_pid >> 4, size,
-                    tx_buffer);
+  usb_host_log_send(transaction_ep_pid & 0x0f, transaction_ep_pid >> 4,
+                    UH_TX_LEN, tx_buffer);
 #endif  // _USB_HOST_DBG_LOG
 
   UH_EP_PID = transaction_ep_pid;
