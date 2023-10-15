@@ -707,8 +707,8 @@ static bool state_transaction(uint8_t hub) {
 #ifdef _USB_HOST_DBG_LOG
     usb_host_log_stall();
 #endif  // _USB_HOST_DBG_LOG
-    // Try resetting, but may be no luck.
-    state[hub] = STATE_CONNECT;
+    unlock_transaction(hub);
+    state[hub] = STATE_READY;
     return true;
   } else if (U_TOG_OK || token == USB_PID_DATA0 || token == USB_PID_DATA1 ||
              token == 0) {
