@@ -2,9 +2,9 @@ CFLAGS  = -V -mmcs51 --model-large --xram-size 0x1800 --xram-loc 0x0000 --code-s
 CC      = sdcc
 TARGET  = build
 OBJS	  = \
-	adc.rel ch559.rel flash.rel hid.rel hid_dualshock3.rel hid_guncon3.rel \
-	hid_keyboard.rel hid_switch.rel hid_xbox.rel led.rel pwm1.rel serial.rel \
-	timer3.rel uart1.rel usb_device.rel usb_host.rel
+	adc.rel ch559.rel flash.rel gpio.rel hid.rel hid_dualshock3.rel \
+	hid_guncon3.rel hid_keyboard.rel hid_switch.rel hid_xbox.rel led.rel \
+	pwm1.rel serial.rel timer3.rel uart1.rel usb_device.rel usb_host.rel
 
 .PHONY: all clean build
 
