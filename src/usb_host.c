@@ -763,7 +763,7 @@ static bool state_transaction(uint8_t hub) {
     return false;
   }
 
-  Serial.printf("\ntransmit error: %x\n", USB_INT_ST);
+  // Serial.printf("\ntransmit error: %x\n", USB_INT_ST);
   halt(hub);
   return false;
 }
