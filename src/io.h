@@ -57,6 +57,7 @@ SFR(P3, 0xb0);          // P3 input/output register
 SFR(GLOBAL_CFG, 0xb1);  // Global configuration register
 SFR(PLL_CFG, 0xb2);     // PLL clock configuration register
 SFR(CLOCK_CFG, 0xb3);   // System clock configuration register
+SFR(IP, 0xb8);          // Interrupt priority control register
 SFR(P1_IE, 0xb9);       // P1 input enable register
 SFR(P1_DIR, 0xba);      // P1 direction control register
 SFR(P1_PU, 0xbb);       // P1 pull-up enable register
@@ -74,6 +75,7 @@ SFR(PORT_CFG, 0xc6);    // Port configuration register
 SFR(P5_IN, 0xc7);       // P5 input register
 SFR(T2MOD, 0xc9);       // Timer2 mode register
 SFR(PIN_FUNC, 0xce);    // Function pins select register
+SFR(GPIO_IE, 0xcf);     // GPIO interrupt enable register
 SFR(USB_RX_LEN, 0xd1);  // USB receiving length register
 SFR(UEP1_CTRL, 0xd2);   // Endpoint1 control register
 SFR(UH_SETUP, 0xd2);    // USB host auxiliary setup register
@@ -99,6 +101,7 @@ SFR(UDEV_CTRL, 0xe4);   // USB device port control register
 SFR(UHUB0_CTRL, 0xe4);  // USB HUB0 control register
 SFR(UHUB1_CTRL, 0xe5);  // USB HUB1 control register
 SFR(IE_EX, 0xe8);       // Extend interrupt enable register
+SFR(IP_EX, 0xe9);       // Externd interrupt priority register
 SFR(ADC_CK_SE, 0xef);   // ADC clock divisor setting
 SFR(ADC_STAT, 0xf1);    // ADC status
 SFR(ADC_CTRL, 0xf2);    // ADC control
@@ -139,6 +142,7 @@ SBIT(P2_5, 0xa0, 5);          // P2, 5
 SBIT(P2_6, 0xa0, 6);          // P2, 6
 SBIT(P2_7, 0xa0, 7);          // P2, 7
 SBIT(ET0, 0xa8, 1);           // IE, Timer0 interrupt enable bit
+SBIT(E_DIS, 0xa8, 6);         // IE, Global interrupt disable control bit
 SBIT(EA, 0xa8, 7);            // IE, Global interrupt enable control bit
 SBIT(P4_0, 0xc0, 0);          // P4, 0
 SBIT(P4_1, 0xc0, 1);          // P4, 1
@@ -156,6 +160,7 @@ SBIT(U_TOG_OK, 0xd8, 6);      // USB_INT_FG, Current USB transmit data toggle
 SBIT(IE_TMR3, 0xe8, 1);       // IE_EX, Timer3 interruprt enable bit
 SBIT(IE_USB, 0xe8, 2);        // IE_EX, USB interruprt enable bit
 SBIT(IE_UART1, 0xe8, 4);      // IE_EX, UART1 interruprt enable bit
+SBIT(IE_GPIO, 0xe8, 6);       // IE_EX, GPIO interruprt enable bit
 
 enum {
   SMOD = 0x80,             // PCON, Baud rate selection for UART0 mode 1/2/3
@@ -248,6 +253,22 @@ enum {
   bADC_SAMPLE = 0x80,      // ADC_CTRL, Sampling pulse control
   bADC_POWER_EN = 0x04,    // ADC_SETUP, ADC power control
   bADC_RESOLUTION = 0x04,  // ADC_EX_SW, ADC resolution
+  bIE_IO_EDGE = 0x80,      // GPIO edge interrupt mode enable bit
+  bIE_RXD1_LO = 0x40,      // RXD1/RXD1_ interrupt enable bit
+  bIE_P5_5_HI = 0x20,      // P5.5 interrupt enable bit
+  bIE_P1_4_LO = 0x10,      // P1.4 interrupt enable bit
+  bIE_P0_3_LO = 0x08,      // P0.3 interrupt enable bit
+  bIE_P5_7_HI = 0x04,      // P5_7 interrupt enable bit
+  bIE_P4_1_LO = 0x02,      // P4_1 interrupt enable bit
+  bIE_RXD0_LO = 0x01,      // RXD/RXD_ interrupt enable bit
+  bIP_LEVEL = 0x80,        // Current interrupt nesting level flag bit
+  bIP_GPIO = 0x40,         // GPIO interrupt priority control bit
+  bIP_PWM1 = 0x20,         // PWM1 interrupt priority control bit
+  bIP_UART1 = 0x10,        // UART1 interrupt priority control bit
+  bIP_ADC = 0x08,          // ADC interrupt priority control bit
+  bIP_USB = 0x04,          // USB interrupt priority control bit
+  bIP_TMR3 = 0x02,         // TMR3 interrupt priority control bit
+  bIP_SPI0 = 0x01,         // SPI0 interrupt priority control bit
 };
 
 __at(0x2446) uint8_t volatile UEP4_1_MOD;

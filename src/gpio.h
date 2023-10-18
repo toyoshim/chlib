@@ -8,6 +8,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "interrupt.h"
+
 // mode
 #define INPUT 0
 #define INPUT_PULLUP 1
@@ -24,5 +26,7 @@ void digitalWrite(uint8_t port, uint8_t bit, uint8_t value);
 // note: port 5 is not supported yet
 uint8_t digitalReadPort(uint8_t port);
 uint8_t digitalRead(uint8_t port, uint8_t bit);
+
+void enable_gpio_interrupt(uint8_t ie, bool high_priority);
 
 #endif  // __gpio_h__

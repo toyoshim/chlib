@@ -170,3 +170,14 @@ uint8_t digitalRead(uint8_t port, uint8_t pin) {
   uint8_t v = digitalReadPort(port);
   return (v & (1 << pin)) ? HIGH : LOW;
 }
+
+void enable_gpio_interrupt(uint8_t ie, bool high_priority) {
+  GPIO_IE = ie;
+  IE_GPIO = 1;  // Enable GPIO interrupt
+  EA = 1;       // Enable interrupt
+  if (high_priority) {
+    IP_EX |= bIP_GPIO;
+  } else {
+    IP_EX &= ~bIP_GPIO;
+  }
+}
