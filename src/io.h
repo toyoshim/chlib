@@ -10,6 +10,7 @@
 #endif
 
 #include <compiler.h>
+#include <stdint.h>
 
 SFR(P0, 0x80);          // P0 input/output register
 SFR(ROM_ADDR_L, 0x84);  // Flash-ROM address register low byte
