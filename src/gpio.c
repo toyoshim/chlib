@@ -26,9 +26,6 @@ void pinMode(uint8_t port, uint8_t bit, uint8_t mode) {
       case 4:
         P4_PU |= mask;
         break;
-      default:
-        Serial.println("N/A");
-        break;
     }
   } else {
     mask = ~mask;
@@ -47,9 +44,6 @@ void pinMode(uint8_t port, uint8_t bit, uint8_t mode) {
         break;
       case 4:
         P4_PU &= mask;
-        break;
-      default:
-        Serial.println("N/A");
         break;
     }
     mask = ~mask;
@@ -71,9 +65,6 @@ void pinMode(uint8_t port, uint8_t bit, uint8_t mode) {
       case 4:
         P4_DIR |= mask;
         break;
-      default:
-        Serial.println("N/A");
-        break;
     }
   } else {
     mask = ~mask;
@@ -92,9 +83,6 @@ void pinMode(uint8_t port, uint8_t bit, uint8_t mode) {
         break;
       case 4:
         P4_DIR &= mask;
-        break;
-      default:
-        Serial.println("N/A");
         break;
     }
   }
@@ -119,9 +107,6 @@ void digitalWrite(uint8_t port, uint8_t bit, uint8_t value) {
       case 4:
         P4_OUT |= mask;
         break;
-      default:
-        Serial.println("N/A");
-        break;
     }
   } else {
     mask = ~mask;
@@ -141,37 +126,36 @@ void digitalWrite(uint8_t port, uint8_t bit, uint8_t value) {
       case 4:
         P4_OUT &= mask;
         break;
-      default:
-        Serial.println("N/A");
-        break;
     }
   }
 }
 
-uint8_t digitalReadPort(uint8_t port) {
+uint8_t digitalRead(uint8_t port, uint8_t pin) {
+  uint8_t v;
   switch (port) {
     case 0:
-      return P0;
+      v = P0;
+      break;
     case 1:
-      return P1;
+      v = P1;
+      break;
     case 2:
-      return P2;
+      v = P2;
+      break;
     case 3:
-      return P3;
+      v = P3;
+      break;
     case 4:
-      return P4_IN;
+      v = P4_IN;
+      break;
     default:
-      Serial.println("N/A");
-      return 0;
+      v = 0;
+      break;
   }
-}
-
-uint8_t digitalRead(uint8_t port, uint8_t pin) {
-  uint8_t v = digitalReadPort(port);
   return (v & (1 << pin)) ? HIGH : LOW;
 }
 
-void enable_gpio_interrupt(uint8_t ie, bool high_priority) {
+void gpio_enable_interrupt(uint8_t ie, bool high_priority) {
   GPIO_IE = ie;
   IE_GPIO = 1;  // Enable GPIO interrupt
   EA = 1;       // Enable interrupt
@@ -180,4 +164,8 @@ void enable_gpio_interrupt(uint8_t ie, bool high_priority) {
   } else {
     IP_EX &= ~bIP_GPIO;
   }
+}
+
+void gpio_enable_opendrain(uint8_t port) {
+  PORT_CFG |= (1 << port);
 }
