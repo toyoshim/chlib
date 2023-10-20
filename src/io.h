@@ -254,11 +254,11 @@ enum {
   bADC_POWER_EN = 0x04,    // ADC_SETUP, ADC power control
   bADC_RESOLUTION = 0x04,  // ADC_EX_SW, ADC resolution
   bIE_IO_EDGE = 0x80,      // GPIO edge interrupt mode enable bit
-  bIE_RXD1_LO = 0x40,      // RXD1/RXD1_ interrupt enable bit
-  bIE_P5_5_HI = 0x20,      // P5.5 interrupt enable bit
+  bIE_RXD1_LO = 0x40,      // RXD1 (P2.6) / RXD1_ (P4.0) interrupt enable bit
+  bIE_P5_5_HI = 0x20,      // P5.5 (HP/XA) interrupt enable bit
   bIE_P1_4_LO = 0x10,      // P1.4 interrupt enable bit
   bIE_P0_3_LO = 0x08,      // P0.3 interrupt enable bit
-  bIE_P5_7_HI = 0x04,      // P5_7 interrupt enable bit
+  bIE_P5_7_HI = 0x04,      // P5_7 (RST) interrupt enable bit
   bIE_P4_1_LO = 0x02,      // P4_1 interrupt enable bit
   bIE_RXD0_LO = 0x01,      // RXD/RXD_ interrupt enable bit
   bIP_LEVEL = 0x80,        // Current interrupt nesting level flag bit
