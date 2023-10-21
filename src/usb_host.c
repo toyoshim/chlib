@@ -325,9 +325,9 @@ static bool state_connect(uint8_t hub) {
   // The device may be disconnected during the reset.
   resetting[hub] = true;
   if (!hub)
-    UHUB0_CTRL = bUHS_BUS_RESET;
+    UHUB0_CTRL = bUH_BUS_RESET;
   else
-    UHUB1_CTRL = bUHS_BUS_RESET;
+    UHUB1_CTRL = bUH_BUS_RESET;
   initial_check[hub] = true;
   hub_address[hub] = 0;
   delay_ms(hub, 100, STATE_RESET);
@@ -337,9 +337,9 @@ static bool state_connect(uint8_t hub) {
 static bool state_reset(uint8_t hub) {
   // Stop resetting, and wait >250us.
   if (!hub)
-    UHUB0_CTRL &= ~bUHS_BUS_RESET;
+    UHUB0_CTRL &= ~bUH_BUS_RESET;
   else
-    UHUB1_CTRL &= ~bUHS_BUS_RESET;
+    UHUB1_CTRL &= ~bUH_BUS_RESET;
   delay_us(hub, 500, STATE_ENABLE);
   return false;
 }
@@ -958,10 +958,16 @@ void usb_host_init(struct usb_host* host) {
   USB_CTRL = bUC_HOST_MODE | bUC_INT_BUSY | bUC_DMA_EN;
   UH_SETUP = bUH_SOF_EN;  // Enable automatic SOF
   USB_INT_FG = 0xff;      // Clear interrupt flags
-  if (host->flags & USE_HUB0)
+  if (host->flags & USE_HUB0) {
     UHUB0_CTRL = 0x00;  // Enable HUB0
-  if (host->flags & USE_HUB1)
+  } else {
+    UHUB0_CTRL = bUH_RECV_DIS | bUH_DP_PD_DIS | bUH_DM_PD_DIS;
+  }
+  if (host->flags & USE_HUB1) {
     UHUB1_CTRL = 0x00;  // Enable HUB1
+  } else {
+    UHUB1_CTRL = bUH_DISABLE | bUH_RECV_DIS | bUH_DP_PD_DIS | bUH_DM_PD_DIS;
+  }
   USB_INT_EN = bUIE_TRANSFER | bUIE_DETECT;
 
   for (uint8_t i = 0; i < 2; ++i)

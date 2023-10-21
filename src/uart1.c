@@ -24,11 +24,13 @@ void uart1_init(uint8_t options, uint8_t speed) {
       // RXD1/TXD1 connect P4.0/P4.4.
       SER1_IER |= bIER_PIN_MOD0;
       SER1_IER &= ~bIER_PIN_MOD1;
+      P4_DIR &= ~(1 << 0);
       P4_DIR |= (1 << 4);
     } else {
       // RXD1/TXD1 connect P2.6/P2.7.
       SER1_IER &= ~bIER_PIN_MOD0;
       SER1_IER |= bIER_PIN_MOD1;
+      P2_DIR &= ~(1 << 6);
       P2_DIR |= (1 << 7);
     }
   }

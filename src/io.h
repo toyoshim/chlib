@@ -219,7 +219,12 @@ enum {
   bUHS_HM_LEVEL = 0x40,    // USB_HUB_ST, HM level on attaching
   bUHS_H1_ATTACH = 0x80,   // USB_HUB_ST, USB HUB1 attached status
   bUH_PORT_EN = 0x01,      // UHUBn_CTRL, Enable USB hub port
+  bUH_BUS_RESET = 0x02,    // UHUBn_CTRL, Control USB hub bus reset
   bUH_LOW_SPEED = 0x04,    // UHUBn_CTRL, Enable USB hub low speed
+  bUH_DIFF_IN = 0x08,      // UHUBn_CTRL, Current xP/xM difference input status
+  bUH_DM_PD_DIS = 0x10,    // UHUBn_CTRL, Disable USB xM pull-down register
+  bUH_DP_PD_DIS = 0x20,    // UHUBn_CTRL, Disable USB xP pull-down register
+  bUH_RECV_DIS = 0x40,     // UHUBn_CTRL, Disable USB hub receiver
   bUH_DISABLE = 0x80,      // UHUBn_CTRL, Disable USB hub pin (only for UHUB1)
   bUEP_R_TOG = 0x80,       // UEPx_CTRL, Expected data toggle flag of USB EPn RX
   bUEP_T_TOG = 0x40,       // UEPx_CTRL, Expected data toggle flag of USB EPn TX
