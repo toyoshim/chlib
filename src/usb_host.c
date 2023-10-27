@@ -542,6 +542,7 @@ static bool state_set_feature(uint8_t hub) {
     state[hub] = next_state;
     return true;
   }
+  do_not_retry[hub] = true;
   host_setup_transfer(hub, (uint8_t*)&set_feature_descriptor,
                       sizeof(set_feature_descriptor), next_state);
   return false;
