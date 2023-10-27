@@ -15,6 +15,25 @@ enum {
   STARTED,
 };
 
+static bool check(struct hub_info* hub_info,
+                  uint8_t any_class,
+                  uint8_t any_subclass,
+                  uint8_t any_protocol) {
+  if (any_class == 0xff && any_subclass == 0x5d && any_protocol == 0x01) {
+    // Might be a Xbox 360 compatible controller.
+    hub_info->type = HID_TYPE_XBOX_360;
+    hub_info->report_desc_size = 1;
+    return true;
+  }
+  if (any_class == 0xff && any_subclass == 0x47 && any_protocol == 0xd0) {
+    // Might be a Xbox One compatible controller.
+    hub_info->type = HID_TYPE_XBOX_ONE;
+    hub_info->report_desc_size = 1;
+    return true;
+  }
+  return false;
+}
+
 bool hid_xbox_check_device_desc(struct hub_info* hub_info,
                                 const struct usb_desc_device* desc) {
   if (desc->idVendor == 0x045e) {
@@ -32,36 +51,15 @@ bool hid_xbox_check_device_desc(struct hub_info* hub_info,
       hub_info->report_desc_size = 1;
       return true;
     }
-  } else if (desc->bDeviceClass == 0xff && desc->bDeviceSubClass == 0x47 &&
-             desc->bDeviceProtocol == 0xd0) {
-    // Might be a Xbox One compatible controller.
-    hub_info->type = HID_TYPE_XBOX_ONE;
-    hub_info->report_desc_size = 1;
-    return true;
   }
-  return false;
+  return check(hub_info, desc->bDeviceClass, desc->bDeviceSubClass,
+               desc->bDeviceProtocol);
 }
 
-bool hid_xbox_360_check_interface_desc(struct hub_info* hub_info,
-                                       const struct usb_desc_interface* intf) {
-  if (intf->bInterfaceClass == 0xff && intf->bInterfaceSubClass == 0x5d &&
-      intf->bInterfaceProtocol == 0x01) {
-    hub_info->type = HID_TYPE_XBOX_360;
-    hub_info->report_desc_size = 1;
-    return true;
-  }
-  return false;
-}
-
-bool hid_xbox_one_check_interface_desc(struct hub_info* hub_info,
-                                       const struct usb_desc_interface* intf) {
-  if (intf->bInterfaceClass == 0xff && intf->bInterfaceSubClass == 0x47 &&
-      intf->bInterfaceProtocol == 0xd0 && intf->bInterfaceNumber == 0) {
-    hub_info->type = HID_TYPE_XBOX_ONE;
-    hub_info->report_desc_size = 1;
-    return true;
-  }
-  return false;
+bool hid_xbox_check_interface_desc(struct hub_info* hub_info,
+                                   const struct usb_desc_interface* intf) {
+  return check(hub_info, intf->bInterfaceClass, intf->bInterfaceSubClass,
+               intf->bInterfaceProtocol);
 }
 
 bool hid_xbox_initialize(struct hub_info* hub_info, struct usb_info* usb_info) {

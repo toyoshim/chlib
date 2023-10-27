@@ -108,8 +108,7 @@ static void check_configuration_desc(uint8_t hub, const uint8_t* data) {
         }
         if (hid_keyboard_check_interface_desc(&hub_info[hub], intf) ||
 #if !defined(_HID_NO_XBOX)
-            hid_xbox_360_check_interface_desc(&hub_info[hub], intf) ||
-            hid_xbox_one_check_interface_desc(&hub_info[hub], intf) ||
+            hid_xbox_check_interface_desc(&hub_info[hub], intf) ||
 #endif
 #if !defined(_HID_NO_GUNCON3)
             hid_guncon3_check_interface_desc(&hub_info[hub], &usb_info[hub]) ||
