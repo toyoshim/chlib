@@ -7,11 +7,16 @@
 #include "hid.h"
 #include "usb.h"
 
+static bool check(uint8_t any_class,
+                  uint8_t any_subclass,
+                  uint8_t any_protocol) {
+  return any_class == USB_CLASS_HID && any_subclass == USB_HID_SUBCLASS_BOOT &&
+         any_protocol == USB_HID_BOOT_PROTOCOL_KEYBOARD;
+}
+
 bool hid_keyboard_check_device_desc(struct hub_info* hub_info,
                                     const struct usb_desc_device* desc) {
-  if (desc->bDeviceClass == USB_CLASS_HID &&
-      desc->bDeviceSubClass == USB_HID_SUBCLASS_BOOT &&
-      desc->bDeviceProtocol == USB_HID_BOOT_PROTOCOL_KEYBOARD) {
+  if (check(desc->bDeviceClass, desc->bDeviceSubClass, desc->bDeviceProtocol)) {
     hub_info->type = HID_TYPE_KEYBOARD;
     return true;
   }
@@ -20,9 +25,8 @@ bool hid_keyboard_check_device_desc(struct hub_info* hub_info,
 
 bool hid_keyboard_check_interface_desc(struct hub_info* hub_info,
                                        const struct usb_desc_interface* desc) {
-  if (desc->bInterfaceClass == USB_CLASS_HID &&
-      desc->bInterfaceSubClass == USB_HID_SUBCLASS_BOOT &&
-      desc->bInterfaceProtocol == USB_HID_BOOT_PROTOCOL_KEYBOARD) {
+  if (check(desc->bInterfaceClass, desc->bInterfaceSubClass,
+            desc->bInterfaceProtocol)) {
     hub_info->type = HID_TYPE_KEYBOARD;
     return true;
   }
