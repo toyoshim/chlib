@@ -163,7 +163,8 @@ enum {
   USB_HID_SUBCLASS_BOOT = 0x01,
 
   // protocol
-  USB_HID_BOOT_PROTOCOL_KEYBOARD = 0x01,
+  USB_HID_PROTOCOL_KEYBOARD = 0x01,
+  USB_HID_PROTOCOL_MOUSE = 0x02,
 };
 
 #endif  // __usb_h__

@@ -3,8 +3,8 @@ CC      = sdcc
 TARGET  = build
 OBJS	  = \
 	adc.rel ch559.rel flash.rel gpio.rel hid.rel hid_dualshock3.rel \
-	hid_guncon3.rel hid_keyboard.rel hid_switch.rel hid_xbox.rel led.rel \
-	pwm1.rel serial.rel timer3.rel uart1.rel usb_device.rel usb_host.rel
+	hid_guncon3.rel hid_keyboard.rel hid_mouse.rel hid_switch.rel hid_xbox.rel \
+	led.rel pwm1.rel serial.rel timer3.rel uart1.rel usb_device.rel usb_host.rel
 
 .PHONY: all clean build
 

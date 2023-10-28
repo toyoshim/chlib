@@ -7,6 +7,7 @@
 #include "ch559.h"
 #include "io.h"
 #include "serial.h"
+#include "usb.h"
 
 // #define _USB_HOST_DBG_LOG
 // #define _IMPL_USB_HOST_LOG_SEND
@@ -37,6 +38,7 @@ enum {
   STATE_GET_HID_REPORT_DESC,
   STATE_GET_HID_REPORT_DESC_RECV,
   STATE_HID_SET_PROTOCOL,
+  STATE_HID_SET_PROTOCOL_DONE,
   STATE_GET_HUB_DESC,
   STATE_GET_HUB_DESC_RECV,
   STATE_SET_PORT_POWER_FEATURE,
@@ -60,6 +62,12 @@ enum {
   STATE_TRANSACTION_ACK,
   STATE_TRANSACTION_CONT,
   STATE_TRANSACTION_RETRY,
+};
+
+enum {
+  BOOT_NOT_SUPPORTED = 0,
+  BOOT_SUPPORTED = 1,
+  BOOT_SELECTED = 2,
 };
 
 #define AUTO_TOGGLE (bUH_R_TOG | bUH_R_AUTO_TOG | bUH_T_TOG | bUH_T_AUTO_TOG)
@@ -173,10 +181,10 @@ static uint8_t delay_next_state[2] = {0, 0};
 static bool resetting[2] = {false, false};
 static bool no_remote_wakeup[2] = {false, false};
 static bool is_hid[2] = {false, false};
-static bool is_hid_boot[2] = {false, false};
+static uint8_t hid_boot[2] = {BOOT_NOT_SUPPORTED, BOOT_NOT_SUPPORTED};
 static uint8_t hub_ports[2] = {0, 0};
 static uint8_t hub_address[2] = {0, 0};
-static uint8_t hid_interface_number[2] = {0, 0};
+static uint8_t hid_interface_number[2] = {0xff, 0xff};
 static bool do_not_retry[2] = {false, false};
 static uint16_t user_request_size = 0;
 static uint8_t string_index[3] = {0, 0, 0};
@@ -413,8 +421,13 @@ static bool state_get_device_desc_recv(uint8_t hub) {
 
   ep_max_packet_size[hub][0] = desc->bMaxPacketSize0;
   is_hid[hub] = desc->bDeviceClass == USB_CLASS_HID;
-  is_hid_boot[hub] = desc->bDeviceClass == USB_CLASS_HID &&
-                     desc->bDeviceSubClass == USB_HID_SUBCLASS_BOOT;
+  // Use BOOT protocol only for keyboards.
+  hid_boot[hub] = (desc->bDeviceClass != USB_CLASS_HID ||
+                   desc->bDeviceSubClass != USB_HID_SUBCLASS_BOOT)
+                      ? BOOT_NOT_SUPPORTED
+                  : (desc->bDeviceProtocol == USB_HID_PROTOCOL_KEYBOARD)
+                      ? BOOT_SELECTED
+                      : BOOT_SUPPORTED;
   hub_ports[hub] = (desc->bDeviceClass == USB_CLASS_HUB) ? 1 : 0;
   string_index[0] = desc->iManufacturer;
   string_index[1] = desc->iProduct;
@@ -487,28 +500,43 @@ static bool state_get_configuration_desc_recv(uint8_t hub) {
     return false;
   }
   no_remote_wakeup[hub] = (desc->bmAttributes & 0x20) == 0;
-  if (usb_host->check_configuration_desc)
-    usb_host->check_configuration_desc(hub, buffer);
+  if (usb_host->check_configuration_desc) {
+    hid_interface_number[hub] = usb_host->check_configuration_desc(hub, buffer);
+  }
   set_configuration_descriptor.wValue = desc->bConfigurationValue;
   // Note: multiple configurations are not supported.
 
-  for (uint8_t i = 1; i < 16; ++i)
+  for (uint8_t i = 1; i < 16; ++i) {
     ep_max_packet_size[hub][i] = 0;
+  }
 
+  bool selected = false;
   for (uint16_t offset = 0; offset < desc->wTotalLength;) {
     const struct usb_desc_head* head =
         (const struct usb_desc_head*)(buffer + offset);
     if (head->bDescriptorType == USB_DESC_INTERFACE) {
+      if (selected) {
+        break;
+      }
       const struct usb_desc_interface* intf =
           (const struct usb_desc_interface*)(buffer + offset);
       if (intf->bInterfaceClass == USB_CLASS_HID) {
         is_hid[hub] = true;
-        if (intf->bInterfaceSubClass == USB_HID_SUBCLASS_BOOT)
-          is_hid_boot[hub] = true;
+        if (intf->bInterfaceSubClass == USB_HID_SUBCLASS_BOOT) {
+          hid_boot[hub] =
+              (intf->bInterfaceProtocol == USB_HID_PROTOCOL_KEYBOARD)
+                  ? BOOT_SELECTED
+                  : BOOT_SUPPORTED;
+        }
       }
-      if (is_hid[hub])
+      if (is_hid[hub] && hid_interface_number[hub] == 0xff) {
         hid_interface_number[hub] = intf->bInterfaceNumber;
-    } else if (head->bDescriptorType == USB_DESC_HID) {
+        selected = true;
+      } else if (hid_interface_number[hub] == intf->bInterfaceNumber) {
+        selected = true;
+      }
+    }
+    if (head->bDescriptorType == USB_DESC_HID) {
       const struct usb_desc_hid* hid =
           (const struct usb_desc_hid*)(buffer + offset);
       get_hid_report_descriptor.wLength = hid->wDescriptorLength;
@@ -550,9 +578,9 @@ static bool state_set_feature(uint8_t hub) {
 
 static bool state_extra_setup(uint8_t hub) {
   delay_us(hub, 250,
-           hub_ports[hub]     ? STATE_GET_HUB_DESC
-           : is_hid_boot[hub] ? STATE_HID_SET_PROTOCOL
-                              : STATE_GET_HID_REPORT_DESC);
+           hub_ports[hub]                          ? STATE_GET_HUB_DESC
+           : (hid_boot[hub] != BOOT_NOT_SUPPORTED) ? STATE_HID_SET_PROTOCOL
+                                                   : STATE_GET_HID_REPORT_DESC);
   return false;
 }
 
@@ -572,8 +600,17 @@ static bool state_get_hid_report_desc_recv(uint8_t hub) {
 }
 
 static bool state_hid_set_protocol(uint8_t hub) {
+  // Select boot protocol or report protocol.
+  hid_set_protocol.wValue = (hid_boot[hub] == BOOT_SELECTED) ? 0 : 1;
   host_setup_transfer(hub, (uint8_t*)&hid_set_protocol,
-                      sizeof(hid_set_protocol), STATE_DONE);
+                      sizeof(hid_set_protocol), STATE_HID_SET_PROTOCOL_DONE);
+  return false;
+}
+
+static bool state_hid_set_protocol_done(uint8_t hub) {
+  delay_ms(hub, 5,
+           (hid_boot[hub] == BOOT_SELECTED) ? STATE_DONE
+                                            : STATE_GET_HID_REPORT_DESC);
   return false;
 }
 
@@ -863,6 +900,8 @@ static bool fsm(uint8_t hub) {
       return state_get_hid_report_desc_recv(hub);
     case STATE_HID_SET_PROTOCOL:
       return state_hid_set_protocol(hub);
+    case STATE_HID_SET_PROTOCOL_DONE:
+      return state_hid_set_protocol_done(hub);
     case STATE_GET_HUB_DESC:
       return state_get_hub_desc(hub);
     case STATE_GET_HUB_DESC_RECV:

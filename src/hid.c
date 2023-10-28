@@ -5,13 +5,18 @@
 #include "hid.h"
 
 #include "ch559.h"
+#if !defined(_HID_NO_PS3)
+#include "hid_dualshock3.h"
+#endif
 #if !defined(_HID_NO_GUNCON3)
 #include "hid_guncon3.h"
 #endif
 #include "hid_internal.h"
+#if !defined(_HID_NO_KEYBOARD)
 #include "hid_keyboard.h"
-#if !defined(_HID_NO_PS3)
-#include "hid_dualshock3.h"
+#endif
+#if !defined(_HID_NO_MOUSE)
+#include "hid_mouse.h"
 #endif
 #if !defined(_HID_NO_SWITCH)
 #include "hid_switch.h"
@@ -32,6 +37,9 @@ static struct hub_info hub_info[2];
 static struct usb_info usb_info[2];
 
 static void do_nothing(void) {}
+static bool return_false(void) {
+  return false;
+}
 
 static void disconnected(uint8_t hub) {
   hub_info[hub].state = HID_STATE_DISCONNECTED;
@@ -68,7 +76,13 @@ static void check_device_desc(uint8_t hub, const uint8_t* data) {
     hub_info[hub].wait = 750;
   }
 
-  if (hid_keyboard_check_device_desc(&hub_info[hub], desc) ||
+  if (false ||
+#if !defined(_HID_NO_KEYBOARD)
+      hid_keyboard_check_device_desc(&hub_info[hub], desc) ||
+#endif
+#if !defined(_HID_NO_MOUSE)
+      hid_mouse_check_device_desc(&hub_info[hub], desc) ||
+#endif
 #if !defined(_HID_NO_XBOX)
       hid_xbox_check_device_desc(&hub_info[hub], desc) ||
 #endif
@@ -86,14 +100,18 @@ static void check_device_desc(uint8_t hub, const uint8_t* data) {
   }
 }
 
-static void check_configuration_desc(uint8_t hub, const uint8_t* data) {
+static uint8_t check_configuration_desc(uint8_t hub, const uint8_t* data) {
   const struct usb_desc_configuration* desc =
       (const struct usb_desc_configuration*)data;
   struct usb_desc_head* head;
   uint8_t class = usb_info[hub].class;
-  bool target_interface = false;
+  uint8_t target_interface = 0xff;
   for (uint8_t i = sizeof(*desc); i < desc->wTotalLength; i += head->bLength) {
     head = (struct usb_desc_head*)(data + i);
+    if (target_interface != 0xff &&
+        head->bDescriptorType == USB_DESC_INTERFACE) {
+      break;
+    }
     switch (head->bDescriptorType) {
       case USB_DESC_INTERFACE: {
         const struct usb_desc_interface* intf =
@@ -106,17 +124,21 @@ static void check_configuration_desc(uint8_t hub, const uint8_t* data) {
         if (usb_info[hub].class == 0) {
           class = intf->bInterfaceClass;
         }
-        if (hid_keyboard_check_interface_desc(&hub_info[hub], intf) ||
+        if (
+#if !defined(_HID_NO_KEYBOARD)
+            hid_keyboard_check_interface_desc(&hub_info[hub], intf) ||
+#endif
+#if !defined(_HID_NO_MOUSE)
+            hid_mouse_check_interface_desc(&hub_info[hub], intf) ||
+#endif
 #if !defined(_HID_NO_XBOX)
             hid_xbox_check_interface_desc(&hub_info[hub], intf) ||
 #endif
 #if !defined(_HID_NO_GUNCON3)
             hid_guncon3_check_interface_desc(&hub_info[hub], &usb_info[hub]) ||
 #endif
-            false) {
-          target_interface = true;
-        } else {
-          target_interface = false;
+            return_false()) {
+          target_interface = intf->bInterfaceNumber;
         }
         break;
       }
@@ -129,13 +151,7 @@ static void check_configuration_desc(uint8_t hub, const uint8_t* data) {
         if (hub_info[hub].type == HID_TYPE_UNKNOWN && class != USB_CLASS_HID) {
           break;
         }
-        if ((hub_info[hub].type == HID_TYPE_KEYBOARD ||
-#if !defined(_HID_NO_XBOX)
-             hub_info[hub].type == HID_TYPE_XBOX_360 ||
-             hub_info[hub].type == HID_TYPE_XBOX_ONE ||
-#endif
-             false) &&
-            !target_interface) {
+        if (target_interface == 0xff) {
           break;
         }
         const struct usb_desc_endpoint* ep =
@@ -166,7 +182,10 @@ static void check_configuration_desc(uint8_t hub, const uint8_t* data) {
     hub_info[hub].state = HID_STATE_NOT_READY;
   }
 
-  if (hid_keyboard_initialize(&hub_info[hub]) ||
+  if (false ||
+#if !defined(_HID_NO_KEYBOARD)
+      hid_keyboard_initialize(&hub_info[hub]) ||
+#endif
 #if !defined(_HID_NO_GUNCON3)
       hid_guncon3_initialize(&hub_info[hub], &usb_info[hub]) ||
 #endif
@@ -176,6 +195,7 @@ static void check_configuration_desc(uint8_t hub, const uint8_t* data) {
       false) {
     hid->detected();
   }
+  return target_interface;
 }
 
 #ifdef _DBG_HID_REPORT_DESC

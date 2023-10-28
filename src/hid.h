@@ -13,6 +13,7 @@
 enum {
   HID_TYPE_UNKNOWN,
   HID_TYPE_KEYBOARD,
+  HID_TYPE_MOUSE,
   HID_TYPE_ZAPPER,
   HID_TYPE_PS3,  // mainly for dualshock3
   HID_TYPE_PS4,

@@ -11,7 +11,7 @@ static bool check(uint8_t any_class,
                   uint8_t any_subclass,
                   uint8_t any_protocol) {
   return any_class == USB_CLASS_HID && any_subclass == USB_HID_SUBCLASS_BOOT &&
-         any_protocol == USB_HID_BOOT_PROTOCOL_KEYBOARD;
+         any_protocol == USB_HID_PROTOCOL_KEYBOARD;
 }
 
 bool hid_keyboard_check_device_desc(struct hub_info* hub_info,
