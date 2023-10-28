@@ -445,7 +445,7 @@ static bool state_get_string_desc(uint8_t hub) {
 static bool state_get_string_desc_recv(uint8_t hub) {
   if (get_string_descriptor.wLength == 2) {
     const struct usb_desc_head* head = (const struct usb_desc_head*)buffer;
-    if (head->bLength != 2) {
+    if (head->bLength != 2 && head->bLength) {
       // Request full part.
       get_string_descriptor.wLength = head->bLength;
       delay_us(hub, 250, STATE_GET_STRING_DESC);
@@ -709,7 +709,8 @@ static bool state_transaction(uint8_t hub) {
     usb_host_log_stall();
 #endif  // _USB_HOST_DBG_LOG
     unlock_transaction(hub);
-    state[hub] = STATE_READY;
+    buffer[0] = 0;  // bLength = 0
+    state[hub] = transaction_recv_state;
     return true;
   } else if (U_TOG_OK || token == USB_PID_DATA0 || token == USB_PID_DATA1 ||
              token == 0) {
