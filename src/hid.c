@@ -151,9 +151,6 @@ static uint8_t check_configuration_desc(uint8_t hub, const uint8_t* data) {
         if (hub_info[hub].type == HID_TYPE_UNKNOWN && class != USB_CLASS_HID) {
           break;
         }
-        if (target_interface == 0xff) {
-          break;
-        }
         const struct usb_desc_endpoint* ep =
             (const struct usb_desc_endpoint*)(data + i);
         if (ep->bEndpointAddress >= 128 && (ep->bmAttributes & 3) == 3) {

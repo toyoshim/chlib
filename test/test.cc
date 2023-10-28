@@ -27,6 +27,9 @@ struct DummyConfigurationDescriptor {
       USB_DESC_CONFIGURATION,
       sizeof(DummyConfigurationDescriptor),
   };
+  usb_desc_interface interface = {
+      sizeof(usb_desc_interface) + 1, USB_DESC_INTERFACE, 1, 0, 1, 3, 0, 0, 1,
+  };
   usb_desc_endpoint endpoint = {
       sizeof(usb_desc_endpoint),
       USB_DESC_ENDPOINT,
