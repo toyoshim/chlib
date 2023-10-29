@@ -531,8 +531,10 @@ static bool state_get_configuration_desc_recv(uint8_t hub) {
       }
       if (is_hid[hub] && hid_interface_number[hub] == 0xff) {
         hid_interface_number[hub] = intf->bInterfaceNumber;
+        get_hid_report_descriptor.wIndex = intf->bInterfaceNumber;
         selected = true;
       } else if (hid_interface_number[hub] == intf->bInterfaceNumber) {
+        get_hid_report_descriptor.wIndex = intf->bInterfaceNumber;
         selected = true;
       }
     }

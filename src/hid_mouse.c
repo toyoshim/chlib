@@ -5,6 +5,7 @@
 #include "hid_mouse.h"
 
 #include "hid.h"
+#include "hid_internal.h"
 #include "usb.h"
 
 static bool check(uint8_t any_class,
@@ -24,9 +25,20 @@ bool hid_mouse_check_device_desc(struct hub_info* hub_info,
 }
 
 bool hid_mouse_check_interface_desc(struct hub_info* hub_info,
+                                    struct usb_info* usb_info,
                                     const struct usb_desc_interface* desc) {
   if (check(desc->bInterfaceClass, desc->bInterfaceSubClass,
             desc->bInterfaceProtocol)) {
+    hub_info->type = HID_TYPE_MOUSE;
+    return true;
+  }
+  if (usb_info->vid == 0xd209 && usb_info->pid == 0x1601 &&
+      desc->bInterfaceNumber == 2) {
+    // AimTrak needs to use multiple interfaces.
+    // As a basic support, let's use the 3rd interface to obtain the point
+    // address, and the trigger click inside or outside the screen.
+    // Red buttons in left and right cannot be accessed here, as they need to
+    // tweak the 2nd interface with bInterfaceNumber == 1.
     hub_info->type = HID_TYPE_MOUSE;
     return true;
   }

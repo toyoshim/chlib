@@ -129,7 +129,8 @@ static uint8_t check_configuration_desc(uint8_t hub, const uint8_t* data) {
             hid_keyboard_check_interface_desc(&hub_info[hub], intf) ||
 #endif
 #if !defined(_HID_NO_MOUSE)
-            hid_mouse_check_interface_desc(&hub_info[hub], intf) ||
+            hid_mouse_check_interface_desc(&hub_info[hub], &usb_info[hub],
+                                           intf) ||
 #endif
 #if !defined(_HID_NO_XBOX)
             hid_xbox_check_interface_desc(&hub_info[hub], intf) ||
