@@ -145,6 +145,14 @@ SBIT(P2_7, 0xa0, 7);          // P2, 7
 SBIT(ET0, 0xa8, 1);           // IE, Timer0 interrupt enable bit
 SBIT(E_DIS, 0xa8, 6);         // IE, Global interrupt disable control bit
 SBIT(EA, 0xa8, 7);            // IE, Global interrupt enable control bit
+SBIT(P3_0, 0xb0, 0);          // P3, 0
+SBIT(P3_1, 0xb0, 1);          // P3, 1
+SBIT(P3_2, 0xb0, 2);          // P3, 2
+SBIT(P3_3, 0xb0, 3);          // P3, 3
+SBIT(P3_4, 0xb0, 4);          // P3, 4
+SBIT(P3_5, 0xb0, 5);          // P3, 5
+SBIT(P3_6, 0xb0, 6);          // P3, 6
+SBIT(P3_7, 0xb0, 7);          // P3, 7
 SBIT(P4_0, 0xc0, 0);          // P4, 0
 SBIT(P4_1, 0xc0, 1);          // P4, 1
 SBIT(P4_2, 0xc0, 2);          // P4, 2
