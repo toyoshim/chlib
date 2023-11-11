@@ -103,10 +103,10 @@ static void check_device_desc(uint8_t hub, const uint8_t* data) {
 static uint8_t check_configuration_desc(uint8_t hub, const uint8_t* data) {
   const struct usb_desc_configuration* desc =
       (const struct usb_desc_configuration*)data;
-  struct usb_desc_head* head;
+  struct usb_desc_head* head = (struct usb_desc_head*)data;
   uint8_t class = usb_info[hub].class;
   uint8_t target_interface = 0xff;
-  for (uint8_t i = sizeof(*desc); i < desc->wTotalLength; i += head->bLength) {
+  for (uint8_t i = head->bLength; i < desc->wTotalLength; i += head->bLength) {
     head = (struct usb_desc_head*)(data + i);
     if (target_interface != 0xff &&
         head->bDescriptorType == USB_DESC_INTERFACE) {
@@ -191,7 +191,9 @@ static uint8_t check_configuration_desc(uint8_t hub, const uint8_t* data) {
       hid_xbox_initialize(&hub_info[hub], &usb_info[hub]) ||
 #endif
       false) {
-    hid->detected();
+    if (hid->detected) {
+      hid->detected();
+    }
   }
   return target_interface;
 }
@@ -441,7 +443,9 @@ quit:
   }
 #endif
   if (hub_info[hub].type != HID_TYPE_UNKNOWN) {
-    hid->detected();
+    if (hid->detected) {
+      hid->detected();
+    }
   }
 
   // Device specific fix-up.

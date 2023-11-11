@@ -68,7 +68,7 @@ struct hub_info {
 
 struct hid {
   void (*report)(uint8_t hub,
-                 const struct hub_info*,
+                 const struct hub_info* hub_info,
                  const uint8_t* data,
                  uint16_t size);
   void (*detected)(void);
