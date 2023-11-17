@@ -16,8 +16,11 @@ struct usb_info {
   uint8_t ep_in;
   uint8_t state;
   uint8_t cmd_count;
+  uint8_t interface;
   uint16_t tick;
   uint16_t wait;
+  uint16_t get_report_value;
+  uint8_t get_report_length;
 };
 
 #endif  // __hid_internal_h__

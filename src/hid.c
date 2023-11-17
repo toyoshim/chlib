@@ -39,9 +39,6 @@ static struct hid_info hid_info[2];
 static struct usb_info usb_info[2];
 
 static void do_nothing(void) {}
-static bool return_false(void) {
-  return false;
-}
 
 static void disconnected(uint8_t hub) {
   hid_info[hub].state = HID_STATE_DISCONNECTED;
@@ -139,7 +136,7 @@ static uint8_t check_configuration_desc(uint8_t hub, const uint8_t* data) {
 #if !defined(_HID_NO_GUNCON3)
             hid_guncon3_check_interface_desc(&hid_info[hub], &usb_info[hub]) ||
 #endif
-            return_false()) {
+            intf->bInterfaceClass == USB_CLASS_HID) {
           target_interface = intf->bInterfaceNumber;
         }
         break;
@@ -174,8 +171,8 @@ static uint8_t check_configuration_desc(uint8_t hub, const uint8_t* data) {
     }
   }
 #ifdef _DBG_DESC
-  Serial.printf("report_desc_size: %d, ep: %d\n",
-                hid_info[hub].report_desc_size, hid_info[hub].ep);
+  Serial.printf("report_desc_size: %d, ep_in: %d\n",
+                hid_info[hub].report_desc_size, usb_info[hub].ep_in);
 #endif
   if (hid_info[hub].report_desc_size && usb_info[hub].ep_in) {
     hid_info[hub].state = HID_STATE_NOT_READY;
@@ -196,14 +193,17 @@ static uint8_t check_configuration_desc(uint8_t hub, const uint8_t* data) {
       hid->detected();
     }
   }
+  usb_info[hub].interface = target_interface;
   return target_interface;
 }
 
 #ifdef _DBG_HID_REPORT_DESC
+#define REPORT(s) Serial.printf("Report %s: %x\n", s, data[i])
 #define REPORT0(s) Serial.println(s " (0)")
 #define REPORT1(s) Serial.printf(s " (1): %x\n", data[i + 1])
 #define REPORT2(s) Serial.printf(s " (2): %x%x\n", data[i + 2], data[i + 1])
 #else
+#define REPORT(s)
 #define REPORT0(s)
 #define REPORT1(s)
 #define REPORT2(s)
@@ -266,6 +266,7 @@ static void check_hid_report_desc(uint8_t hub, const uint8_t* data) {
           usage_index = 0;
           break;
         default:  // ignore
+          REPORT("Skip 0");
           break;
       }
       i++;
@@ -287,8 +288,20 @@ static void check_hid_report_desc(uint8_t hub, const uint8_t* data) {
         case 0x15:
           REPORT1("G:Logical Minimum");
           break;
+        case 0x19:
+          REPORT1("L:Usage Minimum");
+          break;
         case 0x25:
           REPORT1("G:Logical Maximum");
+          break;
+        case 0x29:
+          REPORT1("L:Usage Maxmum");
+          break;
+        case 0x35:
+          REPORT1("G:Physical Minimum");
+          break;
+        case 0x65:
+          REPORT1("G:Unit");
           break;
         case 0x75:
           REPORT1("G:Report Size");
@@ -374,6 +387,7 @@ static void check_hid_report_desc(uint8_t hub, const uint8_t* data) {
           usage_index = 0;
           break;
         default:  // not supported
+          REPORT("Skip 1");
           break;
       }
       i += 2;
@@ -400,7 +414,14 @@ static void check_hid_report_desc(uint8_t hub, const uint8_t* data) {
         case 0x26:
           REPORT2("G:Logical Maximum");
           break;
+        case 0x36:
+          REPORT2("G:Physical Minimum");
+          break;
+        case 0x46:
+          REPORT2("G:Physical Maximum");
+          break;
         default:  // not supported
+          REPORT("Skip 2");
           break;
       }
       i += 3;
@@ -468,6 +489,12 @@ quit:
     hid_info[hub].axis[1] = 136;
     hid_info[hub].axis[2] = 144;
     hid_info[hub].type = HID_TYPE_PS4;
+  } else if (usb_info[hub].vid == 0x0f0d &&
+             (usb_info[hub].pid == 0x00a7 || usb_info[hub].pid == 0x00a8)) {
+    // HOLI Flight Stick [PS4] / [PS3]
+    hid_info[hub].state = HID_STATE_SET_IDLE;
+    usb_info[hub].get_report_value = 0x0303;
+    usb_info[hub].get_report_length = 0x30;
   }
 }
 
@@ -525,10 +552,13 @@ struct hid_info* hid_get_info(uint8_t hub) {
 }
 
 void hid_poll(void) {
-  static uint8_t hub = 0;
+  static uint8_t next_hub = 0;
   usb_host_poll();
-  if (!usb_host_idle())
+  if (!usb_host_idle()) {
     return;
+  }
+  uint8_t hub = next_hub;
+  next_hub = (next_hub + 1) & 1;
   uint16_t wait = usb_info[hub].wait;
   if (wait) {
     uint16_t begin = usb_info[hub].tick;
@@ -536,7 +566,10 @@ void hid_poll(void) {
       return;
     }
   }
-  if (hid_info[hub].state == HID_STATE_READY && usb_host_ready(hub)) {
+  if (!usb_host_ready(hub)) {
+    return;
+  }
+  if (hid_info[hub].state == HID_STATE_READY) {
     switch (hid_info[hub].type) {
 #if !defined(_HID_NO_GUNCON3)
       case HID_TYPE_ZAPPER:
@@ -569,7 +602,22 @@ void hid_poll(void) {
         usb_host_in(hub, usb_info[hub].ep_in, size);
         break;
       }
-    }
+    } /* switch */
+  } else if (hid_info[hub].state == HID_STATE_SET_IDLE) {
+    static struct usb_setup_req set_idle = {
+        USB_REQ_DIR_OUT | USB_REQ_TYPE_CLASS | USB_REQ_RECPT_INTERFACE,
+        USB_HID_SET_IDLE, 0, 0, 0};
+    set_idle.wIndex = usb_info[hub].interface;
+    usb_host_setup(hub, &set_idle, 0);
+    hid_info[hub].state = HID_STATE_GET_REPORT;
+  } else if (hid_info[hub].state == HID_STATE_GET_REPORT) {
+    static struct usb_setup_req get_report = {
+        USB_REQ_DIR_IN | USB_REQ_TYPE_CLASS | USB_REQ_RECPT_INTERFACE,
+        USB_HID_GET_REPORT, 0, 0, 0};
+    get_report.wIndex = usb_info[hub].interface;
+    get_report.wValue = usb_info[hub].get_report_value;
+    get_report.wLength = usb_info[hub].get_report_length;
+    usb_host_setup(hub, &get_report, 0);
+    hid_info[hub].state = HID_STATE_READY;
   }
-  hub = (hub + 1) & 1;
 }
