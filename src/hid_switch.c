@@ -70,13 +70,13 @@ static uint8_t* create_sub_command(struct usb_info* usb_info,
   return cmd;
 }
 
-bool hid_switch_check_device_desc(struct hub_info* hub_info,
+bool hid_switch_check_device_desc(struct hid_info* hid_info,
                                   struct usb_info* usb_info,
                                   const struct usb_desc_device* desc) {
   if (desc->idVendor == 0x057e) {
     if (desc->idProduct == 0x2009 || desc->idProduct == 0x200e) {
       // Nintendo Switch Pro Controller, and Charging Grip.
-      hub_info->type = HID_TYPE_SWITCH;
+      hid_info->type = HID_TYPE_SWITCH;
       usb_info->state = CONNECTED;
       return true;
     }
@@ -84,60 +84,60 @@ bool hid_switch_check_device_desc(struct hub_info* hub_info,
   return false;
 }
 
-bool hid_switch_initialize(struct hub_info* hub_info) {
-  if (hub_info->type != HID_TYPE_SWITCH)
+bool hid_switch_initialize(struct hid_info* hid_info) {
+  if (hid_info->type != HID_TYPE_SWITCH)
     return false;
 
   // Their reporting HID Report Descriptors are completely fake.
-  hub_info->report_size = 64 * 8;
-  hub_info->axis[0] = 5 * 8;
-  hub_info->axis_size[0] = 12;
-  hub_info->axis_shift[0] = 0;
-  hub_info->axis_sign[0] = false;
-  hub_info->axis_polarity[0] = false;
-  hub_info->axis[1] = 6 * 8 + 4;
-  hub_info->axis_size[1] = 12;
-  hub_info->axis_shift[1] = 0;
-  hub_info->axis_sign[1] = false;
-  hub_info->axis_polarity[1] = true;
-  hub_info->axis[2] = 8 * 8;
-  hub_info->axis_size[2] = 12;
-  hub_info->axis_shift[2] = 0;
-  hub_info->axis_sign[2] = false;
-  hub_info->axis_polarity[2] = false;
-  hub_info->axis[3] = 9 * 8 + 4;
-  hub_info->axis_size[3] = 12;
-  hub_info->axis_shift[3] = 0;
-  hub_info->axis_sign[3] = false;
-  hub_info->axis_polarity[3] = true;
-  hub_info->axis[4] = 0xffff;
-  hub_info->axis[5] = 0xffff;
-  hub_info->hat = 0xffff;
-  hub_info->dpad[0] = 4 * 8 + 1;
-  hub_info->dpad[1] = 4 * 8 + 0;
-  hub_info->dpad[2] = 4 * 8 + 3;
-  hub_info->dpad[3] = 4 * 8 + 2;
-  hub_info->button[0] = 2 * 8 + 0;
-  hub_info->button[1] = 2 * 8 + 2;
-  hub_info->button[2] = 2 * 8 + 3;
-  hub_info->button[3] = 2 * 8 + 1;
-  hub_info->button[4] = 4 * 8 + 6;
-  hub_info->button[5] = 2 * 8 + 6;
-  hub_info->button[6] = 4 * 8 + 7;
-  hub_info->button[7] = 2 * 8 + 7;
-  hub_info->button[8] = 3 * 8 + 0;
-  hub_info->button[9] = 3 * 8 + 1;
-  hub_info->button[10] = 3 * 8 + 3;
-  hub_info->button[11] = 3 * 8 + 2;
-  hub_info->report_id = 0x30;
+  hid_info->report_size = 64 * 8;
+  hid_info->axis[0] = 5 * 8;
+  hid_info->axis_size[0] = 12;
+  hid_info->axis_shift[0] = 0;
+  hid_info->axis_sign[0] = false;
+  hid_info->axis_polarity[0] = false;
+  hid_info->axis[1] = 6 * 8 + 4;
+  hid_info->axis_size[1] = 12;
+  hid_info->axis_shift[1] = 0;
+  hid_info->axis_sign[1] = false;
+  hid_info->axis_polarity[1] = true;
+  hid_info->axis[2] = 8 * 8;
+  hid_info->axis_size[2] = 12;
+  hid_info->axis_shift[2] = 0;
+  hid_info->axis_sign[2] = false;
+  hid_info->axis_polarity[2] = false;
+  hid_info->axis[3] = 9 * 8 + 4;
+  hid_info->axis_size[3] = 12;
+  hid_info->axis_shift[3] = 0;
+  hid_info->axis_sign[3] = false;
+  hid_info->axis_polarity[3] = true;
+  hid_info->axis[4] = 0xffff;
+  hid_info->axis[5] = 0xffff;
+  hid_info->hat = 0xffff;
+  hid_info->dpad[0] = 4 * 8 + 1;
+  hid_info->dpad[1] = 4 * 8 + 0;
+  hid_info->dpad[2] = 4 * 8 + 3;
+  hid_info->dpad[3] = 4 * 8 + 2;
+  hid_info->button[0] = 2 * 8 + 0;
+  hid_info->button[1] = 2 * 8 + 2;
+  hid_info->button[2] = 2 * 8 + 3;
+  hid_info->button[3] = 2 * 8 + 1;
+  hid_info->button[4] = 4 * 8 + 6;
+  hid_info->button[5] = 2 * 8 + 6;
+  hid_info->button[6] = 4 * 8 + 7;
+  hid_info->button[7] = 2 * 8 + 7;
+  hid_info->button[8] = 3 * 8 + 0;
+  hid_info->button[9] = 3 * 8 + 1;
+  hid_info->button[10] = 3 * 8 + 3;
+  hid_info->button[11] = 3 * 8 + 2;
+  hid_info->report_id = 0x30;
   return true;
 }
 bool hid_switch_report(uint8_t hub,
-                       struct hub_info* hub_info,
+                       struct hid_info* hid_info,
                        struct usb_info* usb_info,
                        uint8_t* data,
                        uint16_t size) {
-  if (hub_info->type != HID_TYPE_SWITCH)
+  if (hid_info->type != HID_TYPE_SWITCH)
     return false;
 
   if (size == 0) {

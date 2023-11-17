@@ -7,15 +7,15 @@
 
 #include <stdbool.h>
 
-struct hub_info;
+struct hid_info;
 struct usb_info;
 struct usb_desc_device;
 struct usb_desc_interface;
 
-bool hid_mouse_check_device_desc(struct hub_info* hub_info,
+bool hid_mouse_check_device_desc(struct hid_info* hid_info,
                                  const struct usb_desc_device* desc);
 
-bool hid_mouse_check_interface_desc(struct hub_info* hub_info,
+bool hid_mouse_check_interface_desc(struct hid_info* hid_info,
                                     struct usb_info* usb_info,
                                     const struct usb_desc_interface* desc);
 

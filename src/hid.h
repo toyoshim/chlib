@@ -47,7 +47,7 @@ enum {
   HID_BUTTON_META,
 };
 
-struct hub_info {
+struct hid_info {
   uint16_t report_desc_size;
   uint16_t report_size;
   uint16_t axis[6];
@@ -65,7 +65,7 @@ struct hub_info {
 
 struct hid {
   void (*report)(uint8_t hub,
-                 const struct hub_info* hub_info,
+                 const struct hid_info* hid_info,
                  const uint8_t* data,
                  uint16_t size);
   void (*detected)(void);
@@ -74,7 +74,7 @@ struct hid {
 };
 
 void hid_init(struct hid* hid);
-struct hub_info* hid_get_info(uint8_t hub);
+struct hid_info* hid_get_info(uint8_t hub);
 void hid_poll(void);
 
 #endif  // __hid_h__

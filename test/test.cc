@@ -66,7 +66,7 @@ class CompatTest : public ::testing::Test {
     usb_host->check_hid_report_desc(0, desc);
   }
 
-  void CheckHubInfo(hub_info& expected, hub_info& actual) {
+  void CheckHidInfo(hid_info& expected, hid_info& actual) {
     EXPECT_EQ(expected.report_desc_size, actual.report_desc_size);
     EXPECT_EQ(expected.report_size, actual.report_size);
 
@@ -88,7 +88,6 @@ class CompatTest : public ::testing::Test {
 
     EXPECT_EQ(expected.report_id, actual.report_id);
     EXPECT_EQ(expected.type, actual.type);
-    EXPECT_EQ(expected.ep, actual.ep);
     EXPECT_EQ(expected.state, actual.state);
   }
 
@@ -123,7 +122,7 @@ TEST_F(PS4CompatTest, HoripadFpsPlusForPlayStation4_ModePS4) {
       0x09, 0x49, 0x95, 0x0f, 0xb1, 0x02, 0x85, 0xf3, 0x0a, 0x01, 0x47, 0x95,
       0x07, 0xb1, 0x02, 0xc0,
   };
-  hub_info expected = {
+  hid_info expected = {
       sizeof(hid_report_desc),
       504,
       {0, 8, 16, 24, 56, 64},
@@ -136,13 +135,12 @@ TEST_F(PS4CompatTest, HoripadFpsPlusForPlayStation4_ModePS4) {
       {false, false, false, false, false, false},
       1,
       HID_TYPE_PS4,
-      1,
       HID_STATE_READY,
   };
 
   SetReportSize(sizeof(hid_report_desc));
   CheckHidReportDescriptor(hid_report_desc);
-  CheckHubInfo(expected, *hid_get_info(0));
+  CheckHidInfo(expected, *hid_get_info(0));
 }
 
 TEST_F(PS4CompatTest, HoripadFpsPlusForPlayStation4_ModePS3) {
@@ -160,7 +158,7 @@ TEST_F(PS4CompatTest, HoripadFpsPlusForPlayStation4_ModePS3) {
       0xff, 0x03, 0x09, 0x2c, 0x09, 0x2d, 0x09, 0x2e, 0x09, 0x2f, 0x75, 0x10,
       0x95, 0x04, 0x81, 0x02, 0xc0,
   };
-  hub_info expected = {
+  hid_info expected = {
       sizeof(hid_report_desc),
       216,
       {24, 32, 40, 48, 56, 64},
@@ -173,13 +171,12 @@ TEST_F(PS4CompatTest, HoripadFpsPlusForPlayStation4_ModePS3) {
       {false, false, false, false, false, false},
       0,
       HID_TYPE_GENERIC,
-      1,
       HID_STATE_READY,
   };
 
   SetReportSize(sizeof(hid_report_desc));
   CheckHidReportDescriptor(hid_report_desc);
-  CheckHubInfo(expected, *hid_get_info(0));
+  CheckHidInfo(expected, *hid_get_info(0));
 }
 
 TEST_F(PS4CompatTest, WirelessController_DualShock4_CUH_ZCT2J) {
@@ -228,7 +225,7 @@ TEST_F(PS4CompatTest, WirelessController_DualShock4_CUH_ZCT2J) {
       0x09, 0x58, 0x95, 0x3f, 0xb1, 0x02, 0x85, 0xd4, 0x09, 0x59, 0x95, 0x3f,
       0xb1, 0x02, 0xc0,
   };
-  hub_info expected = {
+  hid_info expected = {
       sizeof(hid_report_desc),
       504,
       {0, 8, 16, 24, 56, 64},
@@ -241,13 +238,12 @@ TEST_F(PS4CompatTest, WirelessController_DualShock4_CUH_ZCT2J) {
       {false, false, false, false, false, false},
       1,
       HID_TYPE_PS4,
-      1,
       HID_STATE_READY,
   };
 
   SetReportSize(sizeof(hid_report_desc));
   CheckHidReportDescriptor(hid_report_desc);
-  CheckHubInfo(expected, *hid_get_info(0));
+  CheckHidInfo(expected, *hid_get_info(0));
 }
 
 TEST_F(PS4CompatTest, UniversalFightingBoard) {
@@ -268,7 +264,7 @@ TEST_F(PS4CompatTest, UniversalFightingBoard) {
       0x09, 0x49, 0x95, 0x0f, 0xb1, 0x02, 0x85, 0xf3, 0x0a, 0x01, 0x47, 0x95,
       0x07, 0xb1, 0x02, 0xc0,
   };
-  hub_info expected = {
+  hid_info expected = {
       sizeof(hid_report_desc),
       504,
       {0, 8, 16, 24, 56, 64},
@@ -281,13 +277,12 @@ TEST_F(PS4CompatTest, UniversalFightingBoard) {
       {false, false, false, false, false, false},
       1,
       HID_TYPE_PS4,
-      1,
       HID_STATE_READY,
   };
 
   SetReportSize(sizeof(hid_report_desc));
   CheckHidReportDescriptor(hid_report_desc);
-  CheckHubInfo(expected, *hid_get_info(0));
+  CheckHidInfo(expected, *hid_get_info(0));
 }
 
 TEST_F(PS4CompatTest, PS4PlusFightingBoard) {
@@ -309,7 +304,7 @@ TEST_F(PS4CompatTest, PS4PlusFightingBoard) {
       0x49, 0x95, 0x0f, 0xb1, 0x02, 0x85, 0xf3, 0x0a, 0x01, 0x47, 0x95, 0x07,
       0xb1, 0x02, 0xc0,
   };
-  hub_info expected = {
+  hid_info expected = {
       sizeof(hid_report_desc),
       504,
       {0, 8, 16, 24, 56, 64},
@@ -322,13 +317,12 @@ TEST_F(PS4CompatTest, PS4PlusFightingBoard) {
       {false, false, false, false, false, false},
       1,
       HID_TYPE_PS4,
-      1,
       HID_STATE_READY,
   };
 
   SetReportSize(sizeof(hid_report_desc));
   CheckHidReportDescriptor(hid_report_desc);
-  CheckHubInfo(expected, *hid_get_info(0));
+  CheckHidInfo(expected, *hid_get_info(0));
 }
 
 TEST_F(PS4CompatTest, G29DrivingForceRacingWheelPS3) {
@@ -348,7 +342,7 @@ TEST_F(PS4CompatTest, G29DrivingForceRacingWheelPS3) {
       0x46, 0xff, 0x00, 0x95, 0x07, 0x75, 0x08, 0x09, 0x03, 0x91, 0x02, 0xc0,
       0xc0,
   };
-  hub_info expected = {
+  hid_info expected = {
       sizeof(hid_report_desc),
       216,
       {24, 136, 144, 48, 56, 64},
@@ -361,14 +355,13 @@ TEST_F(PS4CompatTest, G29DrivingForceRacingWheelPS3) {
       {false, false, false, false, false, false},
       0,
       HID_TYPE_PS4,
-      1,
       HID_STATE_READY,
   };
 
   SetVendorAndProduct(0x046d, 0xc294);
   SetReportSize(sizeof(hid_report_desc));
   CheckHidReportDescriptor(hid_report_desc);
-  CheckHubInfo(expected, *hid_get_info(0));
+  CheckHidInfo(expected, *hid_get_info(0));
 }
 
 TEST_F(PS4CompatTest, G29DrivingForceRacingWheelPS4) {
@@ -389,7 +382,7 @@ TEST_F(PS4CompatTest, G29DrivingForceRacingWheelPS4) {
       0x09, 0x49, 0x95, 0x0f, 0xb1, 0x02, 0x85, 0xf3, 0x0a, 0x01, 0x47, 0x95,
       0x07, 0xb1, 0x02, 0xc0,
   };
-  hub_info expected = {
+  hid_info expected = {
       sizeof(hid_report_desc),
       504,
       {336, 352, 368, 384, 56, 64},
@@ -402,14 +395,13 @@ TEST_F(PS4CompatTest, G29DrivingForceRacingWheelPS4) {
       {false, true, true, true, false, false},
       1,
       HID_TYPE_PS4,
-      1,
       HID_STATE_READY,
   };
 
   SetVendorAndProduct(0x046d, 0xc260);
   SetReportSize(sizeof(hid_report_desc));
   CheckHidReportDescriptor(hid_report_desc);
-  CheckHubInfo(expected, *hid_get_info(0));
+  CheckHidInfo(expected, *hid_get_info(0));
 }
 
 // Compatibility tests for PS4 controllers with pseudo descriptors
@@ -425,7 +417,7 @@ TEST_F(PS4PseudoCompatTest, WirelessController_DualShock4_CUH_ZCT1J) {
       0x08, 0x05, 0x01, 0x09, 0x33, 0x05, 0x01, 0x09, 0x34, 0x81, 0x02, 0x95,
       0x36, 0x75, 0x08, 0x06, 0x00, 0xff, 0x09, 0x21, 0x81, 0x02,
   };
-  hub_info expected = {
+  hid_info expected = {
       sizeof(pseudo_hid_report_desc),
       504,
       {0, 8, 16, 24, 56, 64},
@@ -438,13 +430,12 @@ TEST_F(PS4PseudoCompatTest, WirelessController_DualShock4_CUH_ZCT1J) {
       {false, false, false, false, false, false},
       1,
       HID_TYPE_PS4,
-      1,
       HID_STATE_READY,
   };
 
   SetReportSize(sizeof(pseudo_hid_report_desc));
   CheckHidReportDescriptor(pseudo_hid_report_desc);
-  CheckHubInfo(expected, *hid_get_info(0));
+  CheckHidInfo(expected, *hid_get_info(0));
 }
 
 TEST_F(PS4PseudoCompatTest, WirelessController_DualShock4_CUH_ZCT2J) {
@@ -459,7 +450,7 @@ TEST_F(PS4PseudoCompatTest, WirelessController_DualShock4_CUH_ZCT2J) {
       0x02, 0x95, 0x01, 0x75, 0x08, 0x05, 0x01, 0x09, 0x34, 0x81, 0x02, 0x95,
       0x36, 0x75, 0x08, 0x06, 0x00, 0xff, 0x09, 0x21, 0x81, 0x02,
   };
-  hub_info expected = {
+  hid_info expected = {
       sizeof(pseudo_hid_report_desc),
       504,
       {0, 8, 16, 24, 56, 64},
@@ -472,13 +463,12 @@ TEST_F(PS4PseudoCompatTest, WirelessController_DualShock4_CUH_ZCT2J) {
       {false, false, false, false, false, false},
       1,
       HID_TYPE_PS4,
-      1,
       HID_STATE_READY,
   };
 
   SetReportSize(sizeof(pseudo_hid_report_desc));
   CheckHidReportDescriptor(pseudo_hid_report_desc);
-  CheckHubInfo(expected, *hid_get_info(0));
+  CheckHidInfo(expected, *hid_get_info(0));
 }
 
 TEST_F(PS4PseudoCompatTest, VictrixProFSwithTouchPadForPS4) {
@@ -493,7 +483,7 @@ TEST_F(PS4PseudoCompatTest, VictrixProFSwithTouchPadForPS4) {
       0x02, 0x95, 0x01, 0x75, 0x08, 0x05, 0x01, 0x09, 0x34, 0x81, 0x02, 0x95,
       0x36, 0x75, 0x08, 0x06, 0x00, 0xff, 0x09, 0x21, 0x81, 0x02,
   };
-  hub_info expected = {
+  hid_info expected = {
       sizeof(pseudo_hid_report_desc),
       504,
       {0, 8, 16, 24, 56, 64},
@@ -506,13 +496,12 @@ TEST_F(PS4PseudoCompatTest, VictrixProFSwithTouchPadForPS4) {
       {false, false, false, false, false, false},
       1,
       HID_TYPE_PS4,
-      1,
       HID_STATE_READY,
   };
 
   SetReportSize(sizeof(pseudo_hid_report_desc));
   CheckHidReportDescriptor(pseudo_hid_report_desc);
-  CheckHubInfo(expected, *hid_get_info(0));
+  CheckHidInfo(expected, *hid_get_info(0));
 }
 
 using PS3CompatTest = CompatTest;
@@ -532,7 +521,7 @@ TEST_F(PS3CompatTest, DualShock3) {
       0x02, 0xc0, 0xa1, 0x02, 0x85, 0xef, 0x75, 0x08, 0x95, 0x30, 0x09, 0x01,
       0xb1, 0x02, 0xc0, 0xc0,
   };
-  hub_info expected = {
+  hid_info expected = {
       sizeof(hid_report_desc),
       384,
       {40, 48, 56, 64, 136, 144},
@@ -545,14 +534,13 @@ TEST_F(PS3CompatTest, DualShock3) {
       {false, false, false, false, false, false},
       1,
       HID_TYPE_PS3,
-      1,
       HID_STATE_READY,
   };
 
   SetVendorAndProduct(0x054c, 0x0268);
   SetReportSize(sizeof(hid_report_desc));
   CheckHidReportDescriptor(hid_report_desc);
-  CheckHubInfo(expected, *hid_get_info(0));
+  CheckHidInfo(expected, *hid_get_info(0));
 }
 
 // Compatibility tests for PS3 controllers with pseudo descriptors
@@ -570,7 +558,7 @@ TEST_F(PS3PseudoCompatTest, XinMoController) {
       0x02, 0x95, 0x01, 0x75, 0x08, 0x05, 0x01, 0x09, 0x32, 0x81, 0x02,
       0x95, 0x01, 0x75, 0x08, 0x05, 0x01, 0x09, 0x35, 0x81, 0x02,
   };
-  hub_info expected = {
+  hid_info expected = {
       sizeof(pseudo_hid_report_desc),
       56,
       {24, 32, 40, 48, 0xffff, 0xffff},
@@ -583,13 +571,12 @@ TEST_F(PS3PseudoCompatTest, XinMoController) {
       {false, false, false, false, false, false},
       0,
       HID_TYPE_GENERIC,
-      1,
       HID_STATE_READY,
   };
 
   SetReportSize(sizeof(pseudo_hid_report_desc));
   CheckHidReportDescriptor(pseudo_hid_report_desc);
-  CheckHubInfo(expected, *hid_get_info(0));
+  CheckHidInfo(expected, *hid_get_info(0));
 }
 
 // VID: 0x0f0d (HORI CO,.LTD.)
@@ -618,7 +605,7 @@ TEST_F(PS3PseudoCompatTest, RAP_N3) {
       0x81, 0x02, 0x95, 0x01, 0x75, 0x10, 0x06, 0x00, 0xff, 0x09, 0x2e, 0x81,
       0x02, 0x95, 0x01, 0x75, 0x10, 0x06, 0x00, 0xff, 0x09, 0x2f, 0x81, 0x02,
   };
-  hub_info expected = {
+  hid_info expected = {
       sizeof(pseudo_hid_report_desc),
       216,
       {24, 32, 40, 48, 56, 64},
@@ -631,13 +618,12 @@ TEST_F(PS3PseudoCompatTest, RAP_N3) {
       {false, false, false, false, false, false},
       0,
       HID_TYPE_GENERIC,
-      1,
       HID_STATE_READY,
   };
 
   SetReportSize(sizeof(pseudo_hid_report_desc));
   CheckHidReportDescriptor(pseudo_hid_report_desc);
-  CheckHubInfo(expected, *hid_get_info(0));
+  CheckHidInfo(expected, *hid_get_info(0));
 }
 
 // Compatibility tests for Switch controllers with precised descriptors
@@ -660,7 +646,7 @@ TEST_F(SwitchCompatTest, HoripadMiniForNintendoSwitch) {
       0x09, 0x44, 0x91, 0x82, 0x09, 0x45, 0x91, 0x82, 0x09, 0x46, 0x91, 0x82,
       0xc0,
   };
-  hub_info expected = {
+  hid_info expected = {
       sizeof(hid_report_desc),
       216,
       {24, 32, 40, 48, 56, 64},
@@ -673,13 +659,12 @@ TEST_F(SwitchCompatTest, HoripadMiniForNintendoSwitch) {
       {false, false, false, false, false, false},
       0,
       HID_TYPE_GENERIC,
-      1,
       HID_STATE_READY,
   };
 
   SetReportSize(sizeof(hid_report_desc));
   CheckHidReportDescriptor(hid_report_desc);
-  CheckHubInfo(expected, *hid_get_info(0));
+  CheckHidInfo(expected, *hid_get_info(0));
 }
 
 TEST_F(SwitchCompatTest, RetroArcadeStick) {
@@ -692,7 +677,7 @@ TEST_F(SwitchCompatTest, RetroArcadeStick) {
       0x30, 0x09, 0x31, 0x09, 0x32, 0x09, 0x35, 0x75, 0x08, 0x95, 0x04, 0x81,
       0x02, 0x75, 0x08, 0x95, 0x01, 0x81, 0x01, 0xc0,
   };
-  hub_info expected = {
+  hid_info expected = {
       sizeof(hid_report_desc),
       64,
       {24, 32, 40, 48, 0xffff, 0xffff},
@@ -705,13 +690,12 @@ TEST_F(SwitchCompatTest, RetroArcadeStick) {
       {false, false, false, false, false, false},
       0,
       HID_TYPE_GENERIC,
-      1,
       HID_STATE_READY,
   };
 
   SetReportSize(sizeof(hid_report_desc));
   CheckHidReportDescriptor(hid_report_desc);
-  CheckHubInfo(expected, *hid_get_info(0));
+  CheckHidInfo(expected, *hid_get_info(0));
 }
 
 // VID: 0x0f0d (HORI CO,.LTD.)
@@ -727,7 +711,7 @@ TEST_F(SwitchCompatTest, ZeroPiFightingBoard) {
       0x30, 0x09, 0x31, 0x09, 0x32, 0x09, 0x35, 0x75, 0x08, 0x95, 0x04, 0x81,
       0x02, 0x75, 0x08, 0x95, 0x01, 0x81, 0x01, 0xc0,
   };
-  hub_info expected = {
+  hid_info expected = {
       sizeof(hid_report_desc),
       64,
       {24, 32, 40, 48, 0xffff, 0xffff},
@@ -740,13 +724,12 @@ TEST_F(SwitchCompatTest, ZeroPiFightingBoard) {
       {false, false, false, false, false, false},
       0,
       HID_TYPE_GENERIC,
-      1,
       HID_STATE_READY,
   };
 
   SetReportSize(sizeof(hid_report_desc));
   CheckHidReportDescriptor(hid_report_desc);
-  CheckHubInfo(expected, *hid_get_info(0));
+  CheckHidInfo(expected, *hid_get_info(0));
 }
 
 // Compatibility tests for switch controllers with pseudo descriptors
@@ -764,7 +747,7 @@ TEST_F(SwitchPseudoCompatTest, RetroArcadeStick) {
       0x05, 0x01, 0x09, 0x32, 0x81, 0x02, 0x95, 0x01, 0x75, 0x08, 0x05, 0x01,
       0x09, 0x35, 0x81, 0x02, 0x95, 0x01, 0x75, 0x08, 0x81, 0x01,
   };
-  hub_info expected = {
+  hid_info expected = {
       sizeof(pseudo_hid_report_desc),
       64,
       {24, 32, 40, 48, 0xffff, 0xffff},
@@ -777,13 +760,12 @@ TEST_F(SwitchPseudoCompatTest, RetroArcadeStick) {
       {false, false, false, false, false, false},
       0,
       HID_TYPE_GENERIC,
-      1,
       HID_STATE_READY,
   };
 
   SetReportSize(sizeof(pseudo_hid_report_desc));
   CheckHidReportDescriptor(pseudo_hid_report_desc);
-  CheckHubInfo(expected, *hid_get_info(0));
+  CheckHidInfo(expected, *hid_get_info(0));
 }
 
 // Compatibility tests for other controllers with precised descriptors
@@ -801,7 +783,7 @@ TEST_F(GenericCompatTest, 6BController_MegaDriveMini) {
       0x02, 0x75, 0x08, 0x95, 0x04, 0x46, 0xff, 0x00, 0x26, 0xff, 0x00, 0x09,
       0x02, 0x91, 0x02, 0xc0, 0xc0,
   };
-  hub_info expected = {
+  hid_info expected = {
       sizeof(hid_report_desc),
       64,
       {24, 32, 40, 0xffff, 0xffff, 0xffff},
@@ -814,13 +796,12 @@ TEST_F(GenericCompatTest, 6BController_MegaDriveMini) {
       {false, false, false, false, false, false},
       0,
       HID_TYPE_GENERIC,
-      1,
       HID_STATE_READY,
   };
 
   SetReportSize(sizeof(hid_report_desc));
   CheckHidReportDescriptor(hid_report_desc);
-  CheckHubInfo(expected, *hid_get_info(0));
+  CheckHidInfo(expected, *hid_get_info(0));
 }
 
 TEST_F(GenericCompatTest, XE1AJ_USB_MegaDriveMini2) {
@@ -833,7 +814,7 @@ TEST_F(GenericCompatTest, XE1AJ_USB_MegaDriveMini2) {
       0x00, 0x46, 0xff, 0x00, 0x09, 0x30, 0x09, 0x31, 0x09, 0x32, 0x09,
       0x35, 0x75, 0x08, 0x95, 0x04, 0x81, 0x02, 0xc0,
   };
-  hub_info expected = {
+  hid_info expected = {
       sizeof(hid_report_desc),
       56,
       {24, 32, 40, 48, 0xffff, 0xffff},
@@ -846,13 +827,12 @@ TEST_F(GenericCompatTest, XE1AJ_USB_MegaDriveMini2) {
       {false, false, false, false, false, false},
       0,
       HID_TYPE_GENERIC,
-      1,
       HID_STATE_READY,
   };
 
   SetReportSize(sizeof(hid_report_desc));
   CheckHidReportDescriptor(hid_report_desc);
-  CheckHubInfo(expected, *hid_get_info(0));
+  CheckHidInfo(expected, *hid_get_info(0));
 }
 
 // VID: 0x33dd
@@ -864,7 +844,7 @@ TEST_F(GenericCompatTest, X68000Z_JOYCARD_BLACK) {
       0x19, 0x01, 0x29, 0x0c, 0x81, 0x02, 0x95, 0x04, 0x81, 0x01,
       0x05, 0x01, 0x26, 0xff, 0x00, 0x46, 0xff, 0x00, 0x09, 0x30,
       0x09, 0x31, 0x75, 0x08, 0x95, 0x02, 0x81, 0x02, 0xc0};
-  hub_info expected = {
+  hid_info expected = {
       sizeof(pseudo_hid_report_desc),
       32,
       {16, 24, 0xffff, 0xffff, 0xffff, 0xffff},
@@ -877,13 +857,12 @@ TEST_F(GenericCompatTest, X68000Z_JOYCARD_BLACK) {
       {false, false, false, false, false, false},
       0,
       HID_TYPE_GENERIC,
-      1,
       HID_STATE_READY,
   };
 
   SetReportSize(sizeof(pseudo_hid_report_desc));
   CheckHidReportDescriptor(pseudo_hid_report_desc);
-  CheckHubInfo(expected, *hid_get_info(0));
+  CheckHidInfo(expected, *hid_get_info(0));
 }
 
 // Compatibility tests for other controllers with pseudo descriptors
@@ -898,7 +877,7 @@ TEST_F(GenericPseudoCompatTest, 6BController_MegaDriveMini) {
       0x00, 0x1a, 0x01, 0x00, 0x81, 0x02, 0x95, 0x0a, 0x75, 0x01, 0x06,
       0x00, 0xff, 0x09, 0x01, 0x81, 0x02,
   };
-  hub_info expected = {
+  hid_info expected = {
       sizeof(pseudo_hid_report_desc),
       64,
       {24, 32, 40, 0xffff, 0xffff, 0xffff},
@@ -911,13 +890,12 @@ TEST_F(GenericPseudoCompatTest, 6BController_MegaDriveMini) {
       {false, false, false, false, false, false},
       0,
       HID_TYPE_GENERIC,
-      1,
       HID_STATE_READY,
   };
 
   SetReportSize(sizeof(pseudo_hid_report_desc));
   CheckHidReportDescriptor(pseudo_hid_report_desc);
-  CheckHubInfo(expected, *hid_get_info(0));
+  CheckHidInfo(expected, *hid_get_info(0));
 }
 
 // VID: 0x046d
@@ -937,7 +915,7 @@ TEST_F(GenericPseudoCompatTest, G920DrivingForceRacingWheelForXboxOne) {
       0x75, 0x01, 0x2a, 0x03, 0x00, 0x1a, 0x01, 0x00, 0x81, 0x02, 0x95, 0x01,
       0x75, 0x05, 0x81, 0x01,  // Collection 2
   };
-  hub_info expected = {
+  hid_info expected = {
       sizeof(pseudo_hid_report_desc),
       72,
       {24, 40, 48, 56, 0xffff, 0xffff},
@@ -950,13 +928,12 @@ TEST_F(GenericPseudoCompatTest, G920DrivingForceRacingWheelForXboxOne) {
       {false, false, false, false, false, false},
       1,
       HID_TYPE_GENERIC,
-      1,
       HID_STATE_READY,
   };
 
   SetReportSize(sizeof(pseudo_hid_report_desc));
   CheckHidReportDescriptor(pseudo_hid_report_desc);
-  CheckHubInfo(expected, *hid_get_info(0));
+  CheckHidInfo(expected, *hid_get_info(0));
 }
 
 }  // namespace anonymous

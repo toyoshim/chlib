@@ -26,59 +26,59 @@ enum {
   DEVICE_READY,
 };
 
-bool hid_dualshock3_check_device_desc(struct hub_info* hub_info,
+bool hid_dualshock3_check_device_desc(struct hid_info* hid_info,
                                       struct usb_info* usb_info,
                                       const struct usb_desc_device* desc) {
   if (desc->idVendor == 0x054c && desc->idProduct == 0x0268) {
-    hub_info->type = HID_TYPE_PS3;
+    hid_info->type = HID_TYPE_PS3;
     usb_info->state = DEVICE_CONNECTED;
     return true;
   }
   return false;
 }
 
-void hid_dualshock3_initialize(struct hub_info* hub_info) {
-  hub_info->button[0] = 23;   // □
-  hub_info->button[1] = 22;   // ×
-  hub_info->button[2] = 21;   // ◯
-  hub_info->button[3] = 20;   // △
-  hub_info->button[4] = 18;   // L1
-  hub_info->button[5] = 19;   // R1
-  hub_info->button[6] = 16;   // L2
-  hub_info->button[7] = 17;   // R2
-  hub_info->button[8] = 8;    // SELECT
-  hub_info->button[9] = 11;   // START
-  hub_info->button[10] = 9;   // L3
-  hub_info->button[11] = 10;  // R3
-  hub_info->button[12] = 24;  // PS
+void hid_dualshock3_initialize(struct hid_info* hid_info) {
+  hid_info->button[0] = 23;   // □
+  hid_info->button[1] = 22;   // ×
+  hid_info->button[2] = 21;   // ◯
+  hid_info->button[3] = 20;   // △
+  hid_info->button[4] = 18;   // L1
+  hid_info->button[5] = 19;   // R1
+  hid_info->button[6] = 16;   // L2
+  hid_info->button[7] = 17;   // R2
+  hid_info->button[8] = 8;    // SELECT
+  hid_info->button[9] = 11;   // START
+  hid_info->button[10] = 9;   // L3
+  hid_info->button[11] = 10;  // R3
+  hid_info->button[12] = 24;  // PS
 
-  hub_info->dpad[0] = 12;  // UP
-  hub_info->dpad[1] = 14;  // DOWN
-  hub_info->dpad[2] = 15;  // LEFT
-  hub_info->dpad[3] = 13;  // RIGHT
+  hid_info->dpad[0] = 12;  // UP
+  hid_info->dpad[1] = 14;  // DOWN
+  hid_info->dpad[2] = 15;  // LEFT
+  hid_info->dpad[3] = 13;  // RIGHT
 
-  hub_info->axis[4] = 136;  // L2
-  hub_info->axis_size[4] = 8;
-  hub_info->axis_shift[4] = 0;
-  hub_info->axis_sign[4] = false;
-  hub_info->axis_polarity[4] = false;
+  hid_info->axis[4] = 136;  // L2
+  hid_info->axis_size[4] = 8;
+  hid_info->axis_shift[4] = 0;
+  hid_info->axis_sign[4] = false;
+  hid_info->axis_polarity[4] = false;
 
-  hub_info->axis[5] = 144;  // R2
-  hub_info->axis_size[5] = 8;
-  hub_info->axis_shift[5] = 0;
-  hub_info->axis_sign[5] = false;
-  hub_info->axis_polarity[5] = false;
+  hid_info->axis[5] = 144;  // R2
+  hid_info->axis_size[5] = 8;
+  hid_info->axis_shift[5] = 0;
+  hid_info->axis_sign[5] = false;
+  hid_info->axis_polarity[5] = false;
 }
 
-bool hid_dualshock3_report(struct hub_info* hub_info,
+bool hid_dualshock3_report(struct hid_info* hid_info,
                            struct usb_info* usb_info,
                            const uint8_t* data,
                            uint16_t size) {
-  if (hub_info->type != HID_TYPE_PS3) {
+  if (hid_info->type != HID_TYPE_PS3) {
     return false;
   }
   if (!size || usb_info->state != DEVICE_READY ||
-      *data != hub_info->report_id) {
+      *data != hid_info->report_id) {
     // Just consume
     return true;
   }
@@ -100,13 +100,13 @@ bool hid_dualshock3_report(struct hub_info* hub_info,
 }
 
 void hid_dualshock3_poll(uint8_t hub,
-                         struct hub_info* hub_info,
+                         struct hid_info* hid_info,
                          struct usb_info* usb_info) {
   if (usb_info->state == DEVICE_CONNECTED) {
     usb_host_setup(hub, &hid_set_idle_descriptor, 0);
     usb_info->state = DEVICE_IDLE;
   } else if (usb_info->state == DEVICE_IDLE) {
-    usb_host_hid_get_report(hub, 3, hub_info->report_id, 64);
+    usb_host_hid_get_report(hub, 3, hid_info->report_id, 64);
     usb_info->state = DEVICE_GET_REPORT_01;
   } else if (usb_info->state == DEVICE_GET_REPORT_01) {
     usb_host_hid_get_report(hub, 3, 0xf2, 64);

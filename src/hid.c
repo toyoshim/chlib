@@ -35,7 +35,7 @@
 
 static struct hid* hid;
 static struct usb_host host;
-static struct hub_info hub_info[2];
+static struct hid_info hid_info[2];
 static struct usb_info usb_info[2];
 
 static void do_nothing(void) {}
@@ -44,17 +44,17 @@ static bool return_false(void) {
 }
 
 static void disconnected(uint8_t hub) {
-  hub_info[hub].state = HID_STATE_DISCONNECTED;
-  hub_info[hub].report_size = 0;
+  hid_info[hub].state = HID_STATE_DISCONNECTED;
+  hid_info[hub].report_size = 0;
   if (!hid->report)
     return;
-  hid->report(hub, &hub_info[hub], 0, 0);
+  hid->report(hub, &hid_info[hub], 0, 0);
 }
 
 static void check_device_desc(uint8_t hub, const uint8_t* data) {
-  hub_info[hub].report_desc_size = 0;
-  hub_info[hub].state = HID_STATE_CONNECTED;
-  hub_info[hub].type = HID_TYPE_UNKNOWN;
+  hid_info[hub].report_desc_size = 0;
+  hid_info[hub].state = HID_STATE_CONNECTED;
+  hid_info[hub].type = HID_TYPE_UNKNOWN;
   const struct usb_desc_device* desc = (const struct usb_desc_device*)data;
 
 #ifdef _DBG_DESC
@@ -79,22 +79,22 @@ static void check_device_desc(uint8_t hub, const uint8_t* data) {
 
   if (false ||
 #if !defined(_HID_NO_KEYBOARD)
-      hid_keyboard_check_device_desc(&hub_info[hub], desc) ||
+      hid_keyboard_check_device_desc(&hid_info[hub], desc) ||
 #endif
 #if !defined(_HID_NO_MOUSE)
-      hid_mouse_check_device_desc(&hub_info[hub], desc) ||
+      hid_mouse_check_device_desc(&hid_info[hub], desc) ||
 #endif
 #if !defined(_HID_NO_XBOX)
-      hid_xbox_check_device_desc(&hub_info[hub], desc) ||
+      hid_xbox_check_device_desc(&hid_info[hub], desc) ||
 #endif
 #if !defined(_HID_NO_SWITCH)
-      hid_switch_check_device_desc(&hub_info[hub], &usb_info[hub], desc) ||
+      hid_switch_check_device_desc(&hid_info[hub], &usb_info[hub], desc) ||
 #endif
 #if !defined(_HID_NO_GUNCON3)
-      hid_guncon3_check_device_desc(&hub_info[hub], &usb_info[hub], desc) ||
+      hid_guncon3_check_device_desc(&hid_info[hub], &usb_info[hub], desc) ||
 #endif
 #if !defined(_HID_NO_DUALSHOCK3)
-      hid_dualshock3_check_device_desc(&hub_info[hub], &usb_info[hub], desc) ||
+      hid_dualshock3_check_device_desc(&hid_info[hub], &usb_info[hub], desc) ||
 #endif
       false) {
     return;
@@ -127,17 +127,17 @@ static uint8_t check_configuration_desc(uint8_t hub, const uint8_t* data) {
         }
         if (
 #if !defined(_HID_NO_KEYBOARD)
-            hid_keyboard_check_interface_desc(&hub_info[hub], intf) ||
+            hid_keyboard_check_interface_desc(&hid_info[hub], intf) ||
 #endif
 #if !defined(_HID_NO_MOUSE)
-            hid_mouse_check_interface_desc(&hub_info[hub], &usb_info[hub],
+            hid_mouse_check_interface_desc(&hid_info[hub], &usb_info[hub],
                                            intf) ||
 #endif
 #if !defined(_HID_NO_XBOX)
-            hid_xbox_check_interface_desc(&hub_info[hub], intf) ||
+            hid_xbox_check_interface_desc(&hid_info[hub], intf) ||
 #endif
 #if !defined(_HID_NO_GUNCON3)
-            hid_guncon3_check_interface_desc(&hub_info[hub], &usb_info[hub]) ||
+            hid_guncon3_check_interface_desc(&hid_info[hub], &usb_info[hub]) ||
 #endif
             return_false()) {
           target_interface = intf->bInterfaceNumber;
@@ -146,11 +146,11 @@ static uint8_t check_configuration_desc(uint8_t hub, const uint8_t* data) {
       }
       case USB_DESC_HID: {
         const struct usb_desc_hid* hid = (const struct usb_desc_hid*)(data + i);
-        hub_info[hub].report_desc_size = hid->wDescriptorLength;
+        hid_info[hub].report_desc_size = hid->wDescriptorLength;
         break;
       }
       case USB_DESC_ENDPOINT: {
-        if (hub_info[hub].type == HID_TYPE_UNKNOWN && class != USB_CLASS_HID) {
+        if (hid_info[hub].type == HID_TYPE_UNKNOWN && class != USB_CLASS_HID) {
           break;
         }
         const struct usb_desc_endpoint* ep =
@@ -175,21 +175,21 @@ static uint8_t check_configuration_desc(uint8_t hub, const uint8_t* data) {
   }
 #ifdef _DBG_DESC
   Serial.printf("report_desc_size: %d, ep: %d\n",
-                hub_info[hub].report_desc_size, hub_info[hub].ep);
+                hid_info[hub].report_desc_size, hid_info[hub].ep);
 #endif
-  if (hub_info[hub].report_desc_size && usb_info[hub].ep_in) {
-    hub_info[hub].state = HID_STATE_NOT_READY;
+  if (hid_info[hub].report_desc_size && usb_info[hub].ep_in) {
+    hid_info[hub].state = HID_STATE_NOT_READY;
   }
 
   if (false ||
 #if !defined(_HID_NO_KEYBOARD)
-      hid_keyboard_initialize(&hub_info[hub]) ||
+      hid_keyboard_initialize(&hid_info[hub]) ||
 #endif
 #if !defined(_HID_NO_GUNCON3)
-      hid_guncon3_initialize(&hub_info[hub], &usb_info[hub]) ||
+      hid_guncon3_initialize(&hid_info[hub], &usb_info[hub]) ||
 #endif
 #if !defined(_HID_NO_XBOX)
-      hid_xbox_initialize(&hub_info[hub], &usb_info[hub]) ||
+      hid_xbox_initialize(&hid_info[hub], &usb_info[hub]) ||
 #endif
       false) {
     if (hid->detected) {
@@ -211,28 +211,28 @@ static uint8_t check_configuration_desc(uint8_t hub, const uint8_t* data) {
 #endif
 
 static void check_hid_report_desc(uint8_t hub, const uint8_t* data) {
-  if (hub_info[hub].state != HID_STATE_NOT_READY) {
+  if (hid_info[hub].state != HID_STATE_NOT_READY) {
     return;
   }
 #ifdef _DBG_HID_REPORT_DESC_DUMP
   {
-    for (uint16_t i = 0; i < hub_info[hub].report_desc_size; ++i)
+    for (uint16_t i = 0; i < hid_info[hub].report_desc_size; ++i)
       Serial.printf("0x%x, ", data[i]);
   }
 #endif
-  const uint16_t size = hub_info[hub].report_desc_size;
-  hub_info[hub].report_size = 0;
+  const uint16_t size = hid_info[hub].report_desc_size;
+  hid_info[hub].report_size = 0;
   for (uint8_t button = 0; button < 6; ++button) {
-    hub_info[hub].axis[button] = 0xffff;
+    hid_info[hub].axis[button] = 0xffff;
   }
-  hub_info[hub].hat = 0xffff;
+  hid_info[hub].hat = 0xffff;
   for (uint8_t button = 0; button < 4; ++button) {
-    hub_info[hub].dpad[button] = 0xffff;
+    hid_info[hub].dpad[button] = 0xffff;
   }
   for (uint8_t button = 0; button < 13; ++button) {
-    hub_info[hub].button[button] = 0xffff;
+    hid_info[hub].button[button] = 0xffff;
   }
-  hub_info[hub].report_id = 0;
+  hid_info[hub].report_id = 0;
   uint8_t report_size = 0;
   uint8_t report_count = 0;
   uint16_t usage_page = 0;
@@ -300,14 +300,14 @@ static void check_hid_report_desc(uint8_t hub, const uint8_t* data) {
             // Skip constant
           } else if (usages[0] == 0x00010039 && report_size == 4 &&
                      (data[i + 1] & 1) == 0) {  // Hat switch
-            hub_info[hub].hat = hub_info[hub].report_size;
+            hid_info[hub].hat = hid_info[hub].report_size;
           } else if (usages[0] == 0xff000020 && report_size == 6) {
             // PS4 counter
-            hub_info[hub].type = HID_TYPE_PS4;
+            hid_info[hub].type = HID_TYPE_PS4;
           } else if (report_size == 1) {  // Buttons
             for (uint8_t i = 0; i < report_count && button_index < 13; ++i) {
-              hub_info[hub].button[button_index++] =
-                  hub_info[hub].report_size + i;
+              hid_info[hub].button[button_index++] =
+                  hid_info[hub].report_size + i;
             }
           } else if ((data[i + 1] & 1) == 0) {  // Analog buttons
             for (uint8_t i = 0; i < report_count && analog_index < 6; ++i) {
@@ -320,38 +320,38 @@ static void check_hid_report_desc(uint8_t hub, const uint8_t* data) {
               } else if (usages[i] == 0x00010035) {
                 analog_index = 3;
               }
-              hub_info[hub].axis_size[analog_index] = report_size;
-              hub_info[hub].axis_shift[analog_index] = 0;
-              hub_info[hub].axis_sign[analog_index] = false;
-              hub_info[hub].axis_polarity[analog_index] = false;
-              hub_info[hub].axis[analog_index++] =
-                  hub_info[hub].report_size + report_size * i;
+              hid_info[hub].axis_size[analog_index] = report_size;
+              hid_info[hub].axis_shift[analog_index] = 0;
+              hid_info[hub].axis_sign[analog_index] = false;
+              hid_info[hub].axis_polarity[analog_index] = false;
+              hid_info[hub].axis[analog_index++] =
+                  hid_info[hub].report_size + report_size * i;
               while (analog_index < 6 &&
-                     hub_info[hub].axis[analog_index] != 0xffff) {
+                     hid_info[hub].axis[analog_index] != 0xffff) {
                 analog_index++;
               }
             }
           }
           usage_index = 0;
-          hub_info[hub].report_size += report_size * report_count;
+          hid_info[hub].report_size += report_size * report_count;
           break;
         case 0x85:
-          if (hub_info[hub].report_size &&
-              (hub_info[hub].hat != 0xffff || hub_info[hub].dpad[3] != 0xffff ||
-               hub_info[hub].axis[1] != 0xffff) &&
-              hub_info[hub].button[1] != 0xffff) {
+          if (hid_info[hub].report_size &&
+              (hid_info[hub].hat != 0xffff || hid_info[hub].dpad[3] != 0xffff ||
+               hid_info[hub].axis[1] != 0xffff) &&
+              hid_info[hub].button[1] != 0xffff) {
             goto quit;
           }
-          hub_info[hub].report_size = 0;
+          hid_info[hub].report_size = 0;
           for (uint8_t button = 0; button < 6; ++button) {
-            hub_info[hub].axis[button] = 0xffff;
+            hid_info[hub].axis[button] = 0xffff;
           }
-          hub_info[hub].hat = 0xffff;
+          hid_info[hub].hat = 0xffff;
           for (uint8_t button = 0; button < 4; ++button) {
-            hub_info[hub].dpad[button] = 0xffff;
+            hid_info[hub].dpad[button] = 0xffff;
           }
           for (uint8_t button = 0; button < 13; ++button) {
-            hub_info[hub].button[button] = 0xffff;
+            hid_info[hub].button[button] = 0xffff;
           }
           for (uint8_t button = 0; button < 12; ++button) {
             usages[button] = 0;
@@ -360,7 +360,7 @@ static void check_hid_report_desc(uint8_t hub, const uint8_t* data) {
           button_index = 0;
           analog_index = 0;
           REPORT1("G:Report ID");
-          hub_info[hub].report_id = data[i + 1];
+          hid_info[hub].report_id = data[i + 1];
           break;
         case 0x95:
           REPORT1("G:Report Count");
@@ -411,39 +411,39 @@ static void check_hid_report_desc(uint8_t hub, const uint8_t* data) {
 quit:
 #ifdef _DBG_HID_REPORT_DESC
   Serial.printf("Report Size for ID (%d): %d-bits (%d-Bytes)\n",
-                hub_info[hub].report_id, hub_info[hub].report_size,
-                hub_info[hub].report_size / 8);
+                hid_info[hub].report_id, hid_info[hub].report_size,
+                hid_info[hub].report_size / 8);
   for (uint8_t i = 0; i < 4; ++i) {
-    Serial.printf("axis %d: %d, %d\n", i, hub_info[hub].axis[i],
-                  hub_info[hub].axis_size[i]);
+    Serial.printf("axis %d: %d, %d\n", i, hid_info[hub].axis[i],
+                  hid_info[hub].axis_size[i]);
   }
-  Serial.printf("hat: %d\n", hub_info[hub].hat);
+  Serial.printf("hat: %d\n", hid_info[hub].hat);
   for (uint8_t i = 0; i < 13; ++i) {
-    Serial.printf("button %d: %d\n", i, hub_info[hub].button[i]);
+    Serial.printf("button %d: %d\n", i, hid_info[hub].button[i]);
   }
 #endif
-  if (hub_info[hub].type == HID_TYPE_UNKNOWN) {
-    if (hub_info[hub].report_size && hub_info[hub].button[12] != 0xfff &&
-        ((hub_info[hub].axis[0] != 0xffff && hub_info[hub].axis[1] != 0xffff) ||
-         hub_info[hub].hat != 0xffff ||
-         (hub_info[hub].dpad[0] != 0xffff && hub_info[hub].dpad[1] != 0xffff &&
-          hub_info[hub].dpad[2] != 0xffff &&
-          hub_info[hub].dpad[3] != 0xffff))) {
-      hub_info[hub].type = HID_TYPE_GENERIC;
+  if (hid_info[hub].type == HID_TYPE_UNKNOWN) {
+    if (hid_info[hub].report_size && hid_info[hub].button[12] != 0xfff &&
+        ((hid_info[hub].axis[0] != 0xffff && hid_info[hub].axis[1] != 0xffff) ||
+         hid_info[hub].hat != 0xffff ||
+         (hid_info[hub].dpad[0] != 0xffff && hid_info[hub].dpad[1] != 0xffff &&
+          hid_info[hub].dpad[2] != 0xffff &&
+          hid_info[hub].dpad[3] != 0xffff))) {
+      hid_info[hub].type = HID_TYPE_GENERIC;
     }
   }
-  hub_info[hub].state = HID_STATE_READY;
+  hid_info[hub].state = HID_STATE_READY;
 #if !defined(_HID_NO_SWITCH)
-  if (hub_info[hub].type == HID_TYPE_SWITCH) {
-    hid_switch_initialize(&hub_info[hub]);
+  if (hid_info[hub].type == HID_TYPE_SWITCH) {
+    hid_switch_initialize(&hid_info[hub]);
   }
 #endif
 #if !defined(_HID_NO_PS3)
-  if (hub_info[hub].type == HID_TYPE_PS3) {
-    hid_dualshock3_initialize(&hub_info[hub]);
+  if (hid_info[hub].type == HID_TYPE_PS3) {
+    hid_dualshock3_initialize(&hid_info[hub]);
   }
 #endif
-  if (hub_info[hub].type != HID_TYPE_UNKNOWN) {
+  if (hid_info[hub].type != HID_TYPE_UNKNOWN) {
     if (hid->detected) {
       hid->detected();
     }
@@ -452,48 +452,48 @@ quit:
   // Device specific fix-up.
   if (usb_info[hub].vid == 0x046d && usb_info[hub].pid == 0xc260) {
     // G29 Driving Force Racing Wheel [PS4]
-    hub_info[hub].axis[0] = 336;
-    hub_info[hub].axis_size[0] = 16;
-    hub_info[hub].axis[1] = 352;
-    hub_info[hub].axis_size[1] = 16;
-    hub_info[hub].axis_polarity[1] = true;
-    hub_info[hub].axis[2] = 368;
-    hub_info[hub].axis_size[2] = 16;
-    hub_info[hub].axis_polarity[2] = true;
-    hub_info[hub].axis[3] = 384;
-    hub_info[hub].axis_size[3] = 16;
-    hub_info[hub].axis_polarity[3] = true;
+    hid_info[hub].axis[0] = 336;
+    hid_info[hub].axis_size[0] = 16;
+    hid_info[hub].axis[1] = 352;
+    hid_info[hub].axis_size[1] = 16;
+    hid_info[hub].axis_polarity[1] = true;
+    hid_info[hub].axis[2] = 368;
+    hid_info[hub].axis_size[2] = 16;
+    hid_info[hub].axis_polarity[2] = true;
+    hid_info[hub].axis[3] = 384;
+    hid_info[hub].axis_size[3] = 16;
+    hid_info[hub].axis_polarity[3] = true;
   } else if (usb_info[hub].vid == 0x046d && usb_info[hub].pid == 0xc294) {
     // G29 Driving Force Racing Wheel [PS3]
-    hub_info[hub].axis[1] = 136;
-    hub_info[hub].axis[2] = 144;
-    hub_info[hub].type = HID_TYPE_PS4;
+    hid_info[hub].axis[1] = 136;
+    hid_info[hub].axis[2] = 144;
+    hid_info[hub].type = HID_TYPE_PS4;
   }
 }
 
 static void hid_report(uint8_t hub, uint8_t* data, uint16_t size) {
 #if !defined(_HID_NO_PS3)
-  if (hid_dualshock3_report(&hub_info[hub], &usb_info[hub], data, size)) {
+  if (hid_dualshock3_report(&hid_info[hub], &usb_info[hub], data, size)) {
     return;
   }
 #endif
 #if !defined(_HID_NO_GUNCON3)
-  if (hid_guncon3_report(&hub_info[hub], &usb_info[hub], data, size)) {
+  if (hid_guncon3_report(&hid_info[hub], &usb_info[hub], data, size)) {
     return;
   }
 #endif
 #if !defined(_HID_NO_XBOX)
-  if (hid_xbox_report(&hub_info[hub], data, size)) {
+  if (hid_xbox_report(&hid_info[hub], data, size)) {
     return;
   }
 #endif
 #if !defined(_HID_NO_SWITCH)
-  if (hid_switch_report(hub, &hub_info[hub], &usb_info[hub], data, size)) {
+  if (hid_switch_report(hub, &hid_info[hub], &usb_info[hub], data, size)) {
     return;
   }
 #endif
   if (hid->report && size) {
-    hid->report(hub, &hub_info[hub], data, size);
+    hid->report(hub, &hid_info[hub], data, size);
   }
   if (usb_info[hub].wait) {
     usb_info[hub].tick = timer3_tick_raw();
@@ -520,8 +520,8 @@ void hid_init(struct hid* new_hid) {
   usb_host_init(&host);
 }
 
-struct hub_info* hid_get_info(uint8_t hub) {
-  return &hub_info[hub];
+struct hid_info* hid_get_info(uint8_t hub) {
+  return &hid_info[hub];
 }
 
 void hid_poll(void) {
@@ -536,8 +536,8 @@ void hid_poll(void) {
       return;
     }
   }
-  if (hub_info[hub].state == HID_STATE_READY && usb_host_ready(hub)) {
-    switch (hub_info[hub].type) {
+  if (hid_info[hub].state == HID_STATE_READY && usb_host_ready(hub)) {
+    switch (hid_info[hub].type) {
 #if !defined(_HID_NO_GUNCON3)
       case HID_TYPE_ZAPPER:
         hid_guncon3_poll(hub, &usb_info[hub]);
@@ -545,7 +545,7 @@ void hid_poll(void) {
 #endif
 #if !defined(_HID_NO_PS3)
       case HID_TYPE_PS3:
-        hid_dualshock3_poll(hub, &hub_info[hub], &usb_info[hub]);
+        hid_dualshock3_poll(hub, &hid_info[hub], &usb_info[hub]);
         break;
 #endif
 #if !defined(_HID_NO_XBOX)
@@ -562,8 +562,8 @@ void hid_poll(void) {
         break;
 #endif
       default: {
-        uint16_t size = hub_info[hub].report_size / 8;
-        if (hub_info[hub].report_id) {
+        uint16_t size = hid_info[hub].report_size / 8;
+        if (hid_info[hub].report_id) {
           size++;
         }
         usb_host_in(hub, usb_info[hub].ep_in, size);

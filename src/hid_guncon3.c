@@ -80,92 +80,92 @@ void decode(uint8_t* data) {
   }
 }
 
-bool hid_guncon3_check_device_desc(struct hub_info* hub_info,
+bool hid_guncon3_check_device_desc(struct hid_info* hid_info,
                                    struct usb_info* usb_info,
                                    const struct usb_desc_device* desc) {
   if (desc->idVendor == 0x0c12 && desc->idProduct == 0x8801) {
-    hub_info->type = HID_TYPE_ZAPPER;
+    hid_info->type = HID_TYPE_ZAPPER;
     usb_info->state = HUB_CONNECTED;
     return true;
   }
   if (desc->idVendor == 0x0b9a && desc->idProduct == 0x0800) {
-    hub_info->type = HID_TYPE_ZAPPER;
+    hid_info->type = HID_TYPE_ZAPPER;
     usb_info->state = DEVICE_CONNECTED;
     return true;
   }
   return false;
 }
 
-bool hid_guncon3_check_interface_desc(struct hub_info* hub_info,
+bool hid_guncon3_check_interface_desc(struct hid_info* hid_info,
                                       struct usb_info* usb_info) {
-  if (hub_info->type == HID_TYPE_ZAPPER && usb_info->state != IDLE) {
+  if (hid_info->type == HID_TYPE_ZAPPER && usb_info->state != IDLE) {
     return true;
   }
   return false;
 }
 
-bool hid_guncon3_initialize(struct hub_info* hub_info,
+bool hid_guncon3_initialize(struct hid_info* hid_info,
                             struct usb_info* usb_info) {
-  if (hub_info->type != HID_TYPE_ZAPPER || usb_info->state == IDLE) {
+  if (hid_info->type != HID_TYPE_ZAPPER || usb_info->state == IDLE) {
     return false;
   }
-  hub_info->report_size = 15;
-  hub_info->report_id = 0;
-  hub_info->axis[0] = 24;  // Screen X
-  hub_info->axis[1] = 40;  // Screen Y
-  hub_info->axis_size[0] = 16;
-  hub_info->axis_size[1] = 16;
-  hub_info->axis_shift[0] = 0;
-  hub_info->axis_shift[1] = 0;
-  hub_info->axis_sign[0] = true;
-  hub_info->axis_sign[1] = true;
-  hub_info->axis_polarity[0] = false;
-  hub_info->axis_polarity[1] = true;
-  hub_info->axis[2] = 72;  // LX
-  hub_info->axis[3] = 80;  // LY
-  hub_info->axis[4] = 88;  // RX
-  hub_info->axis[5] = 96;  // RY
-  hub_info->axis_size[2] = 8;
-  hub_info->axis_size[3] = 8;
-  hub_info->axis_size[4] = 8;
-  hub_info->axis_size[5] = 8;
-  hub_info->axis_shift[2] = 0;
-  hub_info->axis_shift[3] = 0;
-  hub_info->axis_shift[4] = 0;
-  hub_info->axis_shift[5] = 0;
-  hub_info->axis_sign[2] = false;
-  hub_info->axis_sign[3] = false;
-  hub_info->axis_sign[4] = false;
-  hub_info->axis_sign[5] = false;
-  hub_info->axis_polarity[2] = false;
-  hub_info->axis_polarity[3] = false;
-  hub_info->axis_polarity[4] = false;
-  hub_info->axis_polarity[5] = false;
-  hub_info->hat = 0xffff;
+  hid_info->report_size = 15;
+  hid_info->report_id = 0;
+  hid_info->axis[0] = 24;  // Screen X
+  hid_info->axis[1] = 40;  // Screen Y
+  hid_info->axis_size[0] = 16;
+  hid_info->axis_size[1] = 16;
+  hid_info->axis_shift[0] = 0;
+  hid_info->axis_shift[1] = 0;
+  hid_info->axis_sign[0] = true;
+  hid_info->axis_sign[1] = true;
+  hid_info->axis_polarity[0] = false;
+  hid_info->axis_polarity[1] = true;
+  hid_info->axis[2] = 72;  // LX
+  hid_info->axis[3] = 80;  // LY
+  hid_info->axis[4] = 88;  // RX
+  hid_info->axis[5] = 96;  // RY
+  hid_info->axis_size[2] = 8;
+  hid_info->axis_size[3] = 8;
+  hid_info->axis_size[4] = 8;
+  hid_info->axis_size[5] = 8;
+  hid_info->axis_shift[2] = 0;
+  hid_info->axis_shift[3] = 0;
+  hid_info->axis_shift[4] = 0;
+  hid_info->axis_shift[5] = 0;
+  hid_info->axis_sign[2] = false;
+  hid_info->axis_sign[3] = false;
+  hid_info->axis_sign[4] = false;
+  hid_info->axis_sign[5] = false;
+  hid_info->axis_polarity[2] = false;
+  hid_info->axis_polarity[3] = false;
+  hid_info->axis_polarity[4] = false;
+  hid_info->axis_polarity[5] = false;
+  hid_info->hat = 0xffff;
   for (uint8_t i = 0; i < 4; ++i) {
-    hub_info->dpad[i] = 0xffff;
+    hid_info->dpad[i] = 0xffff;
   }
-  hub_info->button[0] = 0x02;  // A1
-  hub_info->button[1] = 0x01;  // A2
-  hub_info->button[2] = 0x0a;  // B1
-  hub_info->button[3] = 0x09;  // B2
-  hub_info->button[4] = 0x0f;  // C1
-  hub_info->button[5] = 0x03;  // C2
-  hub_info->button[6] = 0x17;  // JA
-  hub_info->button[7] = 0x16;  // JB
-  hub_info->button[8] = 0x0d;  // Trigger
+  hid_info->button[0] = 0x02;  // A1
+  hid_info->button[1] = 0x01;  // A2
+  hid_info->button[2] = 0x0a;  // B1
+  hid_info->button[3] = 0x09;  // B2
+  hid_info->button[4] = 0x0f;  // C1
+  hid_info->button[5] = 0x03;  // C2
+  hid_info->button[6] = 0x17;  // JA
+  hid_info->button[7] = 0x16;  // JB
+  hid_info->button[8] = 0x0d;  // Trigger
   for (uint8_t i = 9; i < 13; ++i) {
-    hub_info->button[i] = 0xffff;
+    hid_info->button[i] = 0xffff;
   }
-  hub_info->state = HID_STATE_READY;
+  hid_info->state = HID_STATE_READY;
   return false;
 }
 
-bool hid_guncon3_report(struct hub_info* hub_info,
+bool hid_guncon3_report(struct hid_info* hid_info,
                         struct usb_info* usb_info,
                         uint8_t* data,
                         uint16_t size) {
-  if (hub_info->type != HID_TYPE_ZAPPER || usb_info->state == IDLE) {
+  if (hid_info->type != HID_TYPE_ZAPPER || usb_info->state == IDLE) {
     return false;
   }
 
@@ -216,7 +216,7 @@ void hid_guncon3_poll(uint8_t hub, struct usb_info* usb_info) {
     }
     case HUB_PORT_RESET_WAIT: {
       usb_host_setup(hub, &get_port_status, 0);
-      // usb_host_in(hub, hub_info->ep, usb_info->ep_max_packet_size);
+      // usb_host_in(hub, hid_info->ep, usb_info->ep_max_packet_size);
       break;
     }
     case HUB_PORT_RESET_DONE: {

@@ -15,21 +15,21 @@ static bool check(uint8_t any_class,
          any_protocol == USB_HID_PROTOCOL_MOUSE;
 }
 
-bool hid_mouse_check_device_desc(struct hub_info* hub_info,
+bool hid_mouse_check_device_desc(struct hid_info* hid_info,
                                  const struct usb_desc_device* desc) {
   if (check(desc->bDeviceClass, desc->bDeviceSubClass, desc->bDeviceProtocol)) {
-    hub_info->type = HID_TYPE_MOUSE;
+    hid_info->type = HID_TYPE_MOUSE;
     return true;
   }
   return false;
 }
 
-bool hid_mouse_check_interface_desc(struct hub_info* hub_info,
+bool hid_mouse_check_interface_desc(struct hid_info* hid_info,
                                     struct usb_info* usb_info,
                                     const struct usb_desc_interface* desc) {
   if (check(desc->bInterfaceClass, desc->bInterfaceSubClass,
             desc->bInterfaceProtocol)) {
-    hub_info->type = HID_TYPE_MOUSE;
+    hid_info->type = HID_TYPE_MOUSE;
     return true;
   }
   if (usb_info->vid == 0xd209 && usb_info->pid == 0x1601 &&
@@ -39,7 +39,7 @@ bool hid_mouse_check_interface_desc(struct hub_info* hub_info,
     // address, and the trigger click inside or outside the screen.
     // Red buttons in left and right cannot be accessed here, as they need to
     // tweak the 2nd interface with bInterfaceNumber == 1.
-    hub_info->type = HID_TYPE_MOUSE;
+    hid_info->type = HID_TYPE_MOUSE;
     return true;
   }
   return false;

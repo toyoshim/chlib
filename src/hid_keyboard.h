@@ -7,16 +7,16 @@
 
 #include <stdbool.h>
 
-struct hub_info;
+struct hid_info;
 struct usb_desc_device;
 struct usb_desc_interface;
 
-bool hid_keyboard_check_device_desc(struct hub_info* hub_info,
+bool hid_keyboard_check_device_desc(struct hid_info* hid_info,
                                     const struct usb_desc_device* desc);
 
-bool hid_keyboard_check_interface_desc(struct hub_info* hub_info,
+bool hid_keyboard_check_interface_desc(struct hid_info* hid_info,
                                        const struct usb_desc_interface* desc);
 
-bool hid_keyboard_initialize(struct hub_info* hub_info);
+bool hid_keyboard_initialize(struct hid_info* hid_info);
 
 #endif  // __hid_keyboard_h__

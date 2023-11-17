@@ -14,30 +14,30 @@ static bool check(uint8_t any_class,
          any_protocol == USB_HID_PROTOCOL_KEYBOARD;
 }
 
-bool hid_keyboard_check_device_desc(struct hub_info* hub_info,
+bool hid_keyboard_check_device_desc(struct hid_info* hid_info,
                                     const struct usb_desc_device* desc) {
   if (check(desc->bDeviceClass, desc->bDeviceSubClass, desc->bDeviceProtocol)) {
-    hub_info->type = HID_TYPE_KEYBOARD;
+    hid_info->type = HID_TYPE_KEYBOARD;
     return true;
   }
   return false;
 }
 
-bool hid_keyboard_check_interface_desc(struct hub_info* hub_info,
+bool hid_keyboard_check_interface_desc(struct hid_info* hid_info,
                                        const struct usb_desc_interface* desc) {
   if (check(desc->bInterfaceClass, desc->bInterfaceSubClass,
             desc->bInterfaceProtocol)) {
-    hub_info->type = HID_TYPE_KEYBOARD;
+    hid_info->type = HID_TYPE_KEYBOARD;
     return true;
   }
   return false;
 }
 
-bool hid_keyboard_initialize(struct hub_info* hub_info) {
-  if (hub_info->type != HID_TYPE_KEYBOARD)
+bool hid_keyboard_initialize(struct hid_info* hid_info) {
+  if (hid_info->type != HID_TYPE_KEYBOARD)
     return false;
-  hub_info->state = HID_STATE_READY;
-  hub_info->report_size = 8;
-  hub_info->report_id = 0;
+  hid_info->state = HID_STATE_READY;
+  hid_info->report_size = 8;
+  hid_info->report_id = 0;
   return true;
 }
