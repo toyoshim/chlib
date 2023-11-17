@@ -822,7 +822,7 @@ static bool state_transaction_out(uint8_t hub) {
   const struct usb_setup_req* req = (const struct usb_setup_req*)tx_buffer;
   const uint8_t ep = transaction_ep_pid & 0x0f;
   uint16_t size = (transaction_stage == 1) ? 0 : req->wLength;
-  uint8_t tog = (transaction_stage == 1) ? AUTO_TOGGLE : 0;
+  uint8_t tog = (transaction_stage != 2) ? AUTO_TOGGLE : 0;
   host_out_transfer(hub, ep, buffer, size, transaction_recv_state, tog);
   return false;
 }
