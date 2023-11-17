@@ -117,6 +117,6 @@ void hid_dualshock3_poll(uint8_t hub,
   } else if (usb_info->state == DEVICE_GET_REPORT_F5) {
     usb_info->state = DEVICE_READY;
   } else if (usb_info->state == DEVICE_READY) {
-    usb_host_in(hub, hub_info->ep, 64);
+    usb_host_in(hub, usb_info->ep_in, 64);
   }
 }

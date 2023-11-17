@@ -60,10 +60,7 @@ struct hub_info {
   bool axis_polarity[6];
   uint8_t report_id;
   uint8_t type;
-  uint8_t ep;
   uint8_t state;
-  uint16_t tick;
-  uint16_t wait;
 };
 
 struct hid {

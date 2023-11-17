@@ -4,6 +4,8 @@
 
 #include "hid.h"
 
+#include <string.h>
+
 #include "ch559.h"
 #if !defined(_HID_NO_PS3)
 #include "hid_dualshock3.h"
@@ -51,11 +53,8 @@ static void disconnected(uint8_t hub) {
 
 static void check_device_desc(uint8_t hub, const uint8_t* data) {
   hub_info[hub].report_desc_size = 0;
-  hub_info[hub].ep = 0;
   hub_info[hub].state = HID_STATE_CONNECTED;
   hub_info[hub].type = HID_TYPE_UNKNOWN;
-  hub_info[hub].wait = 0;
-  hub_info[hub].tick = timer3_tick_raw();
   const struct usb_desc_device* desc = (const struct usb_desc_device*)data;
 
 #ifdef _DBG_DESC
@@ -68,12 +67,14 @@ static void check_device_desc(uint8_t hub, const uint8_t* data) {
   Serial.printf("device protocol: %x\n", desc->bDeviceProtocol);
 #endif
 
+  memset(&usb_info[hub], 0, sizeof(struct usb_info));
+  usb_info[hub].tick = timer3_tick_raw();
   usb_info[hub].class = desc->bDeviceClass;
   usb_info[hub].vid = desc->idVendor;
   usb_info[hub].pid = desc->idProduct;
 
   if (desc->idVendor == 0x17a7 && desc->idProduct == 0x0005) {
-    hub_info[hub].wait = 750;
+    usb_info[hub].wait = 750;
   }
 
   if (false ||
@@ -156,16 +157,16 @@ static uint8_t check_configuration_desc(uint8_t hub, const uint8_t* data) {
             (const struct usb_desc_endpoint*)(data + i);
         if (ep->bEndpointAddress >= 128 && (ep->bmAttributes & 3) == 3) {
           // interrupt input.
-          hub_info[hub].ep = ep->bEndpointAddress & 0x0f;
+          usb_info[hub].ep_in = ep->bEndpointAddress & 0x0f;
           usb_info[hub].ep_max_packet_size = ep->wMaxPacketSize;
 #ifdef _DBG_DESC
-          Serial.printf("ep in: %d\n", hub_info[hub].ep);
+          Serial.printf("ep in: %d\n", usb_info[hub].ep_in);
 #endif
         } else if (ep->bEndpointAddress < 128 && (ep->bmAttributes & 3) == 3) {
           // interrupt output.
-          usb_info[hub].ep = ep->bEndpointAddress & 0x0f;
+          usb_info[hub].ep_out = ep->bEndpointAddress & 0x0f;
 #ifdef _DBG_DESC
-          Serial.printf("ep out: %d\n", usb_info[hub].ep);
+          Serial.printf("ep out: %d\n", usb_info[hub].ep_out);
 #endif
         }
         break;
@@ -176,7 +177,7 @@ static uint8_t check_configuration_desc(uint8_t hub, const uint8_t* data) {
   Serial.printf("report_desc_size: %d, ep: %d\n",
                 hub_info[hub].report_desc_size, hub_info[hub].ep);
 #endif
-  if (hub_info[hub].report_desc_size && hub_info[hub].ep) {
+  if (hub_info[hub].report_desc_size && usb_info[hub].ep_in) {
     hub_info[hub].state = HID_STATE_NOT_READY;
   }
 
@@ -494,8 +495,8 @@ static void hid_report(uint8_t hub, uint8_t* data, uint16_t size) {
   if (hid->report && size) {
     hid->report(hub, &hub_info[hub], data, size);
   }
-  if (hub_info[hub].wait) {
-    hub_info[hub].tick = timer3_tick_raw();
+  if (usb_info[hub].wait) {
+    usb_info[hub].tick = timer3_tick_raw();
   }
 }
 
@@ -528,9 +529,9 @@ void hid_poll(void) {
   usb_host_poll();
   if (!usb_host_idle())
     return;
-  uint16_t wait = hub_info[hub].wait;
+  uint16_t wait = usb_info[hub].wait;
   if (wait) {
-    uint16_t begin = hub_info[hub].tick;
+    uint16_t begin = usb_info[hub].tick;
     if (timer3_tick_raw_between(begin, begin + wait)) {
       return;
     }
@@ -549,10 +550,10 @@ void hid_poll(void) {
 #endif
 #if !defined(_HID_NO_XBOX)
       case HID_TYPE_XBOX_360:
-        hid_xbox_360_poll(hub, &hub_info[hub], &usb_info[hub]);
+        hid_xbox_360_poll(hub, &usb_info[hub]);
         break;
       case HID_TYPE_XBOX_ONE:
-        hid_xbox_one_poll(hub, &hub_info[hub], &usb_info[hub]);
+        hid_xbox_one_poll(hub, &usb_info[hub]);
         break;
 #endif
 #if !defined(_HID_NO_SWITCH)
@@ -565,7 +566,7 @@ void hid_poll(void) {
         if (hub_info[hub].report_id) {
           size++;
         }
-        usb_host_in(hub, hub_info[hub].ep, size);
+        usb_host_in(hub, usb_info[hub].ep_in, size);
         break;
       }
     }

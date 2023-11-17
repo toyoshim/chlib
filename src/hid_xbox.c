@@ -190,33 +190,29 @@ bool hid_xbox_report(struct hub_info* hub_info,
   return false;
 }
 
-void hid_xbox_360_poll(uint8_t hub,
-                       struct hub_info* hub_info,
-                       struct usb_info* usb_info) {
+void hid_xbox_360_poll(uint8_t hub, struct usb_info* usb_info) {
   if (usb_info->state == CONNECTED) {
     static uint8_t initialize[] = {0x01, 0x03, 0x00};
     initialize[2] = 0x02 + hub;
-    usb_host_out(hub, usb_info->ep, initialize, sizeof(initialize));
+    usb_host_out(hub, usb_info->ep_out, initialize, sizeof(initialize));
     usb_info->state = INITIALIZED;
   } else if (usb_info->state == INITIALIZED) {
-    usb_host_in(hub, hub_info->ep, 20);
+    usb_host_in(hub, usb_info->ep_in, 20);
   }
 }
 
-void hid_xbox_one_poll(uint8_t hub,
-                       struct hub_info* hub_info,
-                       struct usb_info* usb_info) {
+void hid_xbox_one_poll(uint8_t hub, struct usb_info* usb_info) {
   if (usb_info->state == CONNECTED) {
     static uint8_t initialize[] = {0x05, 0x20, 0x00, 0x01, 0x00};
     initialize[2] = usb_info->cmd_count++;
-    usb_host_out(hub, usb_info->ep, initialize, sizeof(initialize));
+    usb_host_out(hub, usb_info->ep_out, initialize, sizeof(initialize));
     usb_info->state = INITIALIZED;
   } else if (usb_info->state == INITIALIZED) {
     static uint8_t start[] = {0x06, 0x20, 0x00, 0x02, 0x01, 0x00};
     start[2] = usb_info->cmd_count++;
-    usb_host_out(hub, usb_info->ep, start, sizeof(start));
+    usb_host_out(hub, usb_info->ep_out, start, sizeof(start));
     usb_info->state = STARTED;
   } else if (usb_info->state == STARTED) {
-    usb_host_in(hub, hub_info->ep, usb_info->ep_max_packet_size);
+    usb_host_in(hub, usb_info->ep_in, usb_info->ep_max_packet_size);
   }
 }

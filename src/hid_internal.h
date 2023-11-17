@@ -12,9 +12,12 @@ struct usb_info {
   uint16_t vid;
   uint16_t pid;
   uint16_t ep_max_packet_size;
-  uint8_t ep;  // interrupt out
+  uint8_t ep_out;
+  uint8_t ep_in;
   uint8_t state;
   uint8_t cmd_count;
+  uint16_t tick;
+  uint16_t wait;
 };
 
 #endif  // __hid_internal_h__

@@ -25,12 +25,8 @@ bool hid_xbox_report(struct hub_info* hub_info,
                      const uint8_t* data,
                      uint16_t size);
 
-void hid_xbox_360_poll(uint8_t hub,
-                       struct hub_info* hub_info,
-                       struct usb_info* usb_info);
+void hid_xbox_360_poll(uint8_t hub, struct usb_info* usb_info);
 
-void hid_xbox_one_poll(uint8_t hub,
-                       struct hub_info* hub_info,
-                       struct usb_info* usb_info);
+void hid_xbox_one_poll(uint8_t hub, struct usb_info* usb_info);
 
 #endif  // __hid_xbox_h__
