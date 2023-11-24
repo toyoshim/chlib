@@ -14,4 +14,4 @@ void adc_select(uint8_t ch);
 bool adc_peek(uint16_t* value);
 uint16_t adc_get(uint8_t ch);
 
-#endif  // __rs485_h__
+#endif  // __adc_h__

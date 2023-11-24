@@ -131,6 +131,7 @@ SBIT(P1_4, 0x90, 4);          // P1, 4
 SBIT(P1_5, 0x90, 5);          // P1, 5
 SBIT(P1_6, 0x90, 6);          // P1, 6
 SBIT(P1_7, 0x90, 7);          // P1, 7
+SBIT(REN, 0x98, 4);           // SCON, Enable UART0 receiving
 SBIT(SM1, 0x98, 6);           // SCON, UART0 mode bit1, selection baud rate
 SBIT(SM0, 0x98, 7);           // SCON, UART0 mode bit0, selection data bit
 SBIT(TI, 0x98, 1);            // SCON, Transmit interrupt flag
