@@ -11,6 +11,8 @@
 
 static struct i2c i2c;
 static uint8_t ie;
+static uint16_t exclusive_time_raw = 0;
+static uint16_t last_access_time;
 
 static void wait_posedge() {
   while (SCL_BIT)
@@ -28,11 +30,17 @@ static void wait_negedge() {
 
 void i2c_int(void) __interrupt(INT_NO_GPIO) __using(0) {
   if (SDA_BIT) {
-    if (i2c.interrupt_handler) {
+    if (i2c.interrupt_handler &&
+        (exclusive_time_raw == 0 ||
+         !timer3_tick_raw_between(last_access_time,
+                                  last_access_time + exclusive_time_raw))) {
       i2c.interrupt_handler();
+      exclusive_time_raw = 0;
     }
     return;
   }
+  exclusive_time_raw = i2c.exclusive_time_raw;
+  last_access_time = timer3_tick_raw();
 
   uint8_t addr = 0;
   uint8_t bit;
@@ -88,6 +96,8 @@ void i2c_int(void) __interrupt(INT_NO_GPIO) __using(0) {
         }
         // Wait for STOP condition
         wait_posedge();
+        while (!SDA_BIT)
+          ;
         return;
       } else {
         // ACK
@@ -167,11 +177,15 @@ bool i2c_init(const struct i2c* opt) {
   SCL_PU |= SCL_MASK;    // pullup
   SCL_DIR &= ~SCL_MASK;  // input
   SCL_BIT = LOW;
+
+  last_access_time = timer3_tick_raw();
+
   gpio_enable_interrupt(i2c.ie | ie, true);
+
   return true;
 }
 
-void i2c_update_interrupt(uint8_t ie) {
-  i2c.ie = ie;
+void i2c_update_interrupt(uint8_t new_ie) {
+  i2c.ie = new_ie;
   gpio_enable_interrupt(i2c.ie | ie, true);
 }

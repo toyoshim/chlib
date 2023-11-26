@@ -9,6 +9,7 @@
 #include <stdint.h>
 
 #include "interrupt.h"
+#include "timer3.h"
 
 extern void i2c_int(void) __interrupt(INT_NO_GPIO) __using(0);
 
@@ -25,6 +26,9 @@ struct i2c {
   uint8_t ie;   // Other interrupt ports that should be enabled and handled by
                 // the user interrupt handler.
   uint8_t sda;  // Only specific GPIO can be used for interrupt supports.
+  // Set non-zero value if you don't want to run the `interrupt_handler` in a
+  // certain timespan after I2C accesses.
+  uint16_t exclusive_time_raw;
   void (*interrupt_handler)(void);
   // `start`, `write`, and `read` are called with clock stretch cycle, and can
   // spent a certain time. But `end` cannot.
