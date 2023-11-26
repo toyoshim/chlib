@@ -25,7 +25,7 @@ struct i2c {
   uint8_t ie;   // Other interrupt ports that should be enabled and handled by
                 // the user interrupt handler.
   uint8_t sda;  // Only specific GPIO can be used for interrupt supports.
-  bool (*interrupt_handler)(void);
+  void (*interrupt_handler)(void);
   // `start`, `write`, and `read` are called with clock stretch cycle, and can
   // spent a certain time. But `end` cannot.
   bool (*start)(uint8_t address, uint8_t dir);
@@ -52,5 +52,6 @@ struct i2c {
 // Internally enables GPIO edge interrupt. You need to be careful to override
 // the setting.
 bool i2c_init(const struct i2c* opt);
+void i2c_update_interrupt(uint8_t ie);
 
 #endif  // __i2c_h__

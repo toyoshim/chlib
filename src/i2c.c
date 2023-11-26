@@ -10,6 +10,7 @@
 #include "serial.h"
 
 static struct i2c i2c;
+static uint8_t ie;
 
 static void wait_posedge() {
   while (SCL_BIT)
@@ -26,16 +27,16 @@ static void wait_negedge() {
 }
 
 void i2c_int(void) __interrupt(INT_NO_GPIO) __using(0) {
-  uint8_t sda = SDA_BIT;
-  if (i2c.interrupt_handler && i2c.interrupt_handler()) {
-    return;
-  }
-  if (sda) {
+  if (SDA_BIT) {
+    if (i2c.interrupt_handler) {
+      i2c.interrupt_handler();
+    }
     return;
   }
 
   uint8_t addr = 0;
-  for (uint8_t bit = 0; bit < 7; ++bit) {
+  uint8_t bit;
+  for (bit = 0; bit < 7; ++bit) {
     addr <<= 1;
     wait_posedge();
     addr |= SDA_BIT;
@@ -73,7 +74,7 @@ void i2c_int(void) __interrupt(INT_NO_GPIO) __using(0) {
       if (ready) {
         SDA_DIR |= SDA_MASK;  // output
       }
-      for (uint8_t bit = 0; bit < 8; ++bit) {
+      for (bit = 0; bit < 8; ++bit) {
         SDA_BIT = (data & 0x80) ? HIGH : LOW;
         data <<= 1;
         wait_negedge();
@@ -106,7 +107,7 @@ void i2c_int(void) __interrupt(INT_NO_GPIO) __using(0) {
     } else {
       // Check STOP condition
       wait_posedge();
-      sda = SDA_BIT;
+      uint8_t sda = SDA_BIT;
       data = 0;
       if (sda) {
         data = 1;
@@ -120,7 +121,7 @@ void i2c_int(void) __interrupt(INT_NO_GPIO) __using(0) {
           }
         }
       }
-      for (uint8_t bit = 1; bit < 8; ++bit) {
+      for (bit = 1; bit < 8; ++bit) {
         data <<= 1;
         wait_posedge();
         data |= SDA_BIT;
@@ -151,9 +152,9 @@ bool i2c_init(const struct i2c* opt) {
     return false;
   }
   i2c = *opt;
-  i2c.ie |= bIE_IO_EDGE;
+  ie = bIE_IO_EDGE;
   if (i2c.sda == I2C_SDA_P0_2) {
-    i2c.ie |= bIE_RXD0_LO;
+    ie |= bIE_RXD0_LO;
     if (PIN_FUNC & bUART0_PIN_X) {
       REN = 0;  // Disable UART0 receiving as RXD0 was assigned to P0_2.
     }
@@ -166,6 +167,11 @@ bool i2c_init(const struct i2c* opt) {
   SCL_PU |= SCL_MASK;    // pullup
   SCL_DIR &= ~SCL_MASK;  // input
   SCL_BIT = LOW;
-  gpio_enable_interrupt(i2c.ie, true);
+  gpio_enable_interrupt(i2c.ie | ie, true);
   return true;
+}
+
+void i2c_update_interrupt(uint8_t ie) {
+  i2c.ie = ie;
+  gpio_enable_interrupt(i2c.ie | ie, true);
 }
