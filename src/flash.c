@@ -69,19 +69,21 @@ static bool restore(void) {
 // 2. Checks the MAGIC in the code flash, and restores it and returns if it's
 //    valid.
 // 3. Initializes the data flash with the MAGIC.
-bool flash_init(uint32_t new_magic) {
+bool flash_init(uint32_t new_magic, bool force) {
   magic = new_magic;
   __code uint32_t* flash = (__code uint32_t*)data_flash;
-  if (magic == *flash)
+  if (magic == *flash) {
     return true;
+  }
   flash = (__code uint32_t*)code_flash;
   if (magic == *flash) {
     // Maybe the previous shutdown happens during restore operation. Redo.
     return restore();
   }
-  // No data. Let's initialize with the magic.
-  if (!erase(data_flash))
+  // No data. Let's initialize with the magic if `force` is set.
+  if (!force || !erase(data_flash)) {
     return false;
+  }
   enter();
   bool result = true;
   ROM_ADDR_H = (uint16_t)data_flash >> 8;
