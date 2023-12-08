@@ -4,9 +4,9 @@
 
 #include "hid_switch.h"
 
+#include "../usb.h"
 #include "hid.h"
 #include "hid_internal.h"
-#include "usb.h"
 
 enum {
   CONNECTED = 0,

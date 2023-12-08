@@ -6,7 +6,6 @@
 
 #include "hid.h"
 #include "hid_internal.h"
-#include "serial.h"
 
 enum {
   IDLE = 0,

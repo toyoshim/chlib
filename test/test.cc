@@ -5,9 +5,9 @@
 #include <stdint.h>
 
 extern "C" {
-#include "hid.h"
 #include "serial.h"
-#include "usb.h"
+#include "usb/hid/hid.h"
+#include "usb/usb.h"
 }
 
 #include "gtest/gtest.h"
@@ -99,7 +99,7 @@ class CompatTest : public ::testing::Test {
     SetVendorAndProduct(0, 0);
   }
 
-  hid hid;
+  struct hid hid;
 };
 
 // Compatibility tests for PS4 controllers with precised descriptors

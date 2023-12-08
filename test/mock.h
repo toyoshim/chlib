@@ -6,7 +6,7 @@
 #define __mock_h__
 
 extern "C" {
-#include "usb_host.h"
+#include "usb/usb_host.h"
 }
 
 extern struct usb_host* usb_host;

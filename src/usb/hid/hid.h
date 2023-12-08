@@ -8,7 +8,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "usb_host.h"
+#include "../usb_host.h"
 
 enum {
   HID_TYPE_UNKNOWN,

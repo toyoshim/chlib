@@ -4,9 +4,9 @@
 
 #include "usb_host.h"
 
-#include "ch559.h"
-#include "io.h"
-#include "serial.h"
+#include "../ch559.h"
+#include "../io.h"
+#include "../serial.h"
 #include "usb.h"
 
 // #define _USB_HOST_DBG_LOG

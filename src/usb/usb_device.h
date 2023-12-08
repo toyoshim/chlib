@@ -7,7 +7,7 @@
 
 #include <stdint.h>
 
-#include "interrupt.h"
+#include "../interrupt.h"
 
 extern void usb_int(void) __interrupt(INT_NO_USB) __using(1);
 

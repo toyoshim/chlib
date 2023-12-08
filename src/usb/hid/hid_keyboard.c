@@ -4,8 +4,8 @@
 
 #include "hid_keyboard.h"
 
+#include "../usb.h"
 #include "hid.h"
-#include "usb.h"
 
 static bool check(uint8_t any_class,
                   uint8_t any_subclass,

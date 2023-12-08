@@ -6,7 +6,9 @@
 
 #include <string.h>
 
-#include "ch559.h"
+#include "../../ch559.h"
+#include "../../serial.h"
+#include "../usb.h"
 #if !defined(_HID_NO_PS3)
 #include "hid_dualshock3.h"
 #endif
@@ -26,8 +28,6 @@
 #if !defined(_HID_NO_XBOX)
 #include "hid_xbox.h"
 #endif
-#include "serial.h"
-#include "usb.h"
 
 // #define _DBG_DESC
 // #define _DBG_HID_REPORT_DESC

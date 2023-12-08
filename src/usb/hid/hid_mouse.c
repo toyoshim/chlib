@@ -4,9 +4,9 @@
 
 #include "hid_mouse.h"
 
+#include "../usb.h"
 #include "hid.h"
 #include "hid_internal.h"
-#include "usb.h"
 
 static bool check(uint8_t any_class,
                   uint8_t any_subclass,

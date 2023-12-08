@@ -9,7 +9,7 @@
 #include <stdint.h>
 
 // Should be included from the main source file to set up interrupt handler.
-#include "timer3.h"
+#include "../timer3.h"
 #include "usb.h"
 
 enum {

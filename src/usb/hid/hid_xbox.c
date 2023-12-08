@@ -4,9 +4,9 @@
 
 #include "hid_xbox.h"
 
+#include "../usb.h"
 #include "hid.h"
 #include "hid_internal.h"
-#include "usb.h"
 
 // state
 enum {

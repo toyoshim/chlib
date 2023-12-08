@@ -21,7 +21,13 @@ clean:
 build:
 	mkdir -p build
 
-build/%.rel: src/%.c src/*.h
+build/%.rel: src/%.c src/*.h src/usb/*.h src/usb/hid/*.h
+	$(CC) -c $(CFLAGS) $(DEFINES) -o $@ $<
+
+build/%.rel: src/usb/%.c src/*.h src/usb/*.h src/usb/hid/*.h
+	$(CC) -c $(CFLAGS) $(DEFINES) -o $@ $<
+
+build/%.rel: src/usb/hid/%.c src/*.h src/usb/*.h src/usb/hid/*.h
 	$(CC) -c $(CFLAGS) $(DEFINES) -o $@ $<
 
 build/$(TARGET).ihx: $(addprefix build/,$(OBJS))

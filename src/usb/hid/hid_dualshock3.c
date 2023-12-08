@@ -4,10 +4,9 @@
 
 #include "hid_dualshock3.h"
 
+#include "../usb.h"
 #include "hid.h"
 #include "hid_internal.h"
-#include "serial.h"
-#include "usb.h"
 
 static struct usb_setup_req hid_set_idle_descriptor = {
     USB_REQ_DIR_OUT | USB_REQ_TYPE_CLASS | USB_REQ_RECPT_INTERFACE,
