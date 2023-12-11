@@ -71,11 +71,7 @@ uint16_t timer3_tick_raw(void) {
 }
 
 uint16_t timer3_tick_from_usec(uint16_t usec) {
-  uint16_t x16 = usec * 16;
-  uint16_t tick = x16 / 1000;
-  if (x16 % 1000)
-    tick++;
-  return tick;
+  return usec >> 6;
 }
 
 uint16_t timer3_tick_msec(void) {
