@@ -343,12 +343,12 @@ static bool state_connect(uint8_t hub) {
 }
 
 static bool state_reset(uint8_t hub) {
-  // Stop resetting, and wait >250us.
+  // Stop resetting, and wait 1ms (>250us).
   if (!hub)
     UHUB0_CTRL &= ~bUH_BUS_RESET;
   else
     UHUB1_CTRL &= ~bUH_BUS_RESET;
-  delay_us(hub, 500, STATE_ENABLE);
+  delay_us(hub, 1000, STATE_ENABLE);
   return false;
 }
 
@@ -369,8 +369,8 @@ static bool state_enable(uint8_t hub) {
       UHUB1_CTRL |= bUH_LOW_SPEED;
     UHUB1_CTRL |= bUH_PORT_EN;
   }
-  // Wait >200us.
-  delay_us(hub, 250,
+  // Wait 1ms (>200us).
+  delay_us(hub, 1000,
            initial_check[hub] ? STATE_GET_DEVICE_DESC : STATE_SET_ADDRESS);
   return false;
 }
@@ -389,8 +389,8 @@ static bool state_set_address(uint8_t hub) {
 static bool state_set_address_done(uint8_t hub) {
   unlock_transaction(hub);
   lock_transaction(hub, set_address_descriptor.wValue);
-  // Wait >2 ms
-  delay_ms(hub, 2, STATE_GET_DEVICE_DESC);
+  // Wait 5ms (>2ms)
+  delay_ms(hub, 5, STATE_GET_DEVICE_DESC);
   return false;
 }
 
