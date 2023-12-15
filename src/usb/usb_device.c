@@ -75,7 +75,6 @@ static uint8_t* get_buffer(uint8_t ep) {
 }
 
 static void bus_reset(void) {
-  state = UD_STATE_RESET;
   UEP0_CTRL = UEP_R_RES_ACK | UEP_T_RES_NAK;
   if (usb_device_flags & (UD_USE_EP1_OUT | UD_USE_EP1_IN)) {
     UEP1_CTRL = bUEP_AUTO_TOG | UEP_R_RES_ACK;
