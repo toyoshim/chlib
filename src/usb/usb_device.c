@@ -13,6 +13,7 @@
 
 static struct usb_device* usb_device = 0;
 static uint8_t usb_device_flags = 0;
+static uint8_t state = UD_STATE_IDLE;
 
 static const uint8_t ep0_size = 64;
 static uint8_t _ep0_buffer[64 + 2 + 1];  // EP0 buffer size 64
@@ -74,6 +75,7 @@ static uint8_t* get_buffer(uint8_t ep) {
 }
 
 static void bus_reset(void) {
+  state = UD_STATE_RESET;
   UEP0_CTRL = UEP_R_RES_ACK | UEP_T_RES_NAK;
   if (usb_device_flags & (UD_USE_EP1_OUT | UD_USE_EP1_IN)) {
     UEP1_CTRL = bUEP_AUTO_TOG | UEP_R_RES_ACK;
@@ -132,6 +134,7 @@ static void get_descriptor(void) {
   // Peek outgoing descrirptors to know if the device is HID or not.
   // TODO: move to dedicated file, hid_device.c.
   if (type == USB_DESC_DEVICE) {
+    state = UD_STATE_SETUP;
     const struct usb_desc_device* device = (const struct usb_desc_device*)desc;
     is_hid = device->bDeviceClass == USB_CLASS_HID;
   } else if (type == USB_DESC_CONFIGURATION) {
@@ -180,6 +183,7 @@ static void setup(void) {
         return;
       case USB_SET_CONFIGURATION:
         ep0_send(0, 0);
+        state = UD_STATE_READY;
         return;
       default:
         break;
@@ -409,4 +413,8 @@ void usb_device_init(struct usb_device* device, uint8_t flags) {
   USB_INT_EN = bUIE_TRANSFER | bUIE_BUS_RST;
   IE_USB = 1;  // Enable USB interrupts
   EA = 1;      // Enable interrupts
+}
+
+uint8_t usb_device_get_state(void) {
+  return state;
 }

@@ -29,8 +29,14 @@ enum {
   UD_USE_EP1_IN = 1 << 4,
   UD_USE_EP2_IN = 1 << 5,
   UD_USE_EP3_IN = 1 << 6,
+
+  UD_STATE_IDLE = 0,
+  UD_STATE_RESET = 1,
+  UD_STATE_SETUP = 2,
+  UD_STATE_READY = 3,
 };
 
 void usb_device_init(struct usb_device* device, uint8_t flags);
+uint8_t usb_device_state(void);
 
 #endif  // __usb_device_h__
