@@ -7,7 +7,6 @@
 #include <string.h>
 
 #include "../../ch559.h"
-#include "../../serial.h"
 #include "../usb.h"
 #if !defined(_HID_NO_PS3)
 #include "hid_dualshock3.h"
@@ -29,6 +28,7 @@
 #include "hid_xbox.h"
 #endif
 
+// #include "../../serial.h"
 // #define _DBG_DESC
 // #define _DBG_HID_REPORT_DESC
 // #define _DBG_HID_REPORT_DESC_DUMP
@@ -490,8 +490,12 @@ quit:
     hid_info[hub].axis[2] = 144;
     hid_info[hub].type = HID_TYPE_PS4;
   } else if (usb_info[hub].vid == 0x0f0d &&
-             (usb_info[hub].pid == 0x00a7 || usb_info[hub].pid == 0x00a8)) {
-    // HOLI Flight Stick [PS4] / [PS3]
+             (
+                 // HOLI Flight Stick [PS4] / [PS3]
+                 usb_info[hub].pid == 0x00a7 || usb_info[hub].pid == 0x00a8 ||
+                 // REAL ARCADE PRO.N HAYABUSA [PS4] / [PS3]
+                 usb_info[hub].pid == 0x00ac || usb_info[hub].pid == 0x00ad)) {
+    // Unknown report query is needed to escape from repeated device resets.
     hid_info[hub].state = HID_STATE_SET_IDLE;
     usb_info[hub].get_report_value = 0x0303;
     usb_info[hub].get_report_length = 0x30;
