@@ -4,6 +4,7 @@ test/*\.o
 test/out
 test/test
 test\.*
+*_example\.bin
 *\.asm
 *\.lst
 *\.rel
