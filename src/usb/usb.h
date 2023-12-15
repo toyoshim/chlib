@@ -79,6 +79,18 @@ struct usb_desc_endpoint {
   uint8_t bInterval;
 };
 
+struct usb_desc_qualifier {
+  uint8_t bLength;
+  uint8_t bDescriptorType;
+  uint16_t bcdUSB;
+  uint8_t bDeviceClass;
+  uint8_t bDeviceSubClass;
+  uint8_t bDeviceProtocol;
+  uint8_t bMaxPacketSize0;
+  uint8_t bNumConfigurations;
+  uint8_t bReserved;
+};
+
 struct usb_desc_hub {
   uint8_t bDescLength;
   uint8_t bDescriptorType;
@@ -125,6 +137,10 @@ enum {
   USB_HID_SET_IDLE = 0x0a,
   USB_HID_SET_PROTOCOL = 0x0b,
 
+  USB_CDC_SET_LINE_CODING = 0x20,
+  USB_CDC_GET_LINE_CODING = 0x21,
+  USB_CDC_SET_CONTROL_LINE_STATE = 0x22,
+
   // descriptor
   USB_DESC_DEVICE = 0x01,
   USB_DESC_CONFIGURATION = 0x02,
@@ -135,7 +151,14 @@ enum {
   USB_DESC_INTERFACE_ASSOCIATION = 0x0b,
   USB_DESC_HID = 0x21,
   USB_DESC_HID_REPORT = 0x22,
+  USB_DESC_CS_INTERFACE = 0x24,
   USB_DESC_HUB = 0x29,
+
+  // descriptor subtype
+  USB_DESC_SUB_CS_HEADER = 0x00,
+  USB_DESC_SUB_CS_CALL = 0x01,
+  USB_DESC_SUB_CS_ACM = 0x02,
+  USB_DESC_SUB_CS_UNION = 0x06,
 
   // feature selector
   USB_FEATURE_PORT_RESET = 0x04,
@@ -158,11 +181,14 @@ enum {
   USB_CLASS_CDC = 0x02,
   USB_CLASS_HID = 0x03,
   USB_CLASS_HUB = 0x09,
+  USB_CLASS_CDC_DATA = 0x0a,
 
   // subclass
+  USB_CDC_SUBCLASS_ACM = 0x02,
   USB_HID_SUBCLASS_BOOT = 0x01,
 
   // protocol
+  USB_CDC_PROTOCOL_AT = 0x01,
   USB_HID_PROTOCOL_KEYBOARD = 0x01,
   USB_HID_PROTOCOL_MOUSE = 0x02,
 };

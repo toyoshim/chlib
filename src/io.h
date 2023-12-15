@@ -260,8 +260,11 @@ enum {
   bUD_DM_PD_DIS = 0x10,    // UDEV_CTRL, Disable USB DM pull-down register
   bUD_DP_PD_DIS = 0x20,    // UDEV_CTRL, Disable USB DP pull-down register
   bUEP1_TX_EN = 0x40,      // UEP4_1_MOD, Enable USB endpoint 1 transmittal
+  bUEP1_RX_EN = 0x80,      // UEP4_1_MOD, Enable USB endpoint 1 receiving
   bUEP2_TX_EN = 0x04,      // UEP2_3_MOD, Enable USB endpoint 2 transmittal
+  bUEP2_RX_EN = 0x08,      // UEP2_3_MOD, Enable USB endpoint 2 receiving
   bUEP3_TX_EN = 0x40,      // UEP2_3_MOD, Enable USB endpoint 3 transmittal
+  bUEP3_RX_EN = 0x80,      // UEP2_3_MOD, Enable USB endpoint 3 receiving
   bUH_EP_RX_EN = 0x08,     // UH_EP_MOD, Enable USB host endpoint receiving
   bUH_EP_TX_EN = 0x40,     // UH_EP_MOD, Enable USB host endpoint transmittal
   bADC_IF_ACT = 0x10,      // ADC_STAT, ADC finished flag

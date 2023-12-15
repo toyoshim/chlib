@@ -3,11 +3,13 @@
 // found in the LICENSE file.
 
 #include "usb_device.h"
+#include <stdint.h>
 
 #include "../ch559.h"
 #include "../io.h"
 #include "../serial.h"
-#include "usb.h"
+
+#define NOTREACHED(e) halt(e)
 
 static struct usb_device* usb_device = 0;
 static uint8_t usb_device_flags = 0;
@@ -28,8 +30,11 @@ static uint8_t sending_data_len = 0;
 
 static bool is_hid = false;
 
-static void halt(const char* token) {
-  Serial.println(token);
+static void halt(const char* message) {
+#if 1
+  message;
+#else
+  Serial.printf("HALT: %s\n", message);
   Serial.print("type: ");
   Serial.printc(last_setup_req.bRequestType, HEX);
   Serial.println("");
@@ -38,27 +43,47 @@ static void halt(const char* token) {
   Serial.println("");
   Serial.print("value: ");
   Serial.printc(last_setup_req.wValue >> 8, HEX);
-  Serial.printc(last_setup_req.wValue, HEX);
+  Serial.printc(last_setup_req.wValue & 0xff, HEX);
   Serial.println("");
   Serial.print("index: ");
   Serial.printc(last_setup_req.wIndex >> 8, HEX);
-  Serial.printc(last_setup_req.wIndex, HEX);
+  Serial.printc(last_setup_req.wIndex & 0xff, HEX);
   Serial.println("");
   Serial.print("length: ");
   Serial.printc(last_setup_req.wLength >> 8, HEX);
-  Serial.printc(last_setup_req.wLength, HEX);
+  Serial.printc(last_setup_req.wLength & 0xff, HEX);
   Serial.println("");
   for (;;)
     ;
+#endif
 }
+
+static uint8_t* get_buffer(uint8_t ep) {
+  switch (ep) {
+    case 0:
+      return ep0_buffer;
+    case 1:
+      return ep1_buffer;
+    case 2:
+      return ep2_buffer;
+    case 3:
+      return ep3_buffer;
+    default:
+      return 0;
+  }
+}
+
 static void bus_reset(void) {
   UEP0_CTRL = UEP_R_RES_ACK | UEP_T_RES_NAK;
-  if (usb_device_flags & UD_USE_EP1)
+  if (usb_device_flags & (UD_USE_EP1_OUT | UD_USE_EP1_IN)) {
     UEP1_CTRL = bUEP_AUTO_TOG | UEP_R_RES_ACK;
-  if (usb_device_flags & UD_USE_EP2)
+  }
+  if (usb_device_flags & (UD_USE_EP2_OUT | UD_USE_EP2_IN)) {
     UEP2_CTRL = bUEP_AUTO_TOG | UEP_R_RES_ACK;
-  if (usb_device_flags & UD_USE_EP3)
+  }
+  if (usb_device_flags & (UD_USE_EP3_OUT | UD_USE_EP3_IN)) {
     UEP3_CTRL = bUEP_AUTO_TOG | UEP_R_RES_ACK;
+  }
   USB_DEV_AD = 0x00;
 }
 
@@ -68,9 +93,11 @@ static void stall(void) {
 
 static void ep0_send(uint8_t len, const uint8_t* data) {
   uint8_t transfer_len = (len <= ep0_size) ? len : ep0_size;
-  if (data)
-    for (uint8_t i = 0; i < transfer_len; ++i)
+  if (data) {
+    for (uint8_t i = 0; i < transfer_len; ++i) {
       ep0_buffer[i] = data[i];
+    }
+  }
   UEP0_T_LEN = transfer_len;
   UEP0_CTRL = bUEP_R_TOG | bUEP_T_TOG | UEP_R_RES_ACK | UEP_T_RES_ACK;
   sending_data_ptr = &data[transfer_len];
@@ -80,8 +107,9 @@ static void ep0_send(uint8_t len, const uint8_t* data) {
 static void ep0_cont(void) {
   uint8_t transfer_len =
       (sending_data_len <= ep0_size) ? sending_data_len : ep0_size;
-  for (uint8_t i = 0; i < transfer_len; ++i)
+  for (uint8_t i = 0; i < transfer_len; ++i) {
     ep0_buffer[i] = sending_data_ptr[i];
+  }
   UEP0_T_LEN = transfer_len;
   UEP0_CTRL ^= bUEP_T_TOG;
   sending_data_ptr += transfer_len;
@@ -92,17 +120,17 @@ static void get_descriptor(void) {
   uint8_t type = last_setup_req.wValue >> 8;
   uint8_t no = last_setup_req.wValue & 0xff;
   uint8_t size = usb_device->get_descriptor_size(type, no);
-  if (0 == size && type == USB_DESC_DEVICE_QUALIFIER) {
-    stall();
+  if (0 == size) {
+    NOTREACHED("unknown descriptor");
     return;
   }
-  if (0 == size)
-    halt("get_descriptor");
-  if (size > last_setup_req.wLength)
+  if (size > last_setup_req.wLength) {
     size = last_setup_req.wLength;
+  }
   const char* desc = usb_device->get_descriptor(type, no);
 
   // Peek outgoing descrirptors to know if the device is HID or not.
+  // TODO: move to dedicated file, hid_device.c.
   if (type == USB_DESC_DEVICE) {
     const struct usb_desc_device* device = (const struct usb_desc_device*)desc;
     is_hid = device->bDeviceClass == USB_CLASS_HID;
@@ -110,8 +138,8 @@ static void get_descriptor(void) {
     for (uint8_t i = 0; i < size;) {
       const struct usb_desc_head* head =
           (const struct usb_desc_head*)(desc + i);
+      i += head->bLength;
       if (head->bDescriptorType != USB_DESC_INTERFACE) {
-        i += head->bLength;
         continue;
       }
       const struct usb_desc_interface* interface =
@@ -128,36 +156,32 @@ static void get_descriptor(void) {
 
 static void setup(void) {
   if (USB_RX_LEN != sizeof(struct usb_setup_req)) {
-    Serial.println("unexpected size");
-    stall();
+    NOTREACHED("unexpected request size");
     return;
   }
   struct usb_setup_req* req = (struct usb_setup_req*)ep0_buffer;
+  last_setup_req = *req;
   if ((req->bRequestType & USB_REQ_TYPE_MASK) == USB_REQ_TYPE_STANDARD) {
     switch (req->bRequest) {
       case USB_GET_STATUS:
         ep0_send(2, "\0\0");
-        break;
+        return;
       case USB_SET_FEATURE:
         ep0_send(0, 0);
-        break;
+        return;
       case USB_SET_ADDRESS:
-        last_setup_req = *req;
         ep0_send(0, 0);
-        break;
+        return;
       case USB_GET_DESCRIPTOR:
-        last_setup_req = *req;
         get_descriptor();
-        break;
+        return;
       case USB_GET_CONFIGURATION:
         ep0_send(1, "\0");
-        break;
+        return;
       case USB_SET_CONFIGURATION:
         ep0_send(0, 0);
-        break;
+        return;
       default:
-        last_setup_req = *req;
-        halt("setup");
         break;
     }
   } else if ((req->bRequestType & USB_REQ_TYPE_MASK) == USB_REQ_TYPE_CLASS &&
@@ -166,57 +190,94 @@ static void setup(void) {
       case USB_HID_GET_REPORT: {
         // Reuse ep_in for EP1 to obtain the report. This doesn't work in
         // complicated configuration such as one for a composite device.
-        uint8_t len = usb_device->ep_in(1, ep0_buffer);
+        uint8_t len;
+        usb_device->ep_in(1, ep0_buffer, &len);
         ep0_send(len, 0);
-        break;
+        return;
       }
       case USB_HID_SET_IDLE:
         // TODO: notify clients to ignore interrupt requests.
         ep0_send(0, 0);
-        break;
+        return;
       default:
-        last_setup_req = *req;
-        halt("not impl");
-        stall();
+        break;
     }
   } else {
-    Serial.println("not standard");
-    stall();
+    uint8_t len;
+    if (usb_device->setup && usb_device->setup(req, ep0_buffer, &len)) {
+      if ((last_setup_req.bRequestType & USB_REQ_DIR_MASK) == USB_REQ_DIR_IN) {
+        ep0_send(len, 0);
+      } else {
+        UEP0_CTRL = UEP_R_RES_NAK | UEP_T_RES_ACK;
+      }
+      return;
+    }
   }
+  NOTREACHED("setup");
 }
 
 void in(void) {
-  switch (last_setup_req.bRequest) {
-    case USB_SET_ADDRESS:
+  if ((last_setup_req.bRequestType & USB_REQ_TYPE_MASK) ==
+      USB_REQ_TYPE_STANDARD) {
+    if (last_setup_req.bRequest == USB_SET_ADDRESS) {
       USB_DEV_AD = last_setup_req.wValue;
       UEP0_CTRL = UEP_R_RES_ACK | UEP_T_RES_NAK;
-      break;
-    case USB_GET_DESCRIPTOR:
+      return;
+    }
+    if ((last_setup_req.bRequestType & USB_REQ_DIR_MASK) == USB_REQ_DIR_IN) {
       ep0_cont();
-      break;
-    default:
-      halt("in");
-      break;
+      return;
+    } else {
+      return;
+    }
+  } else {
+    if (usb_device->ep_in) {
+      if ((last_setup_req.bRequestType & USB_REQ_DIR_MASK) == USB_REQ_DIR_IN) {
+        NOTREACHED("not impl");
+      } else {
+        UEP0_CTRL = UEP_R_RES_NAK | UEP_T_RES_ACK;
+      }
+      return;
+    }
   }
+  NOTREACHED("in0");
 }
 
 void out(void) {
-  switch (last_setup_req.bRequest) {
-    case USB_GET_DESCRIPTOR:
+  if ((last_setup_req.bRequestType & USB_REQ_TYPE_MASK) ==
+      USB_REQ_TYPE_STANDARD) {
+    if ((last_setup_req.bRequestType & USB_REQ_DIR_MASK) == USB_REQ_DIR_IN) {
+      // Status Out
       UEP0_CTRL = UEP_R_RES_ACK | UEP_T_RES_NAK;
-      break;
-    default:
-      halt("out");
-      break;
+      return;
+    }
+    NOTREACHED("out0 standard");
+  } else {
+    bool result = false;
+    if (usb_device->ep_out) {
+      result = usb_device->ep_out(0, ep0_buffer, USB_RX_LEN);
+    }
+    if (!result) {
+      NOTREACHED("out0");
+    }
+    if ((last_setup_req.bRequestType & USB_REQ_DIR_MASK) == USB_REQ_DIR_IN) {
+      // Status Out
+      UEP0_CTRL = UEP_R_RES_ACK | UEP_T_RES_NAK;
+    } else {
+      ep0_send(0, 0);
+    }
   }
 }
 
 void in_ep(uint8_t ep) {
   uint8_t len = 0;
+  bool result = false;
   if (usb_device->ep_in) {
-    len = usb_device->ep_in(ep, (ep == 1)   ? ep1_buffer
-                                : (ep == 2) ? ep2_buffer
-                                            : ep3_buffer);
+    result = usb_device->ep_in(ep, get_buffer(ep), &len);
+  }
+  if (!result) {
+    NOTREACHED("in");
+    return;
   }
   if (ep == 1) {
     UEP1_T_LEN = len;
@@ -226,6 +287,27 @@ void in_ep(uint8_t ep) {
     UEP2_CTRL = UEP2_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;
   } else {
     UEP3_T_LEN = len;
+    UEP3_CTRL = UEP3_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;
+  }
+}
+
+void out_ep(uint8_t ep) {
+  bool result = false;
+  if (usb_device->ep_out) {
+    result = usb_device->ep_out(ep, get_buffer(ep), USB_RX_LEN);
+  }
+  if (!result) {
+    NOTREACHED("out_ep");
+    return;
+  }
+  if (ep == 1) {
+    UEP1_T_LEN = 0;
+    UEP1_CTRL = UEP1_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;
+  } else if (ep == 2) {
+    UEP2_T_LEN = 0;
+    UEP2_CTRL = UEP2_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;
+  } else {
+    UEP3_T_LEN = 0;
     UEP3_CTRL = UEP3_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;
   }
 }
@@ -250,12 +332,11 @@ void usb_int(void) __interrupt(INT_NO_USB) __using(1) {
           case UIS_TOKEN_IN:
             in_ep(usb_int_st & MASK_UIS_ENDP);
             break;
+          case UIS_TOKEN_OUT:
+            out_ep(usb_int_st & MASK_UIS_ENDP);
+            break;
           default:
-            Serial.print("USB_INT_ST: ");
-            Serial.printc(usb_int_st, HEX);
-            Serial.println("");
-            for (;;)
-              ;
+            NOTREACHED("Unexpected token");
             break;
         }
         break;
@@ -266,7 +347,7 @@ void usb_int(void) __interrupt(INT_NO_USB) __using(1) {
     UIF_TRANSFER = 0;
     UIF_BUS_RST = 0;
   } else {
-    Serial.println("usb_int: unknown reason");
+    NOTREACHED("usb_int: unknown reason");
   }
 }
 
@@ -275,35 +356,48 @@ void usb_device_init(struct usb_device* device, uint8_t flags) {
   usb_device_flags = flags;
 
   // DMA addresses must be even
-  if ((uint16_t)ep0_buffer & 1)
+  if ((uint16_t)ep0_buffer & 1) {
     ep0_buffer++;
-  if ((uint16_t)ep1_buffer & 1)
+  }
+  if ((uint16_t)ep1_buffer & 1) {
     ep1_buffer++;
-  if ((uint16_t)ep2_buffer & 1)
+  }
+  if ((uint16_t)ep2_buffer & 1) {
     ep2_buffer++;
-  if ((uint16_t)ep3_buffer & 1)
+  }
+  if ((uint16_t)ep3_buffer & 1) {
     ep3_buffer++;
+  }
   IE_USB = 0;       // Disable USB interrupts
   USB_CTRL = 0x00;  // Device, full speed, disble, no pu--up, no pause, no DMA
   UEP4_1_MOD = 0;
-  if (flags & UD_USE_EP1)
+  if (flags & UD_USE_EP1_OUT) {
     UEP4_1_MOD |= bUEP1_TX_EN;
+  } else if (flags & UD_USE_EP1_IN) {
+    UEP4_1_MOD |= bUEP1_RX_EN;
+  }
   UEP2_3_MOD = 0;
-  if (flags & UD_USE_EP2)
+  if (flags & UD_USE_EP2_OUT) {
     UEP2_3_MOD |= bUEP2_TX_EN;
-  if (flags & UD_USE_EP3)
+  } else if (flags & UD_USE_EP2_IN) {
+    UEP2_3_MOD |= bUEP2_RX_EN;
+  }
+  if (flags & UD_USE_EP3_OUT) {
     UEP2_3_MOD |= bUEP3_TX_EN;
+  } else if (flags & UD_USE_EP3_IN) {
+    UEP2_3_MOD |= bUEP3_RX_EN;
+  }
   UEP0_DMA_H = (uint16_t)ep0_buffer >> 8;
   UEP0_DMA_L = (uint16_t)ep0_buffer & 0xff;
-  if (flags & UD_USE_EP1) {
+  if (flags & (UD_USE_EP1_OUT | UD_USE_EP1_IN)) {
     UEP1_DMA_H = (uint16_t)ep1_buffer >> 8;
     UEP1_DMA_L = (uint16_t)ep1_buffer & 0xff;
   }
-  if (flags & UD_USE_EP2) {
+  if (flags & (UD_USE_EP2_OUT | UD_USE_EP2_IN)) {
     UEP2_DMA_H = (uint16_t)ep2_buffer >> 8;
     UEP2_DMA_L = (uint16_t)ep2_buffer & 0xff;
   }
-  if (flags & UD_USE_EP3) {
+  if (flags & (UD_USE_EP3_OUT | UD_USE_EP3_IN)) {
     UEP3_DMA_H = (uint16_t)ep3_buffer >> 8;
     UEP3_DMA_L = (uint16_t)ep3_buffer & 0xff;
   }
