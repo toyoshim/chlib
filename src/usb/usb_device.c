@@ -415,6 +415,6 @@ void usb_device_init(struct usb_device* device, uint8_t flags) {
   EA = 1;      // Enable interrupts
 }
 
-uint8_t usb_device_get_state(void) {
+uint8_t usb_device_state(void) {
   return state;
 }
