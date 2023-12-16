@@ -14,14 +14,14 @@ static uint8_t ie;
 static uint16_t exclusive_time_raw = 0;
 static uint16_t last_access_time;
 
-static void wait_posedge() {
+static void wait_posedge(void) {
   while (SCL_BIT)
     ;
   while (!SCL_BIT)
     ;
 }
 
-static void wait_negedge() {
+static void wait_negedge(void) {
   while (!SCL_BIT)
     ;
   while (SCL_BIT)
