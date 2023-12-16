@@ -75,13 +75,13 @@ static uint8_t* get_buffer(uint8_t ep) {
 static void bus_reset(void) {
   UEP0_CTRL = UEP_R_RES_ACK | UEP_T_RES_NAK;
   if (usb_device_flags & (UD_USE_EP1_OUT | UD_USE_EP1_IN)) {
-    UEP1_CTRL = bUEP_AUTO_TOG | UEP_R_RES_ACK;
+    UEP1_CTRL = bUEP_AUTO_TOG | UEP_R_RES_ACK | UEP_T_RES_ACK;
   }
   if (usb_device_flags & (UD_USE_EP2_OUT | UD_USE_EP2_IN)) {
-    UEP2_CTRL = bUEP_AUTO_TOG | UEP_R_RES_ACK;
+    UEP2_CTRL = bUEP_AUTO_TOG | UEP_R_RES_ACK | UEP_T_RES_ACK;
   }
   if (usb_device_flags & (UD_USE_EP3_OUT | UD_USE_EP3_IN)) {
-    UEP3_CTRL = bUEP_AUTO_TOG | UEP_R_RES_ACK;
+    UEP3_CTRL = bUEP_AUTO_TOG | UEP_R_RES_ACK | UEP_T_RES_ACK;
   }
   USB_DEV_AD = 0x00;
 }
@@ -110,7 +110,7 @@ static void ep0_cont(void) {
     ep0_buffer[i] = sending_data_ptr[i];
   }
   UEP0_T_LEN = transfer_len;
-  UEP0_CTRL ^= bUEP_T_TOG;
+  UEP0_CTRL ^= (bUEP_R_TOG | bUEP_T_TOG);
   sending_data_ptr += transfer_len;
   sending_data_len -= transfer_len;
 }
@@ -186,14 +186,14 @@ void in(void) {
     ep0_cont();
   } else {
     // Status Out
-    UEP0_CTRL = UEP_R_RES_NAK | UEP_T_RES_ACK;
+    UEP0_CTRL = UEP_R_RES_ACK | UEP_T_RES_NAK;
   }
 }
 
 void out(void) {
   if ((last_setup_req.bRequestType & USB_REQ_DIR_MASK) == USB_REQ_DIR_IN) {
     // Status Out
-    UEP0_CTRL = UEP_R_RES_ACK | UEP_T_RES_NAK;
+    UEP0_CTRL = UEP_R_RES_ACK | UEP_T_RES_NAK;  // Might be wrong?
     return;
   }
   if ((last_setup_req.bRequestType & USB_REQ_TYPE_MASK) ==
@@ -207,11 +207,12 @@ void out(void) {
     if (!result) {
       NOTREACHED("out0");
     }
-    ep0_send(0, 0);
+    UEP0_CTRL ^= bUEP_R_TOG;
   }
 }
 
 void ep_in(uint8_t ep) {
+  // Consider only single data transaction
   uint8_t len = 0;
   bool result = false;
   if (usb_device->ep_in) {
@@ -222,17 +223,18 @@ void ep_in(uint8_t ep) {
   }
   if (ep == 1) {
     UEP1_T_LEN = len;
-    UEP1_CTRL = UEP1_CTRL & ~MASK_UEP_R_RES | UEP_R_RES_ACK;
+    UEP1_CTRL = bUEP_R_TOG | bUEP_T_TOG | UEP_R_RES_ACK | UEP_T_RES_ACK;
   } else if (ep == 2) {
     UEP2_T_LEN = len;
-    UEP2_CTRL = UEP2_CTRL & ~MASK_UEP_R_RES | UEP_R_RES_ACK;
+    UEP2_CTRL = bUEP_R_TOG | bUEP_T_TOG | UEP_R_RES_ACK | UEP_T_RES_ACK;
   } else {
     UEP3_T_LEN = len;
-    UEP3_CTRL = UEP3_CTRL & ~MASK_UEP_R_RES | UEP_R_RES_ACK;
+    UEP3_CTRL = bUEP_R_TOG | bUEP_T_TOG | UEP_R_RES_ACK | UEP_T_RES_ACK;
   }
 }
 
 void ep_out(uint8_t ep) {
+  // Consider only single data transaction
   bool result = false;
   if (usb_device->ep_out) {
     result = usb_device->ep_out(ep, get_buffer(ep), USB_RX_LEN);
@@ -242,13 +244,13 @@ void ep_out(uint8_t ep) {
   }
   if (ep == 1) {
     UEP1_T_LEN = 0;
-    UEP1_CTRL = UEP1_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;
+    UEP1_CTRL ^= bUEP_R_TOG;
   } else if (ep == 2) {
     UEP2_T_LEN = 0;
-    UEP2_CTRL = UEP2_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;
+    UEP2_CTRL ^= bUEP_R_TOG;
   } else {
     UEP3_T_LEN = 0;
-    UEP3_CTRL = UEP3_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;
+    UEP3_CTRL ^= bUEP_R_TOG;
   }
 }
 
@@ -312,20 +314,20 @@ void usb_device_init(struct usb_device* device, uint8_t flags) {
   USB_CTRL = 0x00;  // Device, full speed, disble, no pu--up, no pause, no DMA
   UEP4_1_MOD = 0;
   if (flags & UD_USE_EP1_OUT) {
-    UEP4_1_MOD |= bUEP1_TX_EN;
-  } else if (flags & UD_USE_EP1_IN) {
     UEP4_1_MOD |= bUEP1_RX_EN;
+  } else if (flags & UD_USE_EP1_IN) {
+    UEP4_1_MOD |= bUEP1_TX_EN;
   }
   UEP2_3_MOD = 0;
   if (flags & UD_USE_EP2_OUT) {
-    UEP2_3_MOD |= bUEP2_TX_EN;
-  } else if (flags & UD_USE_EP2_IN) {
     UEP2_3_MOD |= bUEP2_RX_EN;
+  } else if (flags & UD_USE_EP2_IN) {
+    UEP2_3_MOD |= bUEP2_TX_EN;
   }
   if (flags & UD_USE_EP3_OUT) {
-    UEP2_3_MOD |= bUEP3_TX_EN;
-  } else if (flags & UD_USE_EP3_IN) {
     UEP2_3_MOD |= bUEP3_RX_EN;
+  } else if (flags & UD_USE_EP3_IN) {
+    UEP2_3_MOD |= bUEP3_TX_EN;
   }
   UEP0_DMA_H = (uint16_t)ep0_buffer >> 8;
   UEP0_DMA_L = (uint16_t)ep0_buffer & 0xff;

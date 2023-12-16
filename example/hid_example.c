@@ -195,7 +195,6 @@ static const uint8_t* get_descriptor(uint8_t type, uint8_t no) {
 }
 
 static void get_report(uint8_t* buffer, uint8_t* len) {
-  Serial.println("get_report");
   buffer[0] = 0;
   buffer[1] = 0;
   buffer[2] = 0;
