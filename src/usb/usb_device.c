@@ -73,15 +73,16 @@ static uint8_t* get_buffer(uint8_t ep) {
 }
 
 static void bus_reset(void) {
+  // ACK for SETUP and OUT, NAK for IN.
   UEP0_CTRL = UEP_R_RES_ACK | UEP_T_RES_NAK;
   if (usb_device_flags & (UD_USE_EP1_OUT | UD_USE_EP1_IN)) {
-    UEP1_CTRL = bUEP_AUTO_TOG | UEP_R_RES_ACK | UEP_T_RES_ACK;
+    UEP1_CTRL = bUEP_AUTO_TOG | UEP_R_RES_ACK | UEP_T_RES_NAK;
   }
   if (usb_device_flags & (UD_USE_EP2_OUT | UD_USE_EP2_IN)) {
-    UEP2_CTRL = bUEP_AUTO_TOG | UEP_R_RES_ACK | UEP_T_RES_ACK;
+    UEP2_CTRL = bUEP_AUTO_TOG | UEP_R_RES_ACK | UEP_T_RES_NAK;
   }
   if (usb_device_flags & (UD_USE_EP3_OUT | UD_USE_EP3_IN)) {
-    UEP3_CTRL = bUEP_AUTO_TOG | UEP_R_RES_ACK | UEP_T_RES_ACK;
+    UEP3_CTRL = bUEP_AUTO_TOG | UEP_R_RES_ACK | UEP_T_RES_NAK;
   }
   USB_DEV_AD = 0x00;
 }
@@ -193,7 +194,7 @@ void in(void) {
 void out(void) {
   if ((last_setup_req.bRequestType & USB_REQ_DIR_MASK) == USB_REQ_DIR_IN) {
     // Status Out
-    UEP0_CTRL = UEP_R_RES_ACK | UEP_T_RES_NAK;  // Might be wrong?
+    UEP0_CTRL = UEP_R_RES_ACK | UEP_T_RES_NAK;
     return;
   }
   if ((last_setup_req.bRequestType & USB_REQ_TYPE_MASK) ==
@@ -223,13 +224,13 @@ void ep_in(uint8_t ep) {
   }
   if (ep == 1) {
     UEP1_T_LEN = len;
-    UEP1_CTRL = bUEP_R_TOG | bUEP_T_TOG | UEP_R_RES_ACK | UEP_T_RES_ACK;
+    UEP1_CTRL = UEP1_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;
   } else if (ep == 2) {
     UEP2_T_LEN = len;
-    UEP2_CTRL = bUEP_R_TOG | bUEP_T_TOG | UEP_R_RES_ACK | UEP_T_RES_ACK;
+    UEP2_CTRL = UEP2_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;
   } else {
     UEP3_T_LEN = len;
-    UEP3_CTRL = bUEP_R_TOG | bUEP_T_TOG | UEP_R_RES_ACK | UEP_T_RES_ACK;
+    UEP3_CTRL = UEP3_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;
   }
 }
 

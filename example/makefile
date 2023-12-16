@@ -8,7 +8,7 @@ DEFINES	= \
 .PHONY: all clean build
 
 all: build i2c_example.bin cdc_example.bin hid_example.bin
-	ch559flasher -w hid_example.bin
+	ch559flasher -w cdc_example.bin
 
 clean:
 	rm -rf build *.bin
