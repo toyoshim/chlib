@@ -17,7 +17,6 @@ struct usb_device {
   uint8_t (*get_descriptor_size)(uint8_t type, uint8_t no);
   const uint8_t* (*get_descriptor)(uint8_t type, uint8_t no);
   bool (*setup)(const struct usb_setup_req* req, uint8_t* buffer, uint8_t* len);
-  bool (*ep_in)(uint8_t no, uint8_t* buffer, uint8_t* len);
   bool (*ep_out)(uint8_t no, const uint8_t* buffer, uint8_t len);
 };
 
@@ -38,5 +37,7 @@ enum {
 
 void usb_device_init(struct usb_device* device, uint8_t flags);
 uint8_t usb_device_state(void);
+bool usb_device_is_ready_to_send(uint8_t ep);
+void usb_device_send(uint8_t ep, const uint8_t* buffer, uint8_t len);
 
 #endif  // __usb_device_h__

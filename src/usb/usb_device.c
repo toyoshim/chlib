@@ -213,24 +213,15 @@ void out(void) {
 }
 
 void ep_in(uint8_t ep) {
-  // Consider only single data transaction
-  uint8_t len = 0;
-  bool result = false;
-  if (usb_device->ep_in) {
-    result = usb_device->ep_in(ep, get_buffer(ep), &len);
-  }
-  if (!result) {
-    NOTREACHED("ep_in");
-  }
   if (ep == 1) {
-    UEP1_T_LEN = len;
-    UEP1_CTRL = UEP1_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;
+    UEP1_T_LEN = 0;
+    UEP1_CTRL = UEP1_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_NAK;
   } else if (ep == 2) {
-    UEP2_T_LEN = len;
-    UEP2_CTRL = UEP2_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;
+    UEP2_T_LEN = 0;
+    UEP2_CTRL = UEP2_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_NAK;
   } else {
-    UEP3_T_LEN = len;
-    UEP3_CTRL = UEP3_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;
+    UEP3_T_LEN = 0;
+    UEP3_CTRL = UEP3_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_NAK;
   }
 }
 
@@ -356,4 +347,43 @@ void usb_device_init(struct usb_device* device, uint8_t flags) {
 
 uint8_t usb_device_state(void) {
   return state;
+}
+
+bool usb_device_is_ready_to_send(uint8_t ep) {
+  switch (ep) {
+    case 0:
+      return (UEP0_CTRL & MASK_UEP_T_RES) != UEP_T_RES_ACK;
+    case 1:
+      return (UEP1_CTRL & MASK_UEP_T_RES) != UEP_T_RES_ACK;
+    case 2:
+      return (UEP2_CTRL & MASK_UEP_T_RES) != UEP_T_RES_ACK;
+    case 3:
+      return (UEP3_CTRL & MASK_UEP_T_RES) != UEP_T_RES_ACK;
+  }
+  return false;
+}
+
+void usb_device_send(uint8_t ep, const uint8_t* data, uint8_t len) {
+  uint8_t* buffer = get_buffer(ep);
+  for (uint8_t i = 0; i < len; ++i) {
+    buffer[i] = data[i];
+  }
+  switch (ep) {
+    case 0:
+      UEP0_T_LEN = len;
+      UEP0_CTRL = UEP0_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;
+      break;
+    case 1:
+      UEP1_T_LEN = len;
+      UEP1_CTRL = UEP1_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;
+      break;
+    case 2:
+      UEP2_T_LEN = len;
+      UEP2_CTRL = UEP2_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;
+      break;
+    case 3:
+      UEP3_T_LEN = len;
+      UEP3_CTRL = UEP3_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;
+      break;
+  }
 }

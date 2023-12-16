@@ -21,10 +21,10 @@ struct cdc_device {
 
   uint8_t (*get_string_length)(uint8_t no);
   const char*(get_string)(uint8_t no);
-  void (*send)(uint8_t* buffer, uint8_t* len);
   void (*recv)(const uint8_t* buffer, uint8_t len);
 };
 
 void cdc_device_init(struct cdc_device* device);
+void cdc_device_send(const uint8_t* buffer, uint8_t len);
 
 #endif  // __cdc_device_h__

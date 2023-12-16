@@ -255,17 +255,6 @@ static bool setup(const struct usb_setup_req* req,
   return false;
 }
 
-static bool ep_in(uint8_t no, uint8_t* buffer, uint8_t* len) {
-  if (no == 1) {
-    *len = 0;
-  } else if (no == 3) {
-    cdc_device->send(buffer, len);
-  } else {
-    return false;
-  }
-  return true;
-}
-
 static bool ep_out(uint8_t no, const uint8_t* buffer, uint8_t len) {
   if (no == 0) {
     switch (last_request) {
@@ -309,8 +298,13 @@ void cdc_device_init(struct cdc_device* device) {
   usb_device.get_descriptor_size = get_descriptor_size;
   usb_device.get_descriptor = get_descriptor;
   usb_device.setup = setup;
-  usb_device.ep_in = ep_in;
   usb_device.ep_out = ep_out;
 
-  usb_device_init(&usb_device, UD_USE_EP1_OUT | UD_USE_EP2_IN | UD_USE_EP3_OUT);
+  usb_device_init(&usb_device, UD_USE_EP1_IN | UD_USE_EP2_OUT | UD_USE_EP3_IN);
+}
+
+void cdc_device_send(const uint8_t* buffer, uint8_t len) {
+  while (!usb_device_is_ready_to_send(3))
+    ;
+  usb_device_send(3, buffer, len);
 }
