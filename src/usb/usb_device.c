@@ -185,6 +185,7 @@ void in(void) {
   if ((last_setup_req.bRequestType & USB_REQ_DIR_MASK) == USB_REQ_DIR_IN) {
     ep0_cont();
   } else {
+    // Status Out
     UEP0_CTRL = UEP_R_RES_NAK | UEP_T_RES_ACK;
   }
 }
@@ -221,13 +222,13 @@ void ep_in(uint8_t ep) {
   }
   if (ep == 1) {
     UEP1_T_LEN = len;
-    UEP1_CTRL = UEP1_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;
+    UEP1_CTRL = UEP1_CTRL & ~MASK_UEP_R_RES | UEP_R_RES_ACK;
   } else if (ep == 2) {
     UEP2_T_LEN = len;
-    UEP2_CTRL = UEP2_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;
+    UEP2_CTRL = UEP2_CTRL & ~MASK_UEP_R_RES | UEP_R_RES_ACK;
   } else {
     UEP3_T_LEN = len;
-    UEP3_CTRL = UEP3_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;
+    UEP3_CTRL = UEP3_CTRL & ~MASK_UEP_R_RES | UEP_R_RES_ACK;
   }
 }
 

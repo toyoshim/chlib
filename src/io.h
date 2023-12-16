@@ -241,6 +241,7 @@ enum {
   UEP_T_RES_ACK = 0x00,    // UEPx_CTRL, Handshake ack response for EPn TX
   UEP_T_RES_NAK = 0x02,    // UEPx_CTRL, Handshake nak response for EPn TX
   UEP_T_RES_STALL = 0x03,  // UEPx_CTRL, Handshake stall response for EPn TX
+  MASK_UEP_R_RES = 0x0c,   // UEPx_CTRL, mask for UEP_R_RES_*
   UEP_R_RES_ACK = 0x00,    // UEPx_CTRL, Handshake ack response for EPn RX
   UEP_R_RES_NAK = 0x80,    // UEPx_CTRL, Handshake nak response for EPn RX
   UEP_R_RES_STALL = 0xc0,  // UEPx_CTRL, Handshake stall response for EPn RX

@@ -21,8 +21,8 @@ struct usb_device {
   bool (*ep_out)(uint8_t no, const uint8_t* buffer, uint8_t len);
 };
 
-// flags
 enum {
+  // flags
   UD_USE_EP1_OUT = 1 << 0,
   UD_USE_EP2_OUT = 1 << 1,
   UD_USE_EP3_OUT = 1 << 2,
@@ -30,6 +30,7 @@ enum {
   UD_USE_EP2_IN = 1 << 5,
   UD_USE_EP3_IN = 1 << 6,
 
+  // states
   UD_STATE_IDLE = 0,
   UD_STATE_SETUP = 1,
   UD_STATE_READY = 2,
