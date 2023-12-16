@@ -37,19 +37,10 @@ static const char* get_string(uint8_t no) {
   return 0;
 }
 
-void send(uint8_t* buffer, uint8_t* len) {
-  if (offset < 5) {
-    buffer[0] = kHello[offset++];
-    Serial.printf("send: %x\n", *buffer);
-    *len = 1;
-  } else {
-    *len = 0;
-  }
-}
-
 void recv(const uint8_t* buffer, uint8_t len) {
+  // Echo back
   Serial.printf("recv: %x, %d\n", *buffer, len);
-  offset = 0;
+  cdc_device_send(buffer, len);
 }
 
 void main(void) {
@@ -63,7 +54,6 @@ void main(void) {
   device.bcd_device = 0x0100;
   device.get_string_length = get_string_length;
   device.get_string = get_string;
-  device.send = send;
   device.recv = recv;
 
   cdc_device_init(&device);

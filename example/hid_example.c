@@ -219,6 +219,12 @@ void main(void) {
   // framework can setup DMA configurations correctly.
   hid_device_init(&device, UD_USE_EP1_IN | UD_USE_EP2_OUT);
 
-  for (;;)
-    ;
+  for (;;) {
+    if (usb_device_is_ready_to_send(1)) {
+      uint8_t buffer[8];
+      uint8_t len = 8;
+      get_report(buffer, &len);
+      usb_device_send(1, buffer, len);
+    }
+  }
 }
