@@ -294,10 +294,9 @@ static bool ep_out(uint8_t no, const uint8_t* buffer, uint8_t len) {
     }
   } else if (no == 2) {
     cdc_device->recv(buffer, len);
-  } else {
-    return false;
+    return true;
   }
-  return true;
+  return false;
 }
 
 void cdc_device_init(struct cdc_device* device) {

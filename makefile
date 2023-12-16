@@ -4,9 +4,11 @@ TARGET  = build
 DEFINES	= \
   -DSDA_BIT=P1_0 -DSDA_DIR=P1_DIR -DSDA_PU=P1_PU -DSDA_MASK="(1 << 0)" \
   -DSCL_BIT=P0_1 -DSCL_DIR=P0_DIR -DSCL_PU=P0_PU -DSCL_MASK="(1 << 1)"
+USB_HID_OBJS = \
+	hid.rel hid_dualshock3.rel hid_guncon3.rel hid_keyboard.rel  hid_mouse.rel \
+	hid_switch.rel hid_xbox.rel
 USB_OBJS = \
-	cdc_device.rel hid.rel hid_dualshock3.rel hid_guncon3.rel hid_keyboard.rel \
-	hid_mouse.rel hid_switch.rel hid_xbox.rel usb_device.rel usb_host.rel
+  cdc_device.rel hid_device.rel usb_device.rel usb_host.rel $(USB_HID_OBJS)
 OBJS	  = \
 	adc.rel ch559.rel flash.rel gpio.rel i2c.rel led.rel pwm1.rel serial.rel \
 	timer3.rel uart1.rel $(USB_OBJS)
