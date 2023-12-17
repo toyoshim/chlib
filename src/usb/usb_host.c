@@ -322,32 +322,35 @@ static void host_ack_transfer(uint8_t hub,
 static bool state_idle(uint8_t hub) {
   if ((hub == 0 && (USB_HUB_ST & bUHS_H0_ATTACH)) ||
       (hub == 1 && (USB_HUB_ST & bUHS_H1_ATTACH))) {
-    // Wait 500ms (>100ms) for devices to be stable.
-    delay_ms(hub, 500, STATE_CONNECT);
+    // Wait 1000ms (>100ms) for devices to be stable.
+    delay_ms(hub, 1000, STATE_CONNECT);
   }
   return false;
 }
 
 static bool state_connect(uint8_t hub) {
-  // Reset the bus, and wait 100ms (>15ms).
+  // Reset the bus, and wait 200ms (>15ms). This timing is quite sensitive as
+  // shorter reset and longer reset both doesn't work well on some devices.
   // The device may be disconnected during the reset.
   resetting[hub] = true;
-  if (!hub)
+  if (!hub) {
     UHUB0_CTRL = bUH_BUS_RESET;
-  else
+  } else {
     UHUB1_CTRL = bUH_BUS_RESET;
+  }
   initial_check[hub] = true;
   hub_address[hub] = 0;
-  delay_ms(hub, 100, STATE_RESET);
+  delay_ms(hub, 200, STATE_RESET);
   return false;
 }
 
 static bool state_reset(uint8_t hub) {
   // Stop resetting, and wait 1ms (>250us).
-  if (!hub)
+  if (!hub) {
     UHUB0_CTRL &= ~bUH_BUS_RESET;
-  else
+  } else {
     UHUB1_CTRL &= ~bUH_BUS_RESET;
+  }
   delay_us(hub, 1000, STATE_ENABLE);
   return false;
 }
@@ -369,15 +372,16 @@ static bool state_enable(uint8_t hub) {
       UHUB1_CTRL |= bUH_LOW_SPEED;
     UHUB1_CTRL |= bUH_PORT_EN;
   }
-  // Wait 1ms (>200us).
-  delay_us(hub, 1000,
+  // Wait 10ms (>200us).
+  delay_ms(hub, 10,
            initial_check[hub] ? STATE_GET_DEVICE_DESC : STATE_SET_ADDRESS);
   return false;
 }
 
 static bool state_set_address(uint8_t hub) {
-  if (!lock_transaction(hub, 0))
+  if (!lock_transaction(hub, 0)) {
     return false;
+  }
 
   set_address_descriptor.wValue =
       hub_address[hub] ? hub_address[hub] : (1 + hub);
@@ -395,8 +399,9 @@ static bool state_set_address_done(uint8_t hub) {
 }
 
 static bool state_get_device_desc(uint8_t hub) {
-  if (initial_check[hub] && !lock_transaction(hub, 0))
+  if (initial_check[hub] && !lock_transaction(hub, 0)) {
     return false;
+  }
 
   get_device_descriptor.wLength = initial_check[hub] ? 0x08 : 0x12;
   host_setup_transfer(hub, (uint8_t*)&get_device_descriptor,
@@ -416,8 +421,9 @@ static bool state_get_device_desc_recv(uint8_t hub) {
     delay_ms(hub, 15, STATE_RESET);
     return false;
   }
-  if (usb_host->check_device_desc)
+  if (usb_host->check_device_desc) {
     usb_host->check_device_desc(hub, buffer);
+  }
 
   ep_max_packet_size[hub][0] = desc->bMaxPacketSize0;
   is_hid[hub] = desc->bDeviceClass == USB_CLASS_HID;
@@ -438,7 +444,7 @@ static bool state_get_device_desc_recv(uint8_t hub) {
   get_configuration_descriptor.wLength = 0x0009;
   get_hub_descriptor.wLength = 0x0008;
 
-  delay_us(hub, 250, STATE_GET_STRING_DESC);
+  delay_us(hub, 1000, STATE_GET_STRING_DESC);
   return false;
 }
 
@@ -461,7 +467,7 @@ static bool state_get_string_desc_recv(uint8_t hub) {
     if (head->bLength != 2 && head->bLength) {
       // Request full part.
       get_string_descriptor.wLength = head->bLength;
-      delay_us(hub, 250, STATE_GET_STRING_DESC);
+      delay_us(hub, 1000, STATE_GET_STRING_DESC);
       return false;
     }
   }
@@ -469,17 +475,18 @@ static bool state_get_string_desc_recv(uint8_t hub) {
   uint8_t i = 0;
   find_string_index(&i);
 
-  if (usb_host->check_string_desc)
+  if (usb_host->check_string_desc) {
     usb_host->check_string_desc(hub, string_index[i], buffer);
+  }
 
   string_index[i] = 0;
   if (find_string_index(&i)) {
     // Request core part.
     get_string_descriptor.wLength = 2;
-    delay_us(hub, 250, STATE_GET_STRING_DESC);
+    delay_us(hub, 1000, STATE_GET_STRING_DESC);
     return false;
   }
-  delay_us(hub, 250, STATE_GET_CONFIGURATION_DESC);
+  delay_us(hub, 1000, STATE_GET_CONFIGURATION_DESC);
   return false;
 }
 
@@ -496,7 +503,7 @@ static bool state_get_configuration_desc_recv(uint8_t hub) {
   if (get_configuration_descriptor.wLength != desc->wTotalLength) {
     // Request full part.
     get_configuration_descriptor.wLength = desc->wTotalLength;
-    delay_us(hub, 250, STATE_GET_CONFIGURATION_DESC);
+    delay_us(hub, 1000, STATE_GET_CONFIGURATION_DESC);
     return false;
   }
   no_remote_wakeup[hub] = (desc->bmAttributes & 0x20) == 0;
@@ -561,7 +568,7 @@ static bool state_set_configuration(uint8_t hub) {
 }
 
 static bool state_set_configuration_done(uint8_t hub) {
-  delay_us(hub, 250, STATE_SET_FEATURE);
+  delay_us(hub, 1000, STATE_SET_FEATURE);
   return false;
 }
 
@@ -579,7 +586,7 @@ static bool state_set_feature(uint8_t hub) {
 }
 
 static bool state_extra_setup(uint8_t hub) {
-  delay_us(hub, 250,
+  delay_us(hub, 1000,
            hub_ports[hub]                          ? STATE_GET_HUB_DESC
            : (hid_boot[hub] != BOOT_NOT_SUPPORTED) ? STATE_HID_SET_PROTOCOL
                                                    : STATE_GET_HID_REPORT_DESC);
@@ -594,8 +601,9 @@ static bool state_get_hid_report_desc(uint8_t hub) {
 }
 
 static bool state_get_hid_report_desc_recv(uint8_t hub) {
-  if (usb_host->check_hid_report_desc)
+  if (usb_host->check_hid_report_desc) {
     usb_host->check_hid_report_desc(hub, buffer);
+  }
   unlock_transaction(hub);
   delay_ms(hub, 5, STATE_READY);
   return false;
@@ -627,7 +635,7 @@ static bool state_get_hub_desc_recv(uint8_t hub) {
   if (get_hub_descriptor.wLength != desc->bDescLength) {
     // Request full part.
     get_hub_descriptor.wLength = desc->bDescLength;
-    delay_us(hub, 250, STATE_GET_HUB_DESC);
+    delay_us(hub, 500, STATE_GET_HUB_DESC);
     return false;
   }
   hub_ports[hub] = desc->bNbPorts;
@@ -766,13 +774,13 @@ static bool state_transaction(uint8_t hub) {
       if ((req->bRequestType & USB_REQ_DIR_MASK) == USB_REQ_DIR_IN) {
         pid = USB_PID_IN;
         if (req->wLength) {
-          delay_us(hub, 250, STATE_TRANSACTION_IN);
+          delay_us(hub, 500, STATE_TRANSACTION_IN);
           return false;
         }
       } else if ((req->bRequestType & USB_REQ_DIR_MASK) == USB_REQ_DIR_OUT) {
         pid = USB_PID_OUT;
         if (req->wLength) {
-          delay_us(hub, 250, STATE_TRANSACTION_OUT);
+          delay_us(hub, 500, STATE_TRANSACTION_OUT);
           return false;
         }
       }
