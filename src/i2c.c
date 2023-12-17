@@ -39,9 +39,6 @@ void i2c_int(void) __interrupt(INT_NO_GPIO) __using(0) {
     }
     return;
   }
-  exclusive_time_raw = i2c.exclusive_time_raw;
-  last_access_time = timer3_tick_raw();
-
   uint8_t addr = 0;
   uint8_t bit;
   for (bit = 0; bit < 7; ++bit) {
@@ -66,6 +63,9 @@ void i2c_int(void) __interrupt(INT_NO_GPIO) __using(0) {
     // ACK
     SDA_BIT = LOW;
     SDA_DIR |= SDA_MASK;  // output
+
+    exclusive_time_raw = i2c.exclusive_time_raw;
+    last_access_time = timer3_tick_raw();
   }
 
   // Release clock streach
