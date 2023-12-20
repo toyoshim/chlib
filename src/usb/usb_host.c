@@ -1027,6 +1027,24 @@ void usb_host_init(struct usb_host* host) {
   timer3_tick_init();
 }
 
+void usb_host_reset(void) {
+  if (usb_host->flags & USE_HUB0) {
+    UHUB0_CTRL |= bUH_BUS_RESET;
+  }
+  if (usb_host->flags & USE_HUB1) {
+    UHUB1_CTRL |= bUH_BUS_RESET;
+  }
+  uint16_t now = timer3_tick_msec();
+  while (timer3_tick_msec_between(now, now + 200))
+    ;
+  if (usb_host->flags & USE_HUB0) {
+    UHUB0_CTRL &= ~bUH_BUS_RESET;
+  }
+  if (usb_host->flags & USE_HUB1) {
+    UHUB1_CTRL &= ~bUH_BUS_RESET;
+  }
+}
+
 void usb_host_poll(void) {
   if (usb_host->flags & USE_HUB0)
     while (fsm(0))
