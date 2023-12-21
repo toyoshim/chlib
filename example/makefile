@@ -7,8 +7,8 @@ DEFINES	= \
 
 .PHONY: all clean build
 
-all: build i2c_example.bin cdc_example.bin hid_example.bin
-	ch559flasher -w cdc_example.bin
+all: build i2c_device_example.bin i2c_host_example.bin cdc_example.bin hid_example.bin
+	ch559flasher -w i2c_host_example.bin
 
 clean:
 	rm -rf build *.bin
@@ -26,7 +26,10 @@ build/%.rel: ../src/usb/%.c ../src/*.h ../src/usb/*.h
 build/%.rel: %.c ../src/*.h
 	$(CC) -c $(CFLAGS) $(DEFINES) -I../src -o $@ $<
 
-build/i2c_example.ihx: $(OBJS) build/i2c.rel build/i2c_example.rel
+build/i2c_device_example.ihx: $(OBJS) build/i2c.rel build/i2c_device_example.rel
+	$(CC) $(CFLAGS) $^ -o $@
+
+build/i2c_host_example.ihx: $(OBJS) build/i2c.rel build/i2c_host_example.rel
 	$(CC) $(CFLAGS) $^ -o $@
 
 build/cdc_example.ihx: $(OBJS) build/cdc_device.rel build/cdc_example.rel build/usb_device.rel

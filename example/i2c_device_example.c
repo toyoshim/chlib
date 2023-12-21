@@ -24,17 +24,18 @@ bool read(uint8_t* data) {
   return true;
 }
 
-void end() {
+void end(void) {
   // Serial.println("END");
 }
 
 void main(void) {
   initialize();
-  Serial.println("I2C Example");
+  Serial.println("I2C Device Example");
 
   struct i2c i2c;
   memset(&i2c, 0, sizeof(i2c));
   i2c.sda = I2C_SDA_P0_2;
+  i2c.mode = I2C_MODE_DEVICE;
   i2c.start = start;
   i2c.write = write;
   i2c.read = read;

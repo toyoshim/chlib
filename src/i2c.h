@@ -11,25 +11,38 @@
 #include "interrupt.h"
 #include "timer3.h"
 
-extern void i2c_int(void) __interrupt(INT_NO_GPIO) __using(0);
+extern void i2c_int_gpio(void) __interrupt(INT_NO_GPIO) __using(0);
+extern void i2c_int_tmr0(void) __interrupt(INT_NO_TMR0) __using(0);
 
 enum {
   I2C_INVALID = 0,
   I2C_SDA_P0_2 = 1,
   // TODO: support more choices
 
+  I2C_MODE_DEVICE = 0,
+  I2C_MODE_HOST = 1,
+
+  I2C_BEGIN_WRITE = 0,
+  I2C_BEGIN_READ = 1,
+
   I2C_DIR_WRITE = 0,
   I2C_DIR_READ = 1,
 };
 
 struct i2c {
-  uint8_t ie;   // Other interrupt ports that should be enabled and handled by
-                // the user interrupt handler.
-  uint8_t sda;  // Only specific GPIO can be used for interrupt supports.
+  // Other interrupt ports that should be enabled and handled b the user
+  // interrupt handler.
+  uint8_t ie;
+  // Only specific GPIO can be used for interrupt supports.
+  uint8_t sda;
+  // Operation mode.
+  uint8_t mode;
+
   // Set non-zero value if you don't want to run the `interrupt_handler` in a
   // certain timespan after I2C accesses.
   uint16_t exclusive_time_raw;
   void (*interrupt_handler)(void);
+
   // `start`, `write`, and `read` are called with clock stretch cycle, and can
   // spent a certain time. But `end` cannot.
   bool (*start)(uint8_t address, uint8_t dir);
@@ -56,6 +69,11 @@ struct i2c {
 // Internally enables GPIO edge interrupt. You need to be careful to override
 // the setting.
 bool i2c_init(const struct i2c* opt);
+bool i2c_set_mode(uint8_t mode);
 void i2c_update_interrupt(uint8_t ie);
+bool i2c_begin(uint8_t address, uint8_t rw);
+bool i2c_write(uint8_t data);
+uint8_t i2c_read(void);
+void i2c_end(void);
 
 #endif  // __i2c_h__
