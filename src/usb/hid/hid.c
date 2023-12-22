@@ -69,6 +69,7 @@ static void check_device_desc(uint8_t hub, const uint8_t* data) {
   usb_info[hub].class = desc->bDeviceClass;
   usb_info[hub].vid = desc->idVendor;
   usb_info[hub].pid = desc->idProduct;
+  usb_info[hub].device = desc->bcdDevice;
 
   if (desc->idVendor == 0x17a7 && desc->idProduct == 0x0005) {
     usb_info[hub].wait = 750;
@@ -435,8 +436,9 @@ quit:
                 hid_info[hub].report_id, hid_info[hub].report_size,
                 hid_info[hub].report_size / 8);
   for (uint8_t i = 0; i < 4; ++i) {
-    Serial.printf("axis %d: %d, %d\n", i, hid_info[hub].axis[i],
-                  hid_info[hub].axis_size[i]);
+    Serial.printf("axis %d: pos-%d, size-%d, shift-%d\n", i,
+                  hid_info[hub].axis[i], hid_info[hub].axis_size[i],
+                  hid_info[hub].axis_shift[i]);
   }
   Serial.printf("hat: %d\n", hid_info[hub].hat);
   for (uint8_t i = 0; i < 13; ++i) {
@@ -472,7 +474,7 @@ quit:
 
   // Device specific fix-up.
   if (usb_info[hub].vid == 0x046d && usb_info[hub].pid == 0xc260) {
-    // G29 Driving Force Racing Wheel [PS4]
+    // G29 Driving Force Racing Wheel [PS4] declares a fake report format.
     hid_info[hub].axis[0] = 336;
     hid_info[hub].axis_size[0] = 16;
     hid_info[hub].axis[1] = 352;
@@ -485,10 +487,16 @@ quit:
     hid_info[hub].axis_size[3] = 16;
     hid_info[hub].axis_polarity[3] = true;
   } else if (usb_info[hub].vid == 0x046d && usb_info[hub].pid == 0xc294) {
-    // G29 Driving Force Racing Wheel [PS3]
-    hid_info[hub].axis[1] = 136;
-    hid_info[hub].axis[2] = 144;
-    hid_info[hub].type = HID_TYPE_PS4;
+    // Logitec Driving Force(Pro)
+    // Known bcdDevice: 0x1106
+    if (usb_info[hub].device == 0x1350) {
+      // Known bcdDevice for G29 Driving Force Racing Wheel[PS3]
+      // This device reports analog inputs in a different format from its
+      // declaration.
+      hid_info[hub].axis[1] = 136;
+      hid_info[hub].axis[2] = 144;
+      hid_info[hub].type = HID_TYPE_PS4;
+    }
   } else if (usb_info[hub].vid == 0x0f0d &&
              (
                  // HOLI Flight Stick [PS4] / [PS3]

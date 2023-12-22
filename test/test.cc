@@ -44,10 +44,11 @@ struct DummyConfigurationDescriptor {
 
 class CompatTest : public ::testing::Test {
  protected:
-  void SetVendorAndProduct(uint32_t vid, uint32_t pid) {
+  void SetVendorAndProduct(uint16_t vid, uint16_t pid) {
     usb_device_desc.idVendor = vid;
     usb_device_desc.idProduct = pid;
   }
+  void SetDevice(uint16_t device) { usb_device_desc.bcdDevice = device; }
   void SetReportSize(uint16_t report_size) {
     ASSERT_TRUE(usb_host);
     ASSERT_TRUE(usb_host->check_device_desc);
@@ -359,6 +360,7 @@ TEST_F(PS4CompatTest, G29DrivingForceRacingWheelPS3) {
   };
 
   SetVendorAndProduct(0x046d, 0xc294);
+  SetDevice(0x1350);
   SetReportSize(sizeof(hid_report_desc));
   CheckHidReportDescriptor(hid_report_desc);
   CheckHidInfo(expected, *hid_get_info(0));
