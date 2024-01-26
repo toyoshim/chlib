@@ -43,8 +43,9 @@ static void do_nothing(void) {}
 static void disconnected(uint8_t hub) {
   hid_info[hub].state = HID_STATE_DISCONNECTED;
   hid_info[hub].report_size = 0;
-  if (!hid->report)
+  if (!hid->report) {
     return;
+  }
   hid->report(hub, &hid_info[hub], 0, 0);
 }
 
@@ -91,7 +92,7 @@ static void check_device_desc(uint8_t hub, const uint8_t* data) {
 #if !defined(_HID_NO_GUNCON3)
       hid_guncon3_check_device_desc(&hid_info[hub], &usb_info[hub], desc) ||
 #endif
-#if !defined(_HID_NO_DUALSHOCK3)
+#if !defined(_HID_NO_PS3)
       hid_dualshock3_check_device_desc(&hid_info[hub], &usb_info[hub], desc) ||
 #endif
       false) {
@@ -137,7 +138,8 @@ static uint8_t check_configuration_desc(uint8_t hub, const uint8_t* data) {
 #if !defined(_HID_NO_GUNCON3)
             hid_guncon3_check_interface_desc(&hid_info[hub], &usb_info[hub]) ||
 #endif
-            intf->bInterfaceClass == USB_CLASS_HID) {
+            (intf->bInterfaceClass == USB_CLASS_HID &&
+             intf->bInterfaceSubClass != USB_HID_SUBCLASS_BOOT)) {
           target_interface = intf->bInterfaceNumber;
         }
         break;
@@ -179,7 +181,9 @@ static uint8_t check_configuration_desc(uint8_t hub, const uint8_t* data) {
     hid_info[hub].state = HID_STATE_NOT_READY;
   }
 
-  if (false ||
+#if !defined(_HID_NO_KEYBOARD) || !defined(_HID_NO_GUNCON3) || \
+    !defined(_HID_NO_XBOX)
+  if (
 #if !defined(_HID_NO_KEYBOARD)
       hid_keyboard_initialize(&hid_info[hub]) ||
 #endif
@@ -194,6 +198,7 @@ static uint8_t check_configuration_desc(uint8_t hub, const uint8_t* data) {
       hid->detected();
     }
   }
+#endif
   usb_info[hub].interface = target_interface;
   return target_interface;
 }
