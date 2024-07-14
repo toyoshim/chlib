@@ -7,8 +7,9 @@ DEFINES	= \
 
 .PHONY: all clean build
 
-all: build i2c_device_example.bin i2c_host_example.bin cdc_example.bin hid_example.bin
-	ch559flasher -w i2c_host_example.bin
+all: build i2c_device_example.bin i2c_host_example.bin cdc_example.bin \
+	hid_example.bin timer3_example.bin
+	ch559flasher -w timer3_example.bin
 
 clean:
 	rm -rf build *.bin
@@ -36,6 +37,9 @@ build/cdc_example.ihx: $(OBJS) build/cdc_device.rel build/cdc_example.rel build/
 	$(CC) $(CFLAGS) $^ -o $@
 
 build/hid_example.ihx: $(OBJS) build/hid_device.rel build/hid_example.rel build/usb_device.rel
+	$(CC) $(CFLAGS) $^ -o $@
+
+build/timer3_example.ihx: $(OBJS) build/timer3_example.rel
 	$(CC) $(CFLAGS) $^ -o $@
 
 %.bin: build/%.ihx
