@@ -244,6 +244,9 @@ void i2c_int_tmr0(void) __interrupt(INT_NO_TMR0) __using(0) {
       SCL_DIR &= ~SCL_MASK;  // input, SCL: High
       break;
     case 12:                 // STOP Condition
+      if (!SCL_BIT) {
+        return;
+      }
       SDA_DIR &= ~SDA_MASK;  // input, SDA: High
       break;
     case 13:
