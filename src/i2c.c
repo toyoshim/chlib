@@ -267,11 +267,13 @@ bool i2c_init(const struct i2c* opt) {
   ie = bIE_IO_EDGE;
 
   // Port specific initializations.
-  if (i2c.sda == I2C_SDA_P0_2) {
+  if (i2c.sda == I2C_SDA_P0_2 && PIN_FUNC & bUART0_PIN_X) {
+    // P0_2 can be used for an interrupt trigger only when the port is
+    // specified as UART0 RXD.
     ie |= bIE_RXD0_LO;
-    if (PIN_FUNC & bUART0_PIN_X) {
-      REN = 0;  // Disable UART0 receiving as RXD0 was assigned to P0_2.
-    }
+    // Disable UART0 receiving, but still it can not be used as a GPIO.
+    // Another port also needs to be assigned to drive the SDA line.
+    REN = 0;
   } else {
     // Not supported.
     return false;

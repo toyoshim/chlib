@@ -33,7 +33,9 @@ struct i2c {
   // Other interrupt ports that should be enabled and handled b the user
   // interrupt handler.
   uint8_t ie;
-  // Only specific GPIO can be used for interrupt supports.
+  // Specify the GPIO port that is used for I2C SDA line interrupt. The
+  // specified GPIO should support edge trigger interrupt.
+  // Note: P0.2 is supported, but another port should drive the SDA line.
   uint8_t sda;
   // Operation mode.
   uint8_t mode;
