@@ -27,18 +27,26 @@ static volatile uint8_t host_state = 0;
 static volatile uint8_t host_data = 0;
 static volatile uint8_t host_ack = ACK_NOT_READY;
 
-static void wait_posedge(void) {
-  while (SCL_BIT)
-    ;
-  while (!SCL_BIT)
-    ;
+static bool wait_posedge(void) {
+  uint8_t count = 0;
+  while (SCL_BIT && count != 0xff) {
+    ++count;
+  }
+  while (!SCL_BIT && count != 0xff) {
+    ++count;
+  }
+  return count != 0xff;
 }
 
-static void wait_negedge(void) {
-  while (!SCL_BIT)
-    ;
-  while (SCL_BIT)
-    ;
+static bool wait_negedge(void) {
+  uint8_t count = 0;
+  while (!SCL_BIT && count != 0xff) {
+    ++count;
+  }
+  while (SCL_BIT && count != 0xff) {
+    ++count;
+  }
+  return count != 0xff;
 }
 
 void i2c_int_gpio(void) __interrupt(INT_NO_GPIO) __using(0) {
@@ -56,12 +64,18 @@ void i2c_int_gpio(void) __interrupt(INT_NO_GPIO) __using(0) {
   uint8_t bit;
   for (bit = 0; bit < 7; ++bit) {
     addr <<= 1;
-    wait_posedge();
+    if (!wait_posedge()) {
+      return;
+    }
     addr |= SDA_BIT;
   }
-  wait_posedge();
+  if (!wait_posedge()) {
+    return;
+  }
   uint8_t dir = SDA_BIT ? I2C_DIR_READ : I2C_DIR_WRITE;
-  wait_negedge();
+  if (!wait_negedge()) {
+    return;
+  }
 
   // Clock stretch
   SCL_DIR |= SCL_MASK;  // output
@@ -83,7 +97,9 @@ void i2c_int_gpio(void) __interrupt(INT_NO_GPIO) __using(0) {
 
   // Release clock streach
   SCL_DIR &= ~SCL_MASK;  // input
-  wait_negedge();
+  if (!wait_negedge()) {
+    return;
+  }
 
   if (ready) {
     // Release ACK
@@ -98,23 +114,31 @@ void i2c_int_gpio(void) __interrupt(INT_NO_GPIO) __using(0) {
       for (bit = 0; bit < 8; ++bit) {
         SDA_BIT = (data & 0x80) ? HIGH : LOW;
         data <<= 1;
-        wait_negedge();
+        if (!wait_negedge()) {
+          return;
+        }
       }
       SDA_DIR &= ~SDA_MASK;  // input
-      wait_posedge();
+      if (!wait_posedge()) {
+        return;
+      }
       if (SDA_BIT) {
         // MACK
         if (ready) {
           i2c.end();
         }
         // Wait for STOP condition
-        wait_posedge();
+        if (!wait_posedge()) {
+          return;
+        }
         while (!SDA_BIT)
           ;
         return;
       } else {
         // ACK
-        wait_negedge();
+        if (!wait_negedge()) {
+          return;
+        }
         if (ready) {
           // Clock stretch
           SCL_DIR |= SCL_MASK;  // output
@@ -129,7 +153,9 @@ void i2c_int_gpio(void) __interrupt(INT_NO_GPIO) __using(0) {
       }
     } else {
       // Check STOP condition
-      wait_posedge();
+      if (!wait_posedge()) {
+        return;
+      }
       uint8_t sda = SDA_BIT;
       data = 0;
       if (sda) {
@@ -146,10 +172,14 @@ void i2c_int_gpio(void) __interrupt(INT_NO_GPIO) __using(0) {
       }
       for (bit = 1; bit < 8; ++bit) {
         data <<= 1;
-        wait_posedge();
+        if (!wait_posedge()) {
+          return;
+        }
         data |= SDA_BIT;
       }
-      wait_negedge();
+      if (!wait_negedge()) {
+        return;
+      }
       if (ready) {
         // Clock stretching
         SCL_DIR |= SCL_MASK;  // output
@@ -160,11 +190,15 @@ void i2c_int_gpio(void) __interrupt(INT_NO_GPIO) __using(0) {
 
         // Release clock streaching
         SCL_DIR &= ~SCL_MASK;  // input
-        wait_negedge();
+        if (!wait_negedge()) {
+          return;
+        }
         // Release ACK or NACK
         SDA_DIR &= ~SDA_MASK;  // input
       } else {
-        wait_negedge();
+        if (!wait_negedge()) {
+          return;
+        }
       }
     }  // else
   }    // for
