@@ -9,6 +9,8 @@
 
 struct usb_info {
   uint8_t class;
+  uint8_t subclass;
+  uint8_t protocol;
   uint16_t vid;
   uint16_t pid;
   uint16_t device;

@@ -68,6 +68,8 @@ static void check_device_desc(uint8_t hub, const uint8_t* data) {
   memset(&usb_info[hub], 0, sizeof(struct usb_info));
   usb_info[hub].tick = timer3_tick_raw();
   usb_info[hub].class = desc->bDeviceClass;
+  usb_info[hub].subclass = desc->bDeviceSubClass;
+  usb_info[hub].protocol = desc->bDeviceProtocol;
   usb_info[hub].vid = desc->idVendor;
   usb_info[hub].pid = desc->idProduct;
   usb_info[hub].device = desc->bcdDevice;
@@ -121,7 +123,10 @@ static uint8_t check_configuration_desc(uint8_t hub, const uint8_t* data) {
         Serial.printf("interface subclass: %x\n", intf->bInterfaceSubClass);
         Serial.printf("interface protocol: %x\n", intf->bInterfaceProtocol);
 #endif  // _DBG_DESC
-        if (usb_info[hub].class == 0) {
+        if ((usb_info[hub].class == USB_CLASS_MISC &&
+             usb_info[hub].subclass == USB_MISC_SUBCLASS_IAD &&
+             usb_info[hub].protocol == USB_MISC_PROTOCOL_IAD) ||
+            (usb_info[hub].class == 0)) {
           class = intf->bInterfaceClass;
         }
         if (
