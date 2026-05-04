@@ -9,9 +9,10 @@ USB_HID_OBJS = \
 	hid_switch.rel hid_xbox.rel
 USB_OBJS = \
   cdc_device.rel hid_device.rel usb_device.rel usb_host.rel $(USB_HID_OBJS)
+CRYPTO_OBJS = aes.rel
 OBJS	  = \
 	adc.rel ch559.rel flash.rel gpio.rel i2c.rel led.rel pwm1.rel serial.rel \
-	timer3.rel uart1.rel $(USB_OBJS)
+	timer3.rel uart1.rel $(USB_OBJS) $(CRYPTO_OBJS)
 
 .PHONY: all clean build
 
@@ -31,6 +32,9 @@ build/%.rel: src/usb/%.c src/*.h src/usb/*.h src/usb/hid/*.h
 	$(CC) -c $(CFLAGS) $(DEFINES) -o $@ $<
 
 build/%.rel: src/usb/hid/%.c src/*.h src/usb/*.h src/usb/hid/*.h
+	$(CC) -c $(CFLAGS) $(DEFINES) -o $@ $<
+
+build/%.rel: src/crypto/%.c src/crypto/*.h
 	$(CC) -c $(CFLAGS) $(DEFINES) -o $@ $<
 
 build/$(TARGET).ihx: $(addprefix build/,$(OBJS))

@@ -2,8 +2,8 @@ CXXFLAGS	= -std=c++17 -Igoogletest/googletest/include -I../src
 CFLAGS		= -I../src
 LFLAGS		= -Lout/lib -lgtest -lgtest_main -lpthread
 LIBGTEST	= out/lib/libgtest.a
-OBJS			= test.o serial.o hid.o hid_dualshock3.o hid_guncon3.o \
-	hid_keyboard.o hid_mouse.o hid_switch.o hid_xbox.o mock.o
+OBJS			= test.o aes_test.o serial.o hid.o hid_dualshock3.o hid_guncon3.o \
+	hid_keyboard.o hid_mouse.o hid_switch.o hid_xbox.o aes.o mock.o
 
 test: ${LIBGTEST} ${OBJS}
 	$(CXX) -o test ${OBJS} ${LFLAGS}
@@ -18,6 +18,9 @@ clean:
 	$(CC) -c ${CFLAGS} -o $@ $<
 
 %.o: ../src/usb/hid/%.c ../src/*.h ../src/usb/*.h ../src/usb/hid/*.h
+	$(CC) -c ${CFLAGS} -o $@ $<
+
+%.o: ../src/crypto/%.c ../src/crypto/*.h
 	$(CC) -c ${CFLAGS} -o $@ $<
 
 %.o: %.cc *.h

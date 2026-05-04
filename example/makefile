@@ -10,7 +10,7 @@ DEFINES	= \
 .PHONY: all clean build
 
 all: build i2c_device_example.bin i2c_host_example.bin cdc_example.bin \
-	hid_example.bin timer3_example.bin
+	hid_example.bin timer3_example.bin aes_example.bin
 	ch559flasher -w timer3_example.bin
 
 clean:
@@ -24,6 +24,9 @@ build/%.rel: ../src/%.c ../src/*.h ../src/usb/*.h
 	$(CC) -c $(CFLAGS) $(DEFINES) -o $@ $<
 
 build/%.rel: ../src/usb/%.c ../src/*.h ../src/usb/*.h
+	$(CC) -c $(CFLAGS) $(DEFINES) -o $@ $<
+
+build/%.rel: ../src/crypto/%.c ../src/crypto/*.h
 	$(CC) -c $(CFLAGS) $(DEFINES) -o $@ $<
 
 build/%.rel: %.c ../src/*.h
@@ -42,6 +45,9 @@ build/hid_example.ihx: $(OBJS) build/hid_device.rel build/hid_example.rel build/
 	$(CC) $(CFLAGS) $^ -o $@
 
 build/timer3_example.ihx: $(OBJS) build/timer3_example.rel
+	$(CC) $(CFLAGS) $^ -o $@
+
+build/aes_example.ihx: $(OBJS) build/aes.rel build/aes_example.rel
 	$(CC) $(CFLAGS) $^ -o $@
 
 %.bin: build/%.ihx
