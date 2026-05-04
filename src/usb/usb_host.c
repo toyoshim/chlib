@@ -692,7 +692,8 @@ static bool state_ready(uint8_t hub) {
 
 static bool state_in_recv(uint8_t hub) {
   if (usb_host->in)
-    usb_host->in(hub, buffer, user_request_size - transaction_size);
+    usb_host->in(hub, transaction_ep_pid & 0x0f, buffer,
+                 user_request_size - transaction_size);
   do_not_retry[hub] = false;
   unlock_transaction(hub);
   delay_us(hub, 250, STATE_READY);
@@ -708,7 +709,7 @@ static bool state_out_done(uint8_t hub) {
 static bool state_hid_get_report(uint8_t hub) {
   uint16_t size = user_request_size - transaction_size;
   if (usb_host->hid_report && !do_not_retry[hub]) {
-    usb_host->hid_report(hub, buffer, size);
+    usb_host->hid_report(hub, transaction_ep_pid & 0x0f, buffer, size);
   }
   do_not_retry[hub] = false;
   unlock_transaction(hub);

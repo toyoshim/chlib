@@ -520,7 +520,8 @@ quit:
   }
 }
 
-static void hid_report(uint8_t hub, uint8_t* data, uint16_t size) {
+static void hid_report(uint8_t hub, uint8_t ep, uint8_t* data, uint16_t size) {
+  (void)ep;
 #if !defined(_HID_NO_PS3)
   if (hid_dualshock3_report(&hid_info[hub], &usb_info[hub], data, size)) {
     return;
