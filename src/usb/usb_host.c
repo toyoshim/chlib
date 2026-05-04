@@ -1115,7 +1115,7 @@ bool usb_host_out(uint8_t hub, uint8_t ep, uint8_t* data, uint8_t size) {
   }
   transaction_stage = 2;
   host_out_transfer(hub, ep, data, size, STATE_OUT_DONE, 0);
-  return false;
+  return true;
 }
 
 bool usb_host_hid_get_report(uint8_t hub,
