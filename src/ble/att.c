@@ -22,6 +22,7 @@ enum {
   ATT_OP_WRITE_REQ              = 0x12,
   ATT_OP_WRITE_RSP              = 0x13,
   ATT_OP_WRITE_CMD              = 0x52,
+  // ATT_OP_HANDLE_VALUE_NTF lives in att.h (sent by callers).
 
   // error codes
   ATT_ERR_INVALID_HANDLE          = 0x01,
