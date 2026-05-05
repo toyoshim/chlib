@@ -7,12 +7,15 @@ DEFINES	= \
 USB_HID_OBJS = \
 	hid.rel hid_dualshock3.rel hid_guncon3.rel hid_keyboard.rel  hid_mouse.rel \
 	hid_switch.rel hid_xbox.rel
+USB_BLE_OBJS = ble.rel
 USB_OBJS = \
-  cdc_device.rel hid_device.rel usb_device.rel usb_host.rel $(USB_HID_OBJS)
+  cdc_device.rel hid_device.rel usb_device.rel usb_host.rel \
+  $(USB_HID_OBJS) $(USB_BLE_OBJS)
+BLE_OBJS = hci.rel l2cap.rel att.rel smp.rel
 CRYPTO_OBJS = aes.rel
 OBJS	  = \
 	adc.rel ch559.rel flash.rel gpio.rel i2c.rel led.rel pwm1.rel serial.rel \
-	timer3.rel uart1.rel $(USB_OBJS) $(CRYPTO_OBJS)
+	timer3.rel uart1.rel $(USB_OBJS) $(BLE_OBJS) $(CRYPTO_OBJS)
 
 .PHONY: all clean build
 
@@ -32,6 +35,12 @@ build/%.rel: src/usb/%.c src/*.h src/usb/*.h src/usb/hid/*.h
 	$(CC) -c $(CFLAGS) $(DEFINES) -o $@ $<
 
 build/%.rel: src/usb/hid/%.c src/*.h src/usb/*.h src/usb/hid/*.h
+	$(CC) -c $(CFLAGS) $(DEFINES) -o $@ $<
+
+build/%.rel: src/usb/ble/%.c src/*.h src/usb/*.h src/usb/ble/*.h
+	$(CC) -c $(CFLAGS) $(DEFINES) -o $@ $<
+
+build/%.rel: src/ble/%.c src/*.h src/ble/*.h
 	$(CC) -c $(CFLAGS) $(DEFINES) -o $@ $<
 
 build/%.rel: src/crypto/%.c src/crypto/*.h
