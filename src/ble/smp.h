@@ -2,8 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// SMP Legacy Just Works pairing (peripheral side) + Phase 3 key
-// distribution.
+// SMP Legacy pairing (peripheral side) — Just Works with passkey == 0,
+// Passkey Entry with a build-time-fixed 6-digit passkey otherwise. Plus
+// Phase 3 key distribution.
 
 #ifndef __ble_smp_h__
 #define __ble_smp_h__
@@ -51,13 +52,18 @@ struct smp_session {
   uint8_t bond_irk[16];
   bool bond_set;
   uint8_t phase3_index;
+  uint32_t passkey;
 };
 
+// `passkey` is the 6-digit Legacy Passkey value (0..999999); 0 selects Just
+// Works (TK = 0, no MITM protection). Non-zero values negotiate Passkey
+// Entry with the central displaying / accepting the same number.
 void smp_init(struct smp_session* s,
               const uint8_t* peer_addr_wire,
               uint8_t peer_addr_type,
               const uint8_t* own_addr_wire,
-              uint8_t own_addr_type);
+              uint8_t own_addr_type,
+              uint32_t passkey);
 
 // Returns the number of response bytes written to `out`, or 0 when no
 // response is needed.

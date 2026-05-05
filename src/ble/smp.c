@@ -91,7 +91,9 @@ struct smp_pkt_failed {
   uint8_t reason;
 };
 
-static void ensure_tk_keys(void) {
+// TK = 16-byte big-endian integer with the passkey (0..999999) in the low
+// bits and zero padding above (BT spec Vol 3 Part H sec 2.3.5.5).
+static void ensure_tk_keys(const struct smp_session* s) {
   if (tk_round_keys_ready) {
     return;
   }
@@ -99,6 +101,9 @@ static void ensure_tk_keys(void) {
   for (uint8_t i = 0; i < AES128_KEY_SIZE; i++) {
     tk[i] = 0;
   }
+  tk[AES128_KEY_SIZE - 1] = (uint8_t)(s->passkey & 0xff);
+  tk[AES128_KEY_SIZE - 2] = (uint8_t)((s->passkey >> 8) & 0xff);
+  tk[AES128_KEY_SIZE - 3] = (uint8_t)((s->passkey >> 16) & 0xff);
   aes128_key_expansion(tk, tk_round_keys);
   tk_round_keys_ready = true;
 }
@@ -167,7 +172,8 @@ void smp_init(struct smp_session* s,
               const uint8_t* peer_addr_wire,
               uint8_t peer_addr_type,
               const uint8_t* own_addr_wire,
-              uint8_t own_addr_type) {
+              uint8_t own_addr_type,
+              uint32_t passkey) {
   s->state = SMP_STATE_IDLE;
   s->iat = peer_addr_type & 1;
   s->rat = own_addr_type & 1;
@@ -175,6 +181,9 @@ void smp_init(struct smp_session* s,
   reverse6(own_addr_wire, s->ra);
   s->bond_set = false;
   s->phase3_index = 0;
+  s->passkey = passkey;
+  // Force the round-key cache to recompute against the new TK on next use.
+  tk_round_keys_ready = false;
 }
 
 static uint8_t fail(uint8_t* out, uint8_t reason) {
@@ -197,9 +206,16 @@ static uint8_t on_pairing_request(struct smp_session* s,
   }
   struct smp_pkt_pairing* rsp = (struct smp_pkt_pairing*)out;
   rsp->opcode = SMP_OP_PAIRING_RESPONSE;
-  rsp->io_capability = SMP_IO_NO_INPUT_OUTPUT;
+  if (s->passkey != 0) {
+    // Passkey is shown by the peripheral and typed into the central. Setting
+    // MITM signals authenticated pairing under Passkey Entry IO mapping.
+    rsp->io_capability = SMP_IO_DISPLAY_ONLY;
+    rsp->auth_req = SMP_AUTH_BONDING | SMP_AUTH_MITM;
+  } else {
+    rsp->io_capability = SMP_IO_NO_INPUT_OUTPUT;
+    rsp->auth_req = SMP_AUTH_BONDING;
+  }
   rsp->oob = SMP_OOB_NOT_PRESENT;
-  rsp->auth_req = SMP_AUTH_BONDING;
   rsp->max_enc_key_size = AES128_KEY_SIZE;
   rsp->initiator_kd = 0;
   rsp->responder_kd = SMP_KD_ENC_KEY;
@@ -223,7 +239,7 @@ static uint8_t on_pairing_confirm(struct smp_session* s,
   for (uint8_t i = 0; i < sizeof(s->mconfirm); i++) {
     s->mconfirm[i] = req->value[sizeof(req->value) - 1 - i];
   }
-  ensure_tk_keys();
+  ensure_tk_keys(s);
   random_fill(s->srand, sizeof(s->srand));
   // Compute c1 into rsp->value (MSB) then reverse in place to wire order.
   struct smp_pkt_value16* rsp = (struct smp_pkt_value16*)out;
