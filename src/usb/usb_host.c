@@ -165,6 +165,7 @@ static uint8_t buffer[1024];
 static uint8_t _tx_buffer[64 + 1];
 static uint8_t* tx_buffer = _tx_buffer;
 static uint16_t ep_max_packet_size[2][16];
+static uint8_t bulk_out_toggle[2][16];
 
 static int8_t transaction_lock = -1;
 static uint8_t* transaction_buffer = 0;
@@ -568,6 +569,11 @@ static bool state_set_configuration(uint8_t hub) {
 }
 
 static bool state_set_configuration_done(uint8_t hub) {
+  // SetConfiguration resets every endpoint's data toggle to DATA0 on the
+  // device (USB 2.0 sec. 9.4.7). Mirror that on the host side.
+  for (uint8_t i = 0; i < 16; i++) {
+    bulk_out_toggle[hub][i] = 0;
+  }
   delay_us(hub, 1000, STATE_SET_FEATURE);
   return false;
 }
@@ -796,6 +802,10 @@ static bool state_transaction(uint8_t hub) {
         delay_us(hub, 250, STATE_TRANSACTION_IN);
         return false;
       }
+    }
+    if (transaction_recv_state == STATE_OUT_DONE) {
+      // Bulk OUT ACK: flip toggle for the next packet on this endpoint.
+      bulk_out_toggle[hub][transaction_ep_pid & 0x0f] ^= 1;
     }
     state[hub] = transaction_recv_state;
     do_not_retry[hub] = false;
@@ -1114,7 +1124,8 @@ bool usb_host_out(uint8_t hub, uint8_t ep, uint8_t* data, uint8_t size) {
     return false;
   }
   transaction_stage = 2;
-  host_out_transfer(hub, ep, data, size, STATE_OUT_DONE, 0);
+  uint8_t tog = bulk_out_toggle[hub][ep & 0x0f] ? bUH_T_TOG : 0;
+  host_out_transfer(hub, ep, data, size, STATE_OUT_DONE, tog);
   return true;
 }
 
