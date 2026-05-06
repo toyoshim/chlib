@@ -13,7 +13,7 @@
 
 #include "../../ble/att.h"
 
-struct ble {
+struct ble_peripheral {
   uint8_t usb_host_flags;
 
   uint16_t adv_interval;          // 0.625ms units; 0 → 100ms default
@@ -39,10 +39,10 @@ struct ble {
   void (*sent)(void);
 };
 
-void ble_init(struct ble* ble);
-void ble_poll(void);
+void ble_peripheral_init(struct ble_peripheral* ble);
+void ble_peripheral_poll(void);
 // Returns false while a previous transfer is in flight; wait for `sent`.
-bool ble_send_notification(uint16_t handle,
+bool ble_peripheral_send_notification(uint16_t handle,
                            const uint8_t* value,
                            uint8_t value_len);
 

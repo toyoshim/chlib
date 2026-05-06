@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "ble.h"
+#include "ble_peripheral.h"
 
 #include "../../ble/hci.h"
 #include "../../ble/l2cap.h"
@@ -60,7 +60,7 @@ static const uint16_t bringup_opcode[] = {
     HCI_OPCODE_LE_SET_ADV_ENABLE,
 };
 
-static struct ble* ble;
+static struct ble_peripheral* ble;
 static struct usb_host host;
 static uint8_t state;
 static uint8_t hub_in_use;
@@ -412,7 +412,7 @@ static void in_cb(uint8_t hub, uint8_t ep, uint8_t* data, uint16_t size) {
   }
 }
 
-void ble_init(struct ble* config) {
+void ble_peripheral_init(struct ble_peripheral* config) {
   ble = config;
   state = STATE_DISCONNECTED;
   hub_in_use = 0;
@@ -450,7 +450,7 @@ static bool ble_send_acl(const void* buf, uint8_t len) {
   return stage_tx(STATE_SEND_ACL, buf, len);
 }
 
-bool ble_send_notification(uint16_t handle,
+bool ble_peripheral_send_notification(uint16_t handle,
                            const uint8_t* value,
                            uint8_t value_len) {
   // Notification PDU: opcode + handle(2) + value, framed in L2CAP/ACL.
@@ -481,7 +481,7 @@ static void on_internal_sent(void) {
   }
 }
 
-void ble_poll(void) {
+void ble_peripheral_poll(void) {
   usb_host_poll();
   if (!usb_host_idle()) {
     return;
