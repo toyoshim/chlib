@@ -7,7 +7,7 @@ DEFINES	= \
 USB_HID_OBJS = \
 	hid.rel hid_dualshock3.rel hid_guncon3.rel hid_keyboard.rel  hid_mouse.rel \
 	hid_switch.rel hid_xbox.rel
-USB_BLE_OBJS = ble_peripheral.rel
+USB_BLE_OBJS = ble_peripheral.rel ble_hid_peripheral.rel
 USB_OBJS = \
   cdc_device.rel hid_device.rel usb_device.rel usb_host.rel \
   $(USB_HID_OBJS) $(USB_BLE_OBJS)
