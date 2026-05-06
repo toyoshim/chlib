@@ -2,9 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// SMP Legacy pairing (peripheral side) — Just Works with passkey == 0,
-// Passkey Entry with a build-time-fixed 6-digit passkey otherwise. Plus
-// Phase 3 key distribution.
+// SMP Legacy pairing (peripheral side): Just Works or Passkey Entry,
+// plus Phase 3 key distribution.
 
 #ifndef __ble_smp_h__
 #define __ble_smp_h__

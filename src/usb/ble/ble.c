@@ -19,8 +19,11 @@ enum {
   // 100ms in 0.625ms units, used when caller leaves adv_interval unset.
   ADV_INTERVAL_DEFAULT = 0x00a0,
 
-  // ACL TX scratch: 4 ACL + 4 L2CAP + max 17-byte SMP PDU.
-  SMP_TX_BUF_SIZE = 25,
+  // Default ATT MTU per spec; the only one this library negotiates.
+  ATT_MTU = 23,
+
+  // ACL TX scratch: 4 ACL + 4 L2CAP + max ATT MTU payload.
+  ACL_TX_BUF_SIZE = 8 + ATT_MTU,
 };
 
 enum {
@@ -74,7 +77,11 @@ static bool encrypted_state;
 static bool smp_phase3_pending;
 static uint8_t smp_phase3_pdu[17];
 static uint8_t smp_phase3_pdu_len;
-static uint8_t smp_tx_buf[SMP_TX_BUF_SIZE];
+static uint8_t acl_tx_buf[ACL_TX_BUF_SIZE];
+static uint8_t current_mtu;
+
+static bool ble_send_hci_cmd(const void* buf, uint8_t len);
+static bool ble_send_acl(const void* buf, uint8_t len);
 
 static union {
   struct hci_pkt_reset reset;
@@ -186,9 +193,9 @@ static void send_security_request(void) {
   uint8_t pdu[2];
   pdu[0] = SMP_OP_SECURITY_REQUEST;
   pdu[1] = SMP_AUTH_BONDING | (ble->passkey ? SMP_AUTH_MITM : 0);
-  uint16_t total = l2cap_build(smp_tx_buf, conn_handle, L2CAP_CID_SMP,
+  uint16_t total = l2cap_build(acl_tx_buf, conn_handle, L2CAP_CID_SMP,
                                pdu, sizeof(pdu));
-  ble_send_acl(smp_tx_buf, (uint8_t)total);
+  ble_send_acl(acl_tx_buf, (uint8_t)total);
 }
 
 static void pump_phase3(void) {
@@ -200,9 +207,9 @@ static void pump_phase3(void) {
       return;
     }
   }
-  uint16_t total = l2cap_build(smp_tx_buf, conn_handle, L2CAP_CID_SMP,
+  uint16_t total = l2cap_build(acl_tx_buf, conn_handle, L2CAP_CID_SMP,
                                smp_phase3_pdu, smp_phase3_pdu_len);
-  if (ble_send_acl(smp_tx_buf, (uint8_t)total)) {
+  if (ble_send_acl(acl_tx_buf, (uint8_t)total)) {
     smp_phase3_pdu_len = 0;
   }
 }
@@ -215,9 +222,9 @@ static void dispatch_smp(const struct l2cap_pkt* l2) {
   if (rsp_len == 0) {
     return;
   }
-  uint16_t total = l2cap_build(smp_tx_buf, conn_handle, L2CAP_CID_SMP,
+  uint16_t total = l2cap_build(acl_tx_buf, conn_handle, L2CAP_CID_SMP,
                                rsp, rsp_len);
-  ble_send_acl(smp_tx_buf, (uint8_t)total);
+  ble_send_acl(acl_tx_buf, (uint8_t)total);
 }
 
 static void handle_le_ltk_request(const uint8_t* data, uint8_t size) {
@@ -282,6 +289,7 @@ static void on_le_connection_complete(const uint8_t* data, uint8_t size) {
   encrypted_state = false;
   smp_phase3_pending = false;
   smp_phase3_pdu_len = 0;
+  current_mtu = ATT_MTU;
   smp_init(&smp, &data[8], data[7], own_addr_wire, 0, ble->passkey);
   if (ble->connected) {
     ble->connected(conn_handle);
@@ -339,6 +347,34 @@ static void handle_event(const uint8_t* data, uint8_t size) {
   }
 }
 
+static void dispatch_att(const struct l2cap_pkt* l2) {
+  uint8_t att_rsp[ATT_MTU];
+  struct att_ctx ctx = {ble->db, ble->db_count, current_mtu, encrypted_state};
+  uint8_t rsp_len = att_dispatch(&ctx, l2->payload,
+                                 (uint8_t)l2->payload_len,
+                                 att_rsp, sizeof(att_rsp));
+  if (rsp_len) {
+    if (l2->payload[0] == ATT_OP_EXCHANGE_MTU_REQ &&
+        att_rsp[0] == ATT_OP_EXCHANGE_MTU_RSP) {
+      uint16_t client_mtu = (uint16_t)l2->payload[1] |
+                            ((uint16_t)l2->payload[2] << 8);
+      current_mtu = client_mtu < ATT_MTU ? (uint8_t)client_mtu : ATT_MTU;
+    }
+    uint16_t total = l2cap_build(acl_tx_buf, conn_handle, L2CAP_CID_ATT,
+                                 att_rsp, rsp_len);
+    ble_send_acl(acl_tx_buf, (uint8_t)total);
+  }
+  bool wrote = (l2->payload[0] == ATT_OP_WRITE_REQ &&
+                rsp_len > 0 && att_rsp[0] == ATT_OP_WRITE_RSP) ||
+               (l2->payload[0] == ATT_OP_WRITE_CMD && rsp_len == 0);
+  if (wrote && l2->payload_len >= 3 && ble->attr_write) {
+    uint16_t handle = (uint16_t)l2->payload[1] |
+                      ((uint16_t)l2->payload[2] << 8);
+    ble->attr_write(handle, &l2->payload[3],
+                    (uint8_t)(l2->payload_len - 3));
+  }
+}
+
 static void handle_acl(const uint8_t* data, uint16_t size) {
   struct l2cap_pkt l2;
   if (!l2cap_parse(data, size, &l2)) {
@@ -346,10 +382,8 @@ static void handle_acl(const uint8_t* data, uint16_t size) {
   }
   if (l2.cid == L2CAP_CID_SMP) {
     dispatch_smp(&l2);
-    return;
-  }
-  if (ble->acl) {
-    ble->acl(data, size);
+  } else if (l2.cid == L2CAP_CID_ATT) {
+    dispatch_att(&l2);
   }
 }
 
@@ -408,12 +442,31 @@ static bool stage_tx(uint8_t next, const void* buf, uint8_t len) {
   return true;
 }
 
-bool ble_send_hci_cmd(const void* buf, uint8_t len) {
+static bool ble_send_hci_cmd(const void* buf, uint8_t len) {
   return stage_tx(STATE_SEND_HCI, buf, len);
 }
 
-bool ble_send_acl(const void* buf, uint8_t len) {
+static bool ble_send_acl(const void* buf, uint8_t len) {
   return stage_tx(STATE_SEND_ACL, buf, len);
+}
+
+bool ble_send_notification(uint16_t handle,
+                           const uint8_t* value,
+                           uint8_t value_len) {
+  // Notification PDU: opcode + handle(2) + value, framed in L2CAP/ACL.
+  if ((uint16_t)value_len + 8 + 3 > sizeof(acl_tx_buf)) {
+    return false;
+  }
+  uint8_t pdu[3 + ATT_MTU];
+  pdu[0] = ATT_OP_HANDLE_VALUE_NTF;
+  pdu[1] = handle & 0xff;
+  pdu[2] = handle >> 8;
+  for (uint8_t i = 0; i < value_len; i++) {
+    pdu[3 + i] = value[i];
+  }
+  uint16_t total = l2cap_build(acl_tx_buf, conn_handle, L2CAP_CID_ATT,
+                               pdu, (uint16_t)(3 + value_len));
+  return ble_send_acl(acl_tx_buf, (uint8_t)total);
 }
 
 // Drives Phase 3 first (library work); falls through to caller's `sent` only
