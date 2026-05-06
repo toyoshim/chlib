@@ -53,7 +53,6 @@ struct smp_session {
   uint8_t bond_ltk[16];
   uint8_t bond_ediv[2];
   uint8_t bond_rand[8];
-  uint8_t bond_irk[16];
   bool bond_set;
   bool jw_mode;
   uint8_t phase3_index;

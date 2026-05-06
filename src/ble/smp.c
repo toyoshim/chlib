@@ -77,12 +77,6 @@ struct smp_pkt_master_ident {
   uint8_t rand[8];
 };
 
-struct smp_pkt_identity_addr {
-  uint8_t opcode;
-  uint8_t addr_type;
-  uint8_t bd_addr[6];
-};
-
 struct smp_pkt_failed {
   uint8_t opcode;
   uint8_t reason;
@@ -341,9 +335,11 @@ uint8_t smp_next_phase3_pdu(struct smp_session* s,
     random_fill(s->bond_ltk, sizeof(s->bond_ltk));
     random_fill(s->bond_ediv, sizeof(s->bond_ediv));
     random_fill(s->bond_rand, sizeof(s->bond_rand));
-    random_fill(s->bond_irk, sizeof(s->bond_irk));
     s->bond_set = true;
   }
+  // on_pairing_request fixes responder_kd to SMP_KD_ENC_KEY, so distribution
+  // is exactly the encryption pair below. If that ever grows to advertise
+  // more keys, send them here gated on the matching bit.
   if (s->phase3_index == 0 && out_max >= sizeof(struct smp_pkt_value16)) {
     struct smp_pkt_value16* p = (struct smp_pkt_value16*)out;
     p->opcode = SMP_OP_ENCRYPTION_INFO;
@@ -363,26 +359,6 @@ uint8_t smp_next_phase3_pdu(struct smp_session* s,
       p->rand[i] = s->bond_rand[i];
     }
     s->phase3_index = 2;
-    return sizeof(*p);
-  }
-  if (s->phase3_index == 2 && out_max >= sizeof(struct smp_pkt_value16)) {
-    struct smp_pkt_value16* p = (struct smp_pkt_value16*)out;
-    p->opcode = SMP_OP_IDENTITY_INFO;
-    for (uint8_t i = 0; i < sizeof(p->value); i++) {
-      p->value[i] = s->bond_irk[i];
-    }
-    s->phase3_index = 3;
-    return sizeof(*p);
-  }
-  if (s->phase3_index == 3 && out_max >= sizeof(struct smp_pkt_identity_addr)) {
-    struct smp_pkt_identity_addr* p = (struct smp_pkt_identity_addr*)out;
-    p->opcode = SMP_OP_IDENTITY_ADDR_INFO;
-    p->addr_type = s->rat & 1;
-    // ra is stored MSB; reverse to wire.
-    for (uint8_t i = 0; i < sizeof(p->bd_addr); i++) {
-      p->bd_addr[i] = s->ra[sizeof(p->bd_addr) - 1 - i];
-    }
-    s->phase3_index = 4;
     return sizeof(*p);
   }
   return 0;
