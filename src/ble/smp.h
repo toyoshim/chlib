@@ -26,6 +26,11 @@ enum {
   SMP_OP_SIGNING_INFO          = 0x0a,
   SMP_OP_SECURITY_REQUEST      = 0x0b,
 
+  // AuthReq bits (also used by callers building Security Request PDUs)
+  SMP_AUTH_BONDING = 1 << 0,
+  SMP_AUTH_MITM    = 1 << 2,
+  SMP_AUTH_SC      = 1 << 3,
+
   // session state
   SMP_STATE_IDLE = 0,
   SMP_STATE_AWAITING_CONFIRM,

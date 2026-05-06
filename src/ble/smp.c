@@ -34,10 +34,7 @@ enum {
   SMP_OOB_NOT_PRESENT = 0x00,
   SMP_OOB_PRESENT     = 0x01,
 
-  // AuthReq bits
-  SMP_AUTH_BONDING = 1 << 0,
-  SMP_AUTH_MITM    = 1 << 2,
-  SMP_AUTH_SC      = 1 << 3,
+  // (SMP_AUTH_* live in smp.h: callers build Security Request PDUs.)
 
   // Key Distribution bits
   SMP_KD_ENC_KEY  = 1 << 0,
