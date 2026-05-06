@@ -10,7 +10,7 @@ DEFINES	= \
 .PHONY: all clean build
 
 all: build i2c_device_example.bin i2c_host_example.bin cdc_example.bin \
-	hid_example.bin timer3_example.bin aes_example.bin
+	hid_example.bin timer3_example.bin aes_example.bin ble_example.bin
 	ch559flasher -w timer3_example.bin
 
 clean:
@@ -26,10 +26,16 @@ build/%.rel: ../src/%.c ../src/*.h ../src/usb/*.h
 build/%.rel: ../src/usb/%.c ../src/*.h ../src/usb/*.h
 	$(CC) -c $(CFLAGS) $(DEFINES) -o $@ $<
 
+build/%.rel: ../src/usb/ble/%.c ../src/*.h ../src/usb/*.h ../src/usb/ble/*.h
+	$(CC) -c $(CFLAGS) $(DEFINES) -o $@ $<
+
+build/%.rel: ../src/ble/%.c ../src/*.h ../src/ble/*.h
+	$(CC) -c $(CFLAGS) $(DEFINES) -o $@ $<
+
 build/%.rel: ../src/crypto/%.c ../src/crypto/*.h
 	$(CC) -c $(CFLAGS) $(DEFINES) -o $@ $<
 
-build/%.rel: %.c ../src/*.h
+build/%.rel: %.c ../src/*.h ../src/usb/*.h ../src/usb/ble/*.h ../src/ble/*.h ../src/crypto/*.h
 	$(CC) -c $(CFLAGS) $(DEFINES) -I../src -o $@ $<
 
 build/i2c_device_example.ihx: $(OBJS) build/i2c.rel build/i2c_device_example.rel
@@ -48,6 +54,9 @@ build/timer3_example.ihx: $(OBJS) build/timer3_example.rel
 	$(CC) $(CFLAGS) $^ -o $@
 
 build/aes_example.ihx: $(OBJS) build/aes.rel build/aes_example.rel
+	$(CC) $(CFLAGS) $^ -o $@
+
+build/ble_example.ihx: $(OBJS) build/usb_host.rel build/ble_peripheral.rel build/ble_hid_peripheral.rel build/hci.rel build/l2cap.rel build/att.rel build/smp.rel build/aes.rel build/ble_example.rel
 	$(CC) $(CFLAGS) $^ -o $@
 
 %.bin: build/%.ihx
