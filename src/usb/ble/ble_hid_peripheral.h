@@ -35,6 +35,14 @@ struct ble_hid_peripheral {
 
   uint32_t passkey;             // 6-digit; 0 → Just Works
 
+  // Battery Service is included in the GATT DB and advertised UUIDs only
+  // when this is non-null. The library calls it from
+  // ble_hid_peripheral_poll() to refresh the value the central will see;
+  // return the level as a percentage (0..100). Cache internally if the
+  // measurement is expensive — the library may call this every poll
+  // iteration.
+  uint8_t (*battery_level)(void);
+
   // Callbacks (any may be null).
   void (*ready)(void);
   void (*connected)(void);

@@ -43,10 +43,6 @@ enum {
   H_DI_MODEL         = 0x0014,
   H_DI_PNP_DECL      = 0x0015,
   H_DI_PNP           = 0x0016,
-  H_BAT_PRIMARY      = 0x0018,
-  H_BAT_LEVEL_DECL   = 0x0019,
-  H_BAT_LEVEL        = 0x001a,
-  H_BAT_CCCD         = 0x001b,
   H_HID_PRIMARY      = 0x0020,
   H_HID_INFO_DECL    = 0x0021,
   H_HID_INFO         = 0x0022,
@@ -58,6 +54,14 @@ enum {
   H_HID_REPORT       = 0x0028,
   H_HID_REPORT_CCCD  = 0x0029,
   H_HID_REPORT_REF   = 0x002a,
+  // Battery handles sit after HID so the optional service can be dropped
+  // by truncating db_count without holes in the HID handle range.
+  H_BAT_PRIMARY      = 0x0030,
+  H_BAT_LEVEL_DECL   = 0x0031,
+  H_BAT_LEVEL        = 0x0032,
+  H_BAT_CCCD         = 0x0033,
+
+  BAT_ATTR_COUNT     = 4,
 };
 
 // Service Primary UUIDs and characteristic declarations are all const.
@@ -107,11 +111,11 @@ static const uint8_t v_char_hid_rep[]  = {CHAR_PROP_READ | CHAR_PROP_NOTIFY,
 // bcdHID = 0x0111, country code 0, flags = RemoteWake | NormallyConnectable.
 static const uint8_t v_hid_info[]       = {0x11, 0x01, 0x00, 0x03};
 static const uint8_t v_hid_report_ref[] = {0x00, 0x01};
-static const uint8_t v_battery_level[]  = {100};
 
 // Variable / mutable values.
 static uint8_t v_appearance[2];
 static uint8_t v_pnp[7];
+static uint8_t v_battery_level[1];
 static uint8_t v_battery_cccd[2];
 static uint8_t v_hid_ctl_point[1];
 static uint8_t v_hid_report[HID_REPORT_MAX];
@@ -140,15 +144,6 @@ static struct ble_attr db[] = {
      (uint8_t*)v_char_pnp, sizeof(v_char_pnp), 0},
     {H_DI_PNP, UUID_PNP_ID, v_pnp, sizeof(v_pnp), 0},
 
-    {H_BAT_PRIMARY, UUID_PRIMARY_SERVICE,
-     (uint8_t*)v_battery_primary, sizeof(v_battery_primary), 0},
-    {H_BAT_LEVEL_DECL, UUID_CHARACTERISTIC,
-     (uint8_t*)v_char_battery, sizeof(v_char_battery), 0},
-    {H_BAT_LEVEL, UUID_BATTERY_LEVEL,
-     (uint8_t*)v_battery_level, sizeof(v_battery_level), 0},
-    {H_BAT_CCCD, UUID_CCCD,
-     v_battery_cccd, sizeof(v_battery_cccd), BLE_ATTR_WRITABLE},
-
     {H_HID_PRIMARY, UUID_PRIMARY_SERVICE,
      (uint8_t*)v_hid_primary, sizeof(v_hid_primary), 0},
     {H_HID_INFO_DECL, UUID_CHARACTERISTIC,
@@ -171,34 +166,49 @@ static struct ble_attr db[] = {
      BLE_ATTR_WRITABLE | BLE_ATTR_ENCRYPTED},
     {H_HID_REPORT_REF, UUID_REPORT_REFERENCE,
      (uint8_t*)v_hid_report_ref, sizeof(v_hid_report_ref), 0},
+
+    // Battery Service (optional). Kept at the end of the table so it can
+    // be excluded by truncating db_count when the caller leaves the
+    // battery_level callback null.
+    {H_BAT_PRIMARY, UUID_PRIMARY_SERVICE,
+     (uint8_t*)v_battery_primary, sizeof(v_battery_primary), 0},
+    {H_BAT_LEVEL_DECL, UUID_CHARACTERISTIC,
+     (uint8_t*)v_char_battery, sizeof(v_char_battery), 0},
+    {H_BAT_LEVEL, UUID_BATTERY_LEVEL,
+     v_battery_level, sizeof(v_battery_level), 0},
+    {H_BAT_CCCD, UUID_CCCD,
+     v_battery_cccd, sizeof(v_battery_cccd), BLE_ATTR_WRITABLE},
 };
 
 #define ATTR_COUNT (sizeof(db) / sizeof(db[0]))
 
-// Advertising payload: Flags + UUID16(HID, Battery) + Appearance. Each AD
-// record's length field is the count of bytes that follow it (type + value).
+// Advertising payload: Flags + Appearance + UUID16(HID, optionally Battery).
+// Each AD record's length field is the count of bytes that follow it (type
+// + value). uuid_battery is at the tail so it can be dropped from the
+// transmitted advertisement by shortening adv_data_len when the caller
+// leaves the battery_level callback null.
 static struct {
   uint8_t flags_len;
   uint8_t flags_type;
   uint8_t flags_value;
+  uint8_t appear_len;
+  uint8_t appear_type;
+  uint16_t appearance;
   uint8_t uuid_len;
   uint8_t uuid_type;
   uint16_t uuid_hid;
   uint16_t uuid_battery;
-  uint8_t appear_len;
-  uint8_t appear_type;
-  uint16_t appearance;
 } adv_data = {
     1 + sizeof(uint8_t),
     HCI_AD_FLAGS,
     HCI_AD_FLAG_LE_GENERAL_DISC | HCI_AD_FLAG_BR_EDR_NOT_SUPPORTED,
+    1 + sizeof(uint16_t),
+    HCI_AD_APPEARANCE,
+    0,
     1 + 2 * sizeof(uint16_t),
     HCI_AD_UUID16_COMPLETE,
     UUID_HID_SVC,
     UUID_BATTERY_SVC,
-    1 + sizeof(uint16_t),
-    HCI_AD_APPEARANCE,
-    0,
 };
 
 // Scan response: complete local name only.
@@ -331,6 +341,9 @@ void ble_hid_peripheral_init(const struct ble_hid_peripheral* config,
   patch_attr(H_HID_MAP, (uint8_t*)config->report_map,
              config->report_map_len);
   patch_attr(H_HID_REPORT, v_hid_report, config->report_len);
+  if (config->battery_level) {
+    v_battery_level[0] = config->battery_level();
+  }
 
   underlying_ble.usb_host_flags = usb_host_flags;
   underlying_ble.adv_interval = 0;
@@ -341,6 +354,13 @@ void ble_hid_peripheral_init(const struct ble_hid_peripheral* config,
   underlying_ble.passkey = config->passkey;
   underlying_ble.db = db;
   underlying_ble.db_count = ATTR_COUNT;
+  if (!config->battery_level) {
+    // Drop the trailing UUID16 (Battery) bytes from the AD record so the
+    // service we don't expose isn't advertised either.
+    adv_data.uuid_len -= sizeof(uint16_t);
+    underlying_ble.adv_data_len -= sizeof(uint16_t);
+    underlying_ble.db_count -= BAT_ATTR_COUNT;
+  }
   underlying_ble.advertising = on_ble_advertising;
   underlying_ble.connected = on_ble_connected;
   underlying_ble.disconnected = on_ble_disconnected;
@@ -352,6 +372,9 @@ void ble_hid_peripheral_init(const struct ble_hid_peripheral* config,
 }
 
 void ble_hid_peripheral_poll(void) {
+  if (hid->battery_level) {
+    v_battery_level[0] = hid->battery_level();
+  }
   ble_peripheral_poll();
 }
 
