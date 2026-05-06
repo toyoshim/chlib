@@ -40,7 +40,7 @@ uint16_t l2cap_build(uint8_t* out,
                      uint16_t payload_len) {
   struct hci_acl_header* acl = (struct hci_acl_header*)out;
   struct l2cap_header* l2 = (struct l2cap_header*)(out + sizeof(*acl));
-  // PB = 0b10 (First auto-flushable LE packet, BT Core Vol 4 Part E sec. 5.4.2),
+  // PB = 0b10 (First auto-flushable LE packet, BT spec Vol 4 Part E sec 5.4.2),
   // BC = 0b00 (point-to-point).
   acl->handle_flags = (handle & 0x0fff) | (0x2 << 12);
   acl->length = sizeof(*l2) + payload_len;
