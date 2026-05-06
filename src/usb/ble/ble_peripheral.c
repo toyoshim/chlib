@@ -457,6 +457,12 @@ bool ble_peripheral_send_notification(uint16_t handle,
   if ((uint16_t)value_len + 8 + 3 > sizeof(acl_tx_buf)) {
     return false;
   }
+  // Bail out before touching acl_tx_buf if a previous staged ACL is still
+  // referencing it; otherwise we would clobber its bytes while the staged
+  // tx_len still expects the old payload.
+  if (state != STATE_POLL_EVENT && state != STATE_POLL_ACL) {
+    return false;
+  }
   uint8_t pdu[3 + ATT_MTU];
   pdu[0] = ATT_OP_HANDLE_VALUE_NTF;
   pdu[1] = handle & 0xff;
