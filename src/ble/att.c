@@ -6,7 +6,6 @@
 
 enum {
   // ATT opcodes used internally (BT spec Vol 3 Part F sec. 3.4)
-  ATT_OP_ERROR_RSP              = 0x01,
   ATT_OP_FIND_INFO_REQ          = 0x04,
   ATT_OP_FIND_INFO_RSP          = 0x05,
   ATT_OP_FIND_BY_TYPE_REQ       = 0x06,
@@ -19,10 +18,9 @@ enum {
   ATT_OP_READ_BLOB_RSP          = 0x0d,
   ATT_OP_READ_BY_GROUP_TYPE_REQ = 0x10,
   ATT_OP_READ_BY_GROUP_TYPE_RSP = 0x11,
-  ATT_OP_WRITE_REQ              = 0x12,
-  ATT_OP_WRITE_RSP              = 0x13,
-  ATT_OP_WRITE_CMD              = 0x52,
-  // ATT_OP_HANDLE_VALUE_NTF lives in att.h (sent by callers).
+  // ATT_OP_ERROR_RSP / WRITE_REQ / WRITE_RSP / WRITE_CMD / HANDLE_VALUE_NTF
+  // live in att.h (callers either send them or detect them in dispatched
+  // requests / responses).
 
   // error codes
   ATT_ERR_INVALID_HANDLE          = 0x01,

@@ -12,9 +12,13 @@
 
 enum {
   // ATT opcodes used by callers (BT spec Vol 3 Part F sec. 3.4)
+  ATT_OP_ERROR_RSP        = 0x01,
   ATT_OP_EXCHANGE_MTU_REQ = 0x02,
   ATT_OP_EXCHANGE_MTU_RSP = 0x03,
+  ATT_OP_WRITE_REQ        = 0x12,
+  ATT_OP_WRITE_RSP        = 0x13,
   ATT_OP_HANDLE_VALUE_NTF = 0x1b,
+  ATT_OP_WRITE_CMD        = 0x52,
 
   // GATT declaration UUIDs used in DB definitions
   UUID_PRIMARY_SERVICE = 0x2800,
