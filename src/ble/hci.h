@@ -24,6 +24,7 @@ enum {
   // event codes (BT spec Vol 4 Part E sec. 7.7)
   HCI_EVT_DISCONNECTION_COMPLETE = 0x05,
   HCI_EVT_ENCRYPTION_CHANGE      = 0x08,
+  HCI_EVT_COMMAND_COMPLETE       = 0x0e,
   HCI_EVT_LE_META                = 0x3e,
 
   // LE Meta sub-events

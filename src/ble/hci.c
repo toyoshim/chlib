@@ -9,9 +9,8 @@ enum {
   HCI_OPCODE_LE_LTK_REQ_REPLY     = 0x201a,
   HCI_OPCODE_LE_LTK_REQ_NEG_REPLY = 0x201b,
 
-  // Event codes used internally
-  HCI_EVT_COMMAND_COMPLETE = 0x0e,
-  HCI_EVT_COMMAND_STATUS   = 0x0f,
+  // Event codes used internally (HCI_EVT_COMMAND_COMPLETE lives in hci.h).
+  HCI_EVT_COMMAND_STATUS = 0x0f,
 
   // Advertising_Type (LE_Set_Advertising_Parameters)
   HCI_ADV_TYPE_CONN_UNDIRECT    = 0x00,
