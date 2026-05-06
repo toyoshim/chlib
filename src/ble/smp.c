@@ -88,8 +88,9 @@ struct smp_pkt_failed {
   uint8_t reason;
 };
 
-// TK = 16-byte big-endian integer with the passkey (0..999999) in the low
-// bits and zero padding above (BT spec Vol 3 Part H sec 2.3.5.5).
+// TK = 0 for Just Works; for Passkey Entry, a 16-byte big-endian integer with
+// the passkey (0..999999) in the low bits and zero padding above (BT spec
+// Vol 3 Part H sec 2.3.5.5).
 static void ensure_tk_keys(const struct smp_session* s) {
   if (tk_round_keys_ready) {
     return;
@@ -98,9 +99,11 @@ static void ensure_tk_keys(const struct smp_session* s) {
   for (uint8_t i = 0; i < AES128_KEY_SIZE; i++) {
     tk[i] = 0;
   }
-  tk[AES128_KEY_SIZE - 1] = (uint8_t)(s->passkey & 0xff);
-  tk[AES128_KEY_SIZE - 2] = (uint8_t)((s->passkey >> 8) & 0xff);
-  tk[AES128_KEY_SIZE - 3] = (uint8_t)((s->passkey >> 16) & 0xff);
+  if (!s->jw_mode) {
+    tk[AES128_KEY_SIZE - 1] = (uint8_t)(s->passkey & 0xff);
+    tk[AES128_KEY_SIZE - 2] = (uint8_t)((s->passkey >> 8) & 0xff);
+    tk[AES128_KEY_SIZE - 3] = (uint8_t)((s->passkey >> 16) & 0xff);
+  }
   aes128_key_expansion(tk, tk_round_keys);
   tk_round_keys_ready = true;
 }
@@ -177,6 +180,7 @@ void smp_init(struct smp_session* s,
   reverse6(peer_addr_wire, s->ia);
   reverse6(own_addr_wire, s->ra);
   s->bond_set = false;
+  s->jw_mode = true;
   s->phase3_index = 0;
   s->passkey = passkey;
   // Force the round-key cache to recompute against the new TK on next use.
@@ -216,6 +220,18 @@ static uint8_t on_pairing_request(struct smp_session* s,
   rsp->max_enc_key_size = AES128_KEY_SIZE;
   rsp->initiator_kd = 0;
   rsp->responder_kd = SMP_KD_ENC_KEY;
+  // BT Core Vol 3 Part H Table 2.6 / sec 2.3.5.1: with the responder fixed at
+  // DisplayOnly or NoInputNoOutput, Passkey Entry is only available when both
+  // sides request MITM and the initiator has keyboard input. Anything else
+  // falls back to Just Works (TK = 0), even if the central asked for MITM.
+  uint8_t peer_io = s->preq[5];
+  uint8_t peer_authreq = s->preq[3];
+  bool both_mitm = (peer_authreq & SMP_AUTH_MITM) &&
+                   (rsp->auth_req & SMP_AUTH_MITM);
+  bool peer_can_input = peer_io == SMP_IO_KEYBOARD_ONLY ||
+                        peer_io == SMP_IO_KEYBOARD_DISPLAY;
+  s->jw_mode = !(both_mitm && peer_can_input &&
+                 rsp->io_capability == SMP_IO_DISPLAY_ONLY);
   for (uint8_t i = 0; i < sizeof(s->pres); i++) {
     s->pres[i] = out[sizeof(s->pres) - 1 - i];
   }
