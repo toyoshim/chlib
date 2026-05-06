@@ -2,7 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// Bluetooth HCI USB transport over chlib's usb_host.
+// Peripheral-side BLE on top of chlib's usb_host. Drives the HCI bring-up
+// sequence (Reset → Set_Event_Mask → LE_Set_Event_Mask → Read_BD_ADDR →
+// LE_Set_Advertising_Parameters → LE_Set_Advertising_Data →
+// LE_Set_Scan_Response_Data → LE_Set_Advertising_Enable) and surfaces
+// connection lifecycle to the caller.
 
 #ifndef __ble_h__
 #define __ble_h__
@@ -12,10 +16,24 @@
 
 struct ble {
   uint8_t usb_host_flags;
-  void (*event)(const uint8_t* data, uint8_t size);
-  void (*acl)(const uint8_t* data, uint16_t size);
-  void (*ready)(void);
+
+  // Advertising configuration. Library copies these into HCI commands.
+  uint16_t adv_interval;          // 0.625ms units; 0 → use 100ms default
+  const uint8_t* adv_data;
+  uint8_t adv_data_len;
+  const uint8_t* scan_rsp_data;
+  uint8_t scan_rsp_data_len;
+
+  // 6-digit Legacy Passkey. 0 selects Just Works (no MITM protection).
+  uint32_t passkey;
+
+  // Lifecycle callbacks. Any may be null. `acl` receives non-SMP L2CAP
+  // payloads (the library handles SMP internally).
+  void (*advertising)(void);
+  void (*connected)(uint16_t handle);
   void (*disconnected)(void);
+  void (*encrypted)(bool on);
+  void (*acl)(const uint8_t* data, uint16_t size);
   void (*sent)(void);
 };
 
