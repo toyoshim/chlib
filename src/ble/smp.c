@@ -134,18 +134,10 @@ static void c1(const struct smp_session* s,
     out_msb[i] ^= r_msb[i];
   }
   aes128_encrypt_block(tk_round_keys, out_msb, out_msb);
-  // p2 = padding(4) || ia(6) || ra(6); needs its own buffer because out_msb
-  // still holds the AES result we will XOR into.
-  uint8_t p2[AES128_BLOCK_SIZE];
-  for (uint8_t i = 0; i < 4; i++) {
-    p2[i] = 0;
-  }
+  // p2 = padding(4) || ia(6) || ra(6). XOR directly into out_msb.
   for (uint8_t i = 0; i < sizeof(s->ia); i++) {
-    p2[4 + i] = s->ia[i];
-    p2[4 + sizeof(s->ia) + i] = s->ra[i];
-  }
-  for (uint8_t i = 0; i < AES128_BLOCK_SIZE; i++) {
-    out_msb[i] ^= p2[i];
+    out_msb[4 + i] ^= s->ia[i];
+    out_msb[4 + sizeof(s->ia) + i] ^= s->ra[i];
   }
   aes128_encrypt_block(tk_round_keys, out_msb, out_msb);
 }
@@ -274,16 +266,15 @@ static uint8_t on_pairing_random(struct smp_session* s,
   for (uint8_t i = 0; i < sizeof(s->mrand); i++) {
     s->mrand[i] = req->value[sizeof(req->value) - 1 - i];
   }
-  uint8_t check[16];
-  c1(s, s->mrand, check);
-  for (uint8_t i = 0; i < sizeof(check); i++) {
-    if (check[i] != s->mconfirm[i]) {
+  struct smp_pkt_value16* rsp = (struct smp_pkt_value16*)out;
+  c1(s, s->mrand, rsp->value);
+  for (uint8_t i = 0; i < sizeof(rsp->value); i++) {
+    if (rsp->value[i] != s->mconfirm[i]) {
       s->state = SMP_STATE_FAILED;
       return fail(out, SMP_PF_CONFIRM_VALUE_FAILED);
     }
   }
   s1(s->srand, s->mrand, s->stk);
-  struct smp_pkt_value16* rsp = (struct smp_pkt_value16*)out;
   rsp->opcode = SMP_OP_PAIRING_RANDOM;
   for (uint8_t i = 0; i < sizeof(rsp->value); i++) {
     rsp->value[i] = s->srand[sizeof(s->srand) - 1 - i];

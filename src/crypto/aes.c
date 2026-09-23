@@ -109,25 +109,24 @@ static void mix_columns(uint8_t state[16]) {
 void aes128_encrypt_block(const uint8_t rk[176],
                           const uint8_t plaintext[16],
                           uint8_t ciphertext[16]) {
-  uint8_t state[16];
   for (int i = 0; i < 16; i++) {
-    state[i] = plaintext[i] ^ rk[i];
+    ciphertext[i] = plaintext[i] ^ rk[i];
   }
   for (int round = 1; round < 10; round++) {
     for (int i = 0; i < 16; i++) {
-      state[i] = SBOX[state[i]];
+      ciphertext[i] = SBOX[ciphertext[i]];
     }
-    shift_rows(state);
-    mix_columns(state);
+    shift_rows(ciphertext);
+    mix_columns(ciphertext);
     for (int i = 0; i < 16; i++) {
-      state[i] ^= rk[round * 16 + i];
+      ciphertext[i] ^= rk[round * 16 + i];
     }
   }
   for (int i = 0; i < 16; i++) {
-    state[i] = SBOX[state[i]];
+    ciphertext[i] = SBOX[ciphertext[i]];
   }
-  shift_rows(state);
+  shift_rows(ciphertext);
   for (int i = 0; i < 16; i++) {
-    ciphertext[i] = state[i] ^ rk[160 + i];
+    ciphertext[i] ^= rk[160 + i];
   }
 }

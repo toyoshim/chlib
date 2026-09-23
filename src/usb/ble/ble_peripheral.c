@@ -22,8 +22,11 @@ enum {
   // Default ATT MTU per spec; the only one this library negotiates.
   ATT_MTU = 23,
 
+  // L2CAP Framing: 4 HCI ACL + 4 L2CAP header
+  L2CAP_HDR_SIZE = 8,
+
   // ACL TX scratch: 4 ACL + 4 L2CAP + max ATT MTU payload.
-  ACL_TX_BUF_SIZE = 8 + ATT_MTU,
+  ACL_TX_BUF_SIZE = L2CAP_HDR_SIZE + ATT_MTU,
 };
 
 enum {
@@ -75,10 +78,12 @@ static struct smp_session smp;
 static uint16_t conn_handle;
 static bool encrypted_state;
 static bool smp_phase3_pending;
-static uint8_t smp_phase3_pdu[17];
-static uint8_t smp_phase3_pdu_len;
 static uint8_t acl_tx_buf[ACL_TX_BUF_SIZE];
 static uint8_t current_mtu;
+
+static uint8_t* acl_tx_payload(void) {
+  return acl_tx_buf + L2CAP_HDR_SIZE;
+}
 
 static bool ble_send_hci_cmd(const void* buf, uint8_t len);
 static bool ble_send_acl(const void* buf, uint8_t len);
@@ -199,26 +204,23 @@ static void send_security_request(void) {
 }
 
 static void pump_phase3(void) {
-  if (smp_phase3_pdu_len == 0) {
-    smp_phase3_pdu_len = smp_next_phase3_pdu(&smp, smp_phase3_pdu,
-                                             sizeof(smp_phase3_pdu));
-    if (smp_phase3_pdu_len == 0) {
-      smp_phase3_pending = false;
-      return;
-    }
+  uint8_t* pdu = acl_tx_payload();
+  uint8_t pdu_len = smp_next_phase3_pdu(&smp, pdu,
+                                        sizeof(acl_tx_buf) - L2CAP_HDR_SIZE);
+  if (pdu_len == 0) {
+    smp_phase3_pending = false;
+    return;
   }
   uint16_t total = l2cap_build(acl_tx_buf, conn_handle, L2CAP_CID_SMP,
-                               smp_phase3_pdu, smp_phase3_pdu_len);
-  if (ble_send_acl(acl_tx_buf, (uint8_t)total)) {
-    smp_phase3_pdu_len = 0;
-  }
+                               pdu, pdu_len);
+  ble_send_acl(acl_tx_buf, (uint8_t)total);
 }
 
 static void dispatch_smp(const struct l2cap_pkt* l2) {
-  uint8_t rsp[17];
+  uint8_t* rsp = acl_tx_payload();
   uint8_t rsp_len = smp_handle_pdu(&smp, l2->payload,
                                    (uint8_t)l2->payload_len,
-                                   rsp, sizeof(rsp));
+                                   rsp, sizeof(acl_tx_buf) - L2CAP_HDR_SIZE);
   if (rsp_len == 0) {
     return;
   }
@@ -271,7 +273,6 @@ static void handle_encryption_change(const uint8_t* data, uint8_t size) {
   encrypted_state = (data[5] != 0);
   if (encrypted_state) {
     smp_phase3_pending = true;
-    smp_phase3_pdu_len = 0;
   }
   if (ble->encrypted) {
     ble->encrypted(encrypted_state);
@@ -288,7 +289,6 @@ static void on_le_connection_complete(const uint8_t* data, uint8_t size) {
   conn_handle = (uint16_t)data[4] | ((uint16_t)data[5] << 8);
   encrypted_state = false;
   smp_phase3_pending = false;
-  smp_phase3_pdu_len = 0;
   current_mtu = ATT_MTU;
   smp_init(&smp, &data[8], data[7], own_addr_wire, 0, ble->passkey);
   if (ble->connected) {
@@ -336,7 +336,6 @@ static void handle_event(const uint8_t* data, uint8_t size) {
   } else if (data[0] == HCI_EVT_DISCONNECTION_COMPLETE) {
     encrypted_state = false;
     smp_phase3_pending = false;
-    smp_phase3_pdu_len = 0;
     bringup_step = BRINGUP_ADV_ENABLE;
     send_bringup_step();
     if (ble->disconnected) {
@@ -348,11 +347,11 @@ static void handle_event(const uint8_t* data, uint8_t size) {
 }
 
 static void dispatch_att(const struct l2cap_pkt* l2) {
-  uint8_t att_rsp[ATT_MTU];
+  uint8_t* att_rsp = acl_tx_payload();
   struct att_ctx ctx = {ble->db, ble->db_count, current_mtu, encrypted_state};
   uint8_t rsp_len = att_dispatch(&ctx, l2->payload,
                                  (uint8_t)l2->payload_len,
-                                 att_rsp, sizeof(att_rsp));
+                                 att_rsp, sizeof(acl_tx_buf) - L2CAP_HDR_SIZE);
   if (rsp_len) {
     if (l2->payload[0] == ATT_OP_EXCHANGE_MTU_REQ &&
         att_rsp[0] == ATT_OP_EXCHANGE_MTU_RSP) {
@@ -395,7 +394,6 @@ static void on_usb_disconnected(uint8_t hub) {
   bringup_step = BRINGUP_IDLE;
   encrypted_state = false;
   smp_phase3_pending = false;
-  smp_phase3_pdu_len = 0;
   if (ble->disconnected) {
     ble->disconnected();
   }
@@ -419,7 +417,6 @@ void ble_peripheral_init(struct ble_peripheral* config) {
   bringup_step = BRINGUP_IDLE;
   encrypted_state = false;
   smp_phase3_pending = false;
-  smp_phase3_pdu_len = 0;
 
   host.flags = config->usb_host_flags;
   host.disconnected = on_usb_disconnected;
@@ -454,7 +451,7 @@ bool ble_peripheral_send_notification(uint16_t handle,
                            const uint8_t* value,
                            uint8_t value_len) {
   // Notification PDU: opcode + handle(2) + value, framed in L2CAP/ACL.
-  if ((uint16_t)value_len + 8 + 3 > sizeof(acl_tx_buf)) {
+  if ((uint16_t)value_len + L2CAP_HDR_SIZE + 3 > sizeof(acl_tx_buf)) {
     return false;
   }
   // Bail out before touching acl_tx_buf if a previous staged ACL is still
@@ -463,7 +460,7 @@ bool ble_peripheral_send_notification(uint16_t handle,
   if (state != STATE_POLL_EVENT && state != STATE_POLL_ACL) {
     return false;
   }
-  uint8_t pdu[3 + ATT_MTU];
+  uint8_t* pdu = acl_tx_payload();
   pdu[0] = ATT_OP_HANDLE_VALUE_NTF;
   pdu[1] = handle & 0xff;
   pdu[2] = handle >> 8;
