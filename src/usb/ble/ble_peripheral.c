@@ -209,6 +209,13 @@ static void pump_phase3(void) {
                                         sizeof(acl_tx_buf) - L2CAP_HDR_SIZE);
   if (pdu_len == 0) {
     smp_phase3_pending = false;
+    smp.state = SMP_STATE_IDLE;
+    if (ble->save_bond) {
+      struct smp_bond_info bond;
+      if (smp_get_bond(&smp, &bond)) {
+        ble->save_bond(&bond);
+      }
+    }
     return;
   }
   uint16_t total = l2cap_build(acl_tx_buf, conn_handle, L2CAP_CID_SMP,
@@ -271,13 +278,13 @@ static void handle_encryption_change(const uint8_t* data, uint8_t size) {
     return;
   }
   encrypted_state = (data[5] != 0);
-  if (encrypted_state) {
+  if (encrypted_state && smp.state == SMP_STATE_STK_READY) {
     smp_phase3_pending = true;
   }
   if (ble->encrypted) {
     ble->encrypted(encrypted_state);
   }
-  if (encrypted_state) {
+  if (smp_phase3_pending) {
     pump_phase3();
   }
 }
@@ -417,6 +424,13 @@ void ble_peripheral_init(struct ble_peripheral* config) {
   bringup_step = BRINGUP_IDLE;
   encrypted_state = false;
   smp_phase3_pending = false;
+
+  if (config->load_bond) {
+    struct smp_bond_info bond;
+    if (config->load_bond(&bond)) {
+      smp_set_bond(&smp, &bond);
+    }
+  }
 
   host.flags = config->usb_host_flags;
   host.disconnected = on_usb_disconnected;

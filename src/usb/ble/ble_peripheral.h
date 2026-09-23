@@ -12,6 +12,7 @@
 #include <stdint.h>
 
 #include "../../ble/att.h"
+#include "../../ble/smp.h"
 
 struct ble_peripheral {
   uint8_t usb_host_flags;
@@ -37,6 +38,8 @@ struct ble_peripheral {
                      const uint8_t* value,
                      uint8_t value_len);
   void (*sent)(void);
+  bool (*load_bond)(struct smp_bond_info* bond);
+  void (*save_bond)(const struct smp_bond_info* bond);
 };
 
 void ble_peripheral_init(struct ble_peripheral* ble);

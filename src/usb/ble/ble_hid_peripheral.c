@@ -367,6 +367,8 @@ void ble_hid_peripheral_init(const struct ble_hid_peripheral* config,
   underlying_ble.encrypted = on_ble_encrypted;
   underlying_ble.attr_write = on_ble_attr_write;
   underlying_ble.sent = on_ble_sent;
+  underlying_ble.load_bond = config->load_bond;
+  underlying_ble.save_bond = config->save_bond;
 
   ble_peripheral_init(&underlying_ble);
 }

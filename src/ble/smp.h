@@ -59,6 +59,12 @@ struct smp_session {
   uint32_t passkey;
 };
 
+struct smp_bond_info {
+  uint8_t ltk[16];
+  uint8_t ediv[2];
+  uint8_t rand[8];
+};
+
 // `passkey` is the 6-digit Legacy Passkey value (0..999999); 0 selects Just
 // Works (TK = 0, no MITM protection). Non-zero values negotiate Passkey
 // Entry with the central displaying / accepting the same number.
@@ -68,6 +74,9 @@ void smp_init(struct smp_session* s,
               const uint8_t* own_addr_wire,
               uint8_t own_addr_type,
               uint32_t passkey);
+
+void smp_set_bond(struct smp_session* s, const struct smp_bond_info* bond);
+bool smp_get_bond(const struct smp_session* s, struct smp_bond_info* bond);
 
 // Returns the number of response bytes written to `out`, or 0 when no
 // response is needed.

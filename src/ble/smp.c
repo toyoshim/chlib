@@ -165,12 +165,44 @@ void smp_init(struct smp_session* s,
   s->rat = own_addr_type & 1;
   reverse6(peer_addr_wire, s->ia);
   reverse6(own_addr_wire, s->ra);
-  s->bond_set = false;
   s->jw_mode = true;
   s->phase3_index = 0;
   s->passkey = passkey;
   // Force the round-key cache to recompute against the new TK on next use.
   tk_round_keys_ready = false;
+}
+
+void smp_set_bond(struct smp_session* s, const struct smp_bond_info* bond) {
+  if (bond) {
+    for (uint8_t i = 0; i < sizeof(s->bond_ltk); i++) {
+      s->bond_ltk[i] = bond->ltk[i];
+    }
+    for (uint8_t i = 0; i < sizeof(s->bond_ediv); i++) {
+      s->bond_ediv[i] = bond->ediv[i];
+    }
+    for (uint8_t i = 0; i < sizeof(s->bond_rand); i++) {
+      s->bond_rand[i] = bond->rand[i];
+    }
+    s->bond_set = true;
+  } else {
+    s->bond_set = false;
+  }
+}
+
+bool smp_get_bond(const struct smp_session* s, struct smp_bond_info* bond) {
+  if (!s->bond_set) {
+    return false;
+  }
+  for (uint8_t i = 0; i < sizeof(bond->ltk); i++) {
+    bond->ltk[i] = s->bond_ltk[i];
+  }
+  for (uint8_t i = 0; i < sizeof(bond->ediv); i++) {
+    bond->ediv[i] = s->bond_ediv[i];
+  }
+  for (uint8_t i = 0; i < sizeof(bond->rand); i++) {
+    bond->rand[i] = s->bond_rand[i];
+  }
+  return true;
 }
 
 static uint8_t fail(uint8_t* out, uint8_t reason) {
@@ -187,6 +219,7 @@ static uint8_t on_pairing_request(struct smp_session* s,
   if (pdu_len != sizeof(struct smp_pkt_pairing)) {
     return fail(out, SMP_PF_UNSPECIFIED);
   }
+  s->bond_set = false;
   // preq spec/MSB = wire reversed.
   for (uint8_t i = 0; i < sizeof(s->preq); i++) {
     s->preq[i] = pdu[sizeof(s->preq) - 1 - i];

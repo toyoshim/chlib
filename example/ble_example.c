@@ -11,9 +11,10 @@
 #include "usb/ble/ble_hid_peripheral.h"
 #include "usb/usb_host.h"
 
+#define BLE_PASSKEY 738291
+
 enum {
   APPEARANCE_KEYBOARD = 0x03c1,
-  BLE_PASSKEY         = 738291,
   HID_REPORT_LEN      = 8,
   HID_KEYCODE_A       = 0x04,
 };
@@ -96,6 +97,21 @@ static void on_sent(void) {
   }
 }
 
+static bool on_load_bond(struct smp_bond_info* bond) {
+  // Optional: load previously saved bonding keys (LTK, EDIV, RAND) from
+  // persistent storage (e.g. Flash / EEPROM) into `bond` and return true.
+  // Returning false indicates no stored bond exists.
+  (void)bond;
+  return false;
+}
+
+static void on_save_bond(const struct smp_bond_info* bond) {
+  // Optional: persist newly negotiated bonding keys into Flash / EEPROM so
+  // future connections can re-encrypt without re-pairing.
+  (void)bond;
+  Serial.println("bonded");
+}
+
 void main(void) {
   initialize();
   Serial.println("BLE Example: chlib example");
@@ -116,6 +132,8 @@ void main(void) {
       .disconnected = on_disconnected,
       .notify_enabled = on_notify_enabled,
       .sent = on_sent,
+      .load_bond = on_load_bond,
+      .save_bond = on_save_bond,
   };
   // HUB0 is left for the PC (flashing / serial); the dongle goes on HUB1.
   ble_hid_peripheral_init(&hid, USE_HUB1);

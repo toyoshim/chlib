@@ -10,6 +10,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "../../ble/smp.h"
+
 enum {
   BLE_VID_SOURCE_BT_SIG = 0x01,
   BLE_VID_SOURCE_USB_IF = 0x02,
@@ -49,6 +51,8 @@ struct ble_hid_peripheral {
   void (*disconnected)(void);
   void (*notify_enabled)(bool on);
   void (*sent)(void);
+  bool (*load_bond)(struct smp_bond_info* bond);
+  void (*save_bond)(const struct smp_bond_info* bond);
 };
 
 void ble_hid_peripheral_init(const struct ble_hid_peripheral* hid,
