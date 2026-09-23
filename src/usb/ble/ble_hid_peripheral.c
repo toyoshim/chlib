@@ -24,6 +24,7 @@ enum {
   UUID_HID_CONTROL_POINT = 0x2a4c,
   UUID_HID_REPORT_MAP    = 0x2a4b,
   UUID_HID_REPORT        = 0x2a4d,
+  UUID_HID_PROTOCOL_MODE = 0x2a4e,
 
   // Caps on the variable parts of the static state.
   HID_REPORT_MAX  = 32,
@@ -54,6 +55,8 @@ enum {
   H_HID_REPORT       = 0x0028,
   H_HID_REPORT_CCCD  = 0x0029,
   H_HID_REPORT_REF   = 0x002a,
+  H_HID_PROTO_DECL   = 0x002b,
+  H_HID_PROTO        = 0x002c,
   // Battery handles sit after HID so the optional service can be dropped
   // by truncating db_count without holes in the HID handle range.
   H_BAT_PRIMARY      = 0x0030,
@@ -107,6 +110,10 @@ static const uint8_t v_char_hid_rep[]  = {CHAR_PROP_READ | CHAR_PROP_NOTIFY,
                                           H_HID_REPORT, 0x00,
                                           UUID_HID_REPORT & 0xff,
                                           UUID_HID_REPORT >> 8};
+static const uint8_t v_char_hid_proto[] = {CHAR_PROP_READ | CHAR_PROP_WRITE_NO_RSP,
+                                           H_HID_PROTO, 0x00,
+                                           UUID_HID_PROTOCOL_MODE & 0xff,
+                                           UUID_HID_PROTOCOL_MODE >> 8};
 
 // bcdHID = 0x0111, country code 0, flags = RemoteWake | NormallyConnectable.
 static const uint8_t v_hid_info[]       = {0x11, 0x01, 0x00, 0x03};
@@ -120,6 +127,7 @@ static uint8_t v_battery_cccd[2];
 static uint8_t v_hid_ctl_point[1];
 static uint8_t v_hid_report[HID_REPORT_MAX];
 static uint8_t v_hid_cccd[2];
+static uint8_t v_hid_proto[1] = {0x01};
 
 static struct ble_attr db[] = {
     {H_GAP_PRIMARY, UUID_PRIMARY_SERVICE,
@@ -166,6 +174,10 @@ static struct ble_attr db[] = {
      BLE_ATTR_WRITABLE | BLE_ATTR_ENCRYPTED},
     {H_HID_REPORT_REF, UUID_REPORT_REFERENCE,
      (uint8_t*)v_hid_report_ref, sizeof(v_hid_report_ref), 0},
+    {H_HID_PROTO_DECL, UUID_CHARACTERISTIC,
+     (uint8_t*)v_char_hid_proto, sizeof(v_char_hid_proto), 0},
+    {H_HID_PROTO, UUID_HID_PROTOCOL_MODE,
+     v_hid_proto, sizeof(v_hid_proto), BLE_ATTR_WRITABLE},
 
     // Battery Service (optional). Kept at the end of the table so it can
     // be excluded by truncating db_count when the caller leaves the
@@ -265,8 +277,6 @@ static void on_ble_connected(uint16_t handle) {
   (void)handle;
   encrypted_state = false;
   notify_state = false;
-  v_hid_cccd[0] = 0;
-  v_hid_cccd[1] = 0;
   if (hid->connected) {
     hid->connected();
   }
@@ -275,8 +285,6 @@ static void on_ble_connected(uint16_t handle) {
 static void on_ble_disconnected(void) {
   encrypted_state = false;
   notify_state = false;
-  v_hid_cccd[0] = 0;
-  v_hid_cccd[1] = 0;
   if (hid->disconnected) {
     hid->disconnected();
   }
@@ -284,6 +292,16 @@ static void on_ble_disconnected(void) {
 
 static void on_ble_encrypted(bool on) {
   encrypted_state = on;
+  if (on) {
+    if ((v_hid_cccd[0] & 0x01) && !notify_state) {
+      notify_state = true;
+      if (hid->notify_enabled) {
+        hid->notify_enabled(true);
+      }
+    }
+  } else {
+    notify_state = false;
+  }
 }
 
 static void on_ble_attr_write(uint16_t handle,
@@ -291,6 +309,10 @@ static void on_ble_attr_write(uint16_t handle,
                               uint8_t value_len) {
   if (handle != H_HID_REPORT_CCCD || value_len < 1) {
     return;
+  }
+  v_hid_cccd[0] = value[0];
+  if (value_len > 1) {
+    v_hid_cccd[1] = value[1];
   }
   bool now = (value[0] & 0x01) != 0;
   if (now == notify_state) {
@@ -329,6 +351,12 @@ void ble_hid_peripheral_init(const struct ble_hid_peripheral* config,
   }
   v_hid_cccd[0] = 0;
   v_hid_cccd[1] = 0;
+  if (config->load_bond) {
+    struct smp_bond_info bond;
+    if (config->load_bond(&bond)) {
+      v_hid_cccd[0] = 0x01;
+    }
+  }
 
   adv_data.appearance = config->appearance;
   build_scan_rsp();

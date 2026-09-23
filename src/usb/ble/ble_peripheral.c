@@ -216,6 +216,9 @@ static void pump_phase3(void) {
         ble->save_bond(&bond);
       }
     }
+    if (ble->encrypted) {
+      ble->encrypted(true);
+    }
     return;
   }
   uint16_t total = l2cap_build(acl_tx_buf, conn_handle, L2CAP_CID_SMP,
@@ -280,12 +283,11 @@ static void handle_encryption_change(const uint8_t* data, uint8_t size) {
   encrypted_state = (data[5] != 0);
   if (encrypted_state && smp.state == SMP_STATE_STK_READY) {
     smp_phase3_pending = true;
-  }
-  if (ble->encrypted) {
-    ble->encrypted(encrypted_state);
-  }
-  if (smp_phase3_pending) {
     pump_phase3();
+  } else {
+    if (ble->encrypted) {
+      ble->encrypted(encrypted_state);
+    }
   }
 }
 
@@ -469,9 +471,9 @@ bool ble_peripheral_send_notification(uint16_t handle,
     return false;
   }
   // Bail out before touching acl_tx_buf if a previous staged ACL is still
-  // referencing it; otherwise we would clobber its bytes while the staged
-  // tx_len still expects the old payload.
-  if (state != STATE_POLL_EVENT && state != STATE_POLL_ACL) {
+  // referencing it, or if Phase 3 key distribution is in flight.
+  if (smp_phase3_pending ||
+      (state != STATE_POLL_EVENT && state != STATE_POLL_ACL)) {
     return false;
   }
   uint8_t* pdu = acl_tx_payload();
